@@ -40,6 +40,8 @@ __turbopack_context__.s([
     ()=>fetchXrayTickers,
     "generateAlphaStrategy",
     ()=>generateAlphaStrategy,
+    "getPipelineStatus",
+    ()=>getPipelineStatus,
     "getPortfolios",
     ()=>getPortfolios,
     "getTraders",
@@ -48,6 +50,12 @@ __turbopack_context__.s([
     ()=>promoteAlphaExperiment,
     "runAlphaBacktest",
     ()=>runAlphaBacktest,
+    "runPipelineFull",
+    ()=>runPipelineFull,
+    "runPipelineIngest",
+    ()=>runPipelineIngest,
+    "runPipelineScoring",
+    ()=>runPipelineScoring,
     "runTournament",
     ()=>runTournament,
     "runTraderBacktest",
@@ -240,6 +248,28 @@ async function promoteAlphaExperiment(experimentId) {
     const res = await fetch(`${API_BASE}/api/alpha-lab/${experimentId}/promote`, {
         method: "POST"
     });
+    return await res.json();
+}
+async function runPipelineIngest() {
+    const res = await fetch(`${API_BASE}/api/pipeline/run/ingest`, {
+        method: "POST"
+    });
+    return await res.json();
+}
+async function runPipelineFull() {
+    const res = await fetch(`${API_BASE}/api/pipeline/run/full`, {
+        method: "POST"
+    });
+    return await res.json();
+}
+async function runPipelineScoring() {
+    const res = await fetch(`${API_BASE}/api/pipeline/run/pipeline`, {
+        method: "POST"
+    });
+    return await res.json();
+}
+async function getPipelineStatus() {
+    const res = await fetch(`${API_BASE}/api/pipeline/status`);
     return await res.json();
 }
 }),

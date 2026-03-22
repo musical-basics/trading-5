@@ -3,3 +3,6 @@
 {"timestamp":"00:00:31.355","source":"Browser","level":"LOG","message":"%c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit"}
 {"timestamp":"00:00:31.355","source":"Browser","level":"LOG","message":"%c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {\"path\":\"/\",\"route\":\"/\"}"}
 {"timestamp":"00:00:31.355","source":"Browser","level":"LOG","message":"%c[Vercel Web Analytics]%c [view] http://localhost:3000/ color: rgb(120, 120, 120) color: inherit {\"dp\":\"/\",\"o\":\"http://localhost:3000/\",\"r\":\"\",\"sdkn\":\"@vercel/analytics/next\",\"sdkv\":\"1.6.1\",\"sv\":\"0.1.3\",\"ts\":1774178734053} /_vercel/insights/view"}
+{"timestamp":"10:04:00.559","source":"Server","level":"LOG","message":"✓ Compiled in 847ms"}
+{"timestamp":"10:04:38.926","source":"Server","level":"LOG","message":"✓ Compiled in 276ms"}
+{"timestamp":"10:05:06.443","source":"Server","level":"LOG","message":"✓ Compiled in 624ms"}

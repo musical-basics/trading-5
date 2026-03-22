@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, Database, CheckCircle2, AlertTriangle, XCircle } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Loader2, Database, CheckCircle2, AlertTriangle, XCircle, Play, RefreshCw } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { fetchPipelineCoverage, type TickerCoverage, type ComponentCoverage } from "@/lib/api"
+import { fetchPipelineCoverage, runPipelineIngest, runPipelineFull, getPipelineStatus, type TickerCoverage, type ComponentCoverage } from "@/lib/api"
 
 const STAGES = [
   { key: "market_data", label: "Market Data", cols: ["adj_close", "volume", "daily_return"] },
@@ -36,13 +37,69 @@ export function DataPipeline() {
   const [data, setData] = useState<TickerCoverage[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedTicker, setSelectedTicker] = useState<string | null>(null)
+  const [pipelineRunning, setPipelineRunning] = useState(false)
+  const [pipelinePhase, setPipelinePhase] = useState<string | null>(null)
+  const [pipelineError, setPipelineError] = useState<string | null>(null)
+  const [pipelineMessage, setPipelineMessage] = useState<string | null>(null)
 
-  useEffect(() => {
+  const loadCoverage = useCallback(() => {
     fetchPipelineCoverage().then((d) => {
       setData(d)
       setLoading(false)
     })
   }, [])
+
+  useEffect(() => { loadCoverage() }, [loadCoverage])
+
+  // Poll pipeline status when running
+  useEffect(() => {
+    if (!pipelineRunning) return
+    const interval = setInterval(async () => {
+      try {
+        const status = await getPipelineStatus()
+        if (!status.running) {
+          setPipelineRunning(false)
+          setPipelinePhase(null)
+          if (status.error) {
+            setPipelineError(status.error)
+            setPipelineMessage(null)
+          } else {
+            setPipelineMessage("✅ Pipeline completed successfully!")
+            setPipelineError(null)
+            loadCoverage() // Refresh data
+          }
+          clearInterval(interval)
+        }
+      } catch { /* ignore polling errors */ }
+    }, 3000)
+    return () => clearInterval(interval)
+  }, [pipelineRunning, loadCoverage])
+
+  const handleRunIngest = async () => {
+    setPipelineError(null)
+    setPipelineMessage(null)
+    const result = await runPipelineIngest()
+    if (result.ok) {
+      setPipelineRunning(true)
+      setPipelinePhase("ingest")
+      setPipelineMessage(result.message ?? "Ingesting data...")
+    } else {
+      setPipelineError(result.error ?? "Failed to start")
+    }
+  }
+
+  const handleRunFull = async () => {
+    setPipelineError(null)
+    setPipelineMessage(null)
+    const result = await runPipelineFull()
+    if (result.ok) {
+      setPipelineRunning(true)
+      setPipelinePhase("full")
+      setPipelineMessage(result.message ?? "Running full pipeline...")
+    } else {
+      setPipelineError(result.error ?? "Failed to start")
+    }
+  }
 
   if (loading) {
     return (
@@ -64,17 +121,67 @@ export function DataPipeline() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="p-2 rounded-lg bg-primary/10">
-          <Database className="w-5 h-5 text-primary" />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-primary/10">
+            <Database className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold">Data Pipeline</h2>
+            <p className="text-xs text-muted-foreground">
+              Coverage across {totalTickers} tickers — {fullCoverage} fully covered, {partialCoverage} with gaps
+            </p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-lg font-semibold">Data Pipeline</h2>
-          <p className="text-xs text-muted-foreground">
-            Coverage across {totalTickers} tickers — {fullCoverage} fully covered, {partialCoverage} with gaps
-          </p>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={loadCoverage}
+            disabled={pipelineRunning}
+          >
+            <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+            Refresh
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRunIngest}
+            disabled={pipelineRunning}
+          >
+            {pipelineRunning && pipelinePhase === "ingest" ? (
+              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+            ) : (
+              <Play className="w-3.5 h-3.5 mr-1.5" />
+            )}
+            Ingest Data
+          </Button>
+          <Button
+            size="sm"
+            onClick={handleRunFull}
+            disabled={pipelineRunning}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+          >
+            {pipelineRunning && pipelinePhase === "full" ? (
+              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+            ) : (
+              <Play className="w-3.5 h-3.5 mr-1.5" />
+            )}
+            Run Full Pipeline
+          </Button>
         </div>
       </div>
+
+      {/* Pipeline Status Banner */}
+      {(pipelineMessage || pipelineError) && (
+        <div className={cn(
+          "rounded-lg px-4 py-2 text-sm",
+          pipelineError ? "bg-red-500/10 text-red-400 border border-red-500/20" : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+        )}>
+          {pipelineRunning && <Loader2 className="w-3.5 h-3.5 inline mr-2 animate-spin" />}
+          {pipelineError || pipelineMessage}
+        </div>
+      )}
 
       {/* Coverage Matrix */}
       <Card className="border-border/50 bg-card/50">

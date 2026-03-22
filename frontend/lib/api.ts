@@ -504,3 +504,24 @@ export async function promoteAlphaExperiment(experimentId: string): Promise<{
   return await res.json()
 }
 
+// ── Pipeline Triggers ──────────────────────────────────────
+
+export async function runPipelineIngest(): Promise<{ ok: boolean; message?: string; error?: string }> {
+  const res = await fetch(`${API_BASE}/api/pipeline/run/ingest`, { method: "POST" })
+  return await res.json()
+}
+
+export async function runPipelineFull(): Promise<{ ok: boolean; message?: string; error?: string }> {
+  const res = await fetch(`${API_BASE}/api/pipeline/run/full`, { method: "POST" })
+  return await res.json()
+}
+
+export async function runPipelineScoring(): Promise<{ ok: boolean; message?: string; error?: string }> {
+  const res = await fetch(`${API_BASE}/api/pipeline/run/pipeline`, { method: "POST" })
+  return await res.json()
+}
+
+export async function getPipelineStatus(): Promise<{ running: boolean; phase: string | null; error: string | null }> {
+  const res = await fetch(`${API_BASE}/api/pipeline/status`)
+  return await res.json()
+}

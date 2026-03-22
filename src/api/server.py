@@ -110,6 +110,9 @@ app.include_router(indicators.router)
 from src.api.routers import alpha_lab
 app.include_router(alpha_lab.router)
 
+from src.api.routers import pipeline
+app.include_router(pipeline.router)
+
 
 # ── WebSocket Endpoint — Real-Time Telemetry ────────────────
 @app.websocket("/api/ws/telemetry")
