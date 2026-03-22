@@ -14,7 +14,9 @@ import numpy as np
 
 from src.core.duckdb_store import get_parquet_path
 from src.alpha_lab.sandbox_executor import execute_strategy
-from src.alpha_lab.alpha_lab_store import save_equity_curve, update_experiment_status
+from src.alpha_lab.alpha_lab_store import (
+    save_equity_curve, update_experiment_status, update_experiment_code,
+)
 
 
 def _load_aligned_data() -> pl.DataFrame:
@@ -143,8 +145,36 @@ def run_lab_backtest(
         # 1. Load aligned data
         data = _load_aligned_data()
 
-        # 2. Execute strategy in sandbox
-        result_df, error = execute_strategy(strategy_code, data)
+        # 2. Execute strategy in sandbox (with self-healing retry)
+        result_df = None
+        error = None
+        max_retries = 2
+        current_code = strategy_code
+
+        for attempt in range(max_retries + 1):
+            result_df, error = execute_strategy(current_code, data)
+            if error is None:
+                break
+
+            if attempt < max_retries and "Runtime error" in error:
+                # Level 5 Self-Healing: feed the error back to the LLM
+                try:
+                    from src.alpha_lab.strategy_generator import generate_strategy
+                    print(f"  🔧 Self-healing attempt {attempt + 1}: {error[:100]}...")
+                    fix_prompt = (
+                        f"The following strategy code failed with this error:\n"
+                        f"```python\n{current_code}\n```\n\n"
+                        f"Error:\n{error}\n\n"
+                        f"Fix the code so it runs correctly. Return only the corrected function."
+                    )
+                    fixed = generate_strategy(prompt=fix_prompt, model_tier="haiku")
+                    current_code = fixed.code
+                    update_experiment_code(experiment_id, current_code)
+                except Exception:
+                    break  # LLM not available, skip self-healing
+            else:
+                break
+
         if error:
             update_experiment_status(experiment_id, "error", {"error": error})
             return {"error": error}

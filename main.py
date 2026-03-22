@@ -1,20 +1,18 @@
 """
-main.py — Level 3 Neurosymbolic Pod: CLI Pipeline Runner
+main.py — Level 5 CLI Dispatcher
 
-Orchestrates all phases sequentially:
-  Phase 0:  Database Initialization
-  Phase 1a: EOD Price Ingestion (yfinance → SQLite)
-  Phase 1b: Quarterly Fundamental Ingestion (yfinance → SQLite)
-  Phase 1c: Macro Factor Ingestion (VIX, 10Y Yield, SPY)
-  Phase 2A: Rolling OLS Factor Betas (Return APT)
-  Phase 2B: Cross-Sectional Scoring (EV/Sales Z-scores)
-  Phase 2C: Dynamic DCF Valuations
-  Phase 2D: ML Feature Assembly
-  Phase 3a: XGBoost Walk-Forward Optimization
-  Phase 3b: Risk APT (Covariance + MCR Scaling)
-  Phase 4:  Squeeze Filter + Execution Reconciliation
+Provides a command-line interface for running pipeline phases individually
+or triggering the full pipeline. In production, these are called by
+Celery tasks via the Master Clock — but this CLI remains available
+for manual operation and debugging.
 
-Run with: python3 main.py
+Usage:
+    python3 main.py                 # Full pipeline (all phases)
+    python3 main.py ingest          # Phase 1 only: Ingest market data
+    python3 main.py pipeline        # Phases 2-4: ECS scoring + risk
+    python3 main.py retrain         # XGBoost WFO retraining
+    python3 main.py server          # Start FastAPI dev server
+    python3 main.py migrate         # SQLite → Postgres migration
 """
 
 import sys
@@ -24,78 +22,51 @@ from datetime import datetime
 # Ensure project root is on the path so src imports work
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from src.pipeline import (
-    db_init,
-    data_ingestion,
-    macro_ingestion,
-    fundamental_ingestion,
-    cross_sectional_scoring,
-    factor_betas,
-    dynamic_dcf,
-    ml_feature_assembly,
-    xgb_wfo_engine,
-    risk_apt,
-    squeeze_filter,
-    wfo_backtester,
-    portfolio_rebalancer,
-    execution,
-)
 
+def _run_full_pipeline():
+    """Run all pipeline phases sequentially (legacy behavior)."""
+    from src.pipeline import (
+        db_init,
+        data_ingestion,
+        macro_ingestion,
+        fundamental_ingestion,
+        cross_sectional_scoring,
+        factor_betas,
+        dynamic_dcf,
+        ml_feature_assembly,
+        xgb_wfo_engine,
+        risk_apt,
+        squeeze_filter,
+        wfo_backtester,
+        portfolio_rebalancer,
+        execution,
+    )
 
-def main():
     start_time = datetime.now()
-
     print()
     print("╔" + "═" * 58 + "╗")
-    print("║  LEVEL 3 — NEUROSYMBOLIC POD PIPELINE                   ║")
+    print("║  LEVEL 5 — GOD ENGINE PIPELINE                          ║")
     print("║  Started: " + start_time.strftime("%Y-%m-%d %H:%M:%S") + " " * 27 + "║")
     print("╚" + "═" * 58 + "╝")
     print()
 
-    # Phase 0: Initialize Database
     db_init.init_db()
-
-    # Phase 1a: Ingest EOD prices
     data_ingestion.ingest()
-
-    # Phase 1b: Ingest quarterly fundamentals
     fundamental_ingestion.ingest_fundamentals()
-
-    # Phase 1c: Ingest macro factors (VIX, 10Y Yield, SPY)
     macro_ingestion.ingest_macro_factors()
-
-    # Phase 2A: Compute rolling factor betas (Return APT)
     factor_betas.compute_factor_betas()
-
-    # Phase 2B: Compute cross-sectional EV/Sales Z-scores
     cross_sectional_scoring.compute_cross_sectional_scores()
-
-    # Phase 2C: Compute Dynamic DCF valuations
     dynamic_dcf.compute_dynamic_dcf()
-
-    # Phase 2D: Assemble ML features (merge all scores + labels)
     ml_feature_assembly.assemble_features()
-
-    # Phase 3a: XGBoost Walk-Forward Optimization
     xgb_wfo_engine.run_xgb_wfo()
-
-    # Phase 3b: Risk APT — Variance-constrained weight scaling
     risk_apt.apply_risk_constraints()
-
-    # Phase 4: Squeeze Filter (Bouncer Defense)
     squeeze_filter.apply_squeeze_filter()
-
-    # Phase 3 (Legacy): Walk-Forward Optimization tournament
     wfo_backtester.run_wfo_tournament()
-
-    # Phase 4: Portfolio rebalance → execution
     orders = portfolio_rebalancer.rebalance_portfolio()
     execution.route_orders(orders)
 
-    # Done
     end_time = datetime.now()
     elapsed = (end_time - start_time).total_seconds()
-
     print()
     print("╔" + "═" * 58 + "╗")
     print("║  PIPELINE COMPLETE                                      ║")
@@ -103,6 +74,92 @@ def main():
     print(f"║  Elapsed: {elapsed:.1f}s" + " " * (47 - len(f"{elapsed:.1f}s")) + "║")
     print("╚" + "═" * 58 + "╝")
     print()
+
+
+def _run_ingest():
+    """Phase 1 only: ingest all market data, fundamentals, macro."""
+    from src.pipeline.data_sources.data_ingestion import ingest
+    from src.pipeline.data_sources.macro_ingestion import ingest_macro_factors
+    print("🕓 Ingesting market data...")
+    ingest()
+    ingest_macro_factors()
+    print("✅ Ingestion complete.")
+
+
+def _run_pipeline():
+    """Phases 2–4: scoring, ML, risk."""
+    from src.pipeline.scoring.cross_sectional_scoring import compute_cross_sectional_scores
+    from src.pipeline.scoring.factor_betas import compute_factor_betas
+    from src.pipeline.scoring.dynamic_dcf import compute_dynamic_dcf
+    from src.pipeline.scoring.ml_feature_assembly import assemble_features
+    from src.pipeline.scoring.risk_apt import apply_risk_constraints
+    from src.pipeline.backtesting.xgb_wfo_engine import run_xgb_wfo
+
+    print("🧮 Running ECS pipeline...")
+    factor_betas()
+    compute_cross_sectional_scores()
+    compute_dynamic_dcf()
+    assemble_features()
+    run_xgb_wfo()
+    apply_risk_constraints()
+    print("✅ Pipeline complete.")
+
+
+def _run_retrain():
+    """Weekend XGBoost retraining."""
+    from src.pipeline.backtesting.xgb_wfo_engine import run_xgb_wfo
+    print("🧠 Retraining XGBoost WFO model...")
+    run_xgb_wfo()
+    print("✅ Retrain complete.")
+
+
+def _run_server():
+    """Start FastAPI dev server."""
+    import uvicorn
+    print("🚀 Starting QuantPrime API on :8000...")
+    uvicorn.run("src.api.server:app", host="0.0.0.0", port=8000, reload=True)
+
+
+def _run_migrate():
+    """Run SQLite → Postgres migration."""
+    from src.scripts.migrate_sqlite_to_pg import migrate
+    migrate()
+
+
+COMMANDS = {
+    "full": ("Run full pipeline (all phases)", _run_full_pipeline),
+    "ingest": ("Phase 1: Ingest market data", _run_ingest),
+    "pipeline": ("Phases 2-4: ECS scoring + risk", _run_pipeline),
+    "retrain": ("Weekend XGBoost retraining", _run_retrain),
+    "server": ("Start FastAPI dev server", _run_server),
+    "migrate": ("SQLite → Postgres migration", _run_migrate),
+}
+
+
+def main():
+    if len(sys.argv) < 2:
+        _run_full_pipeline()
+        return
+
+    command = sys.argv[1].lower()
+
+    if command in ("help", "--help", "-h"):
+        print("Usage: python3 main.py [command]")
+        print()
+        print("Commands:")
+        for cmd, (desc, _) in COMMANDS.items():
+            print(f"  {cmd:<12} {desc}")
+        print()
+        print("If no command given, runs the full pipeline.")
+        return
+
+    if command in COMMANDS:
+        _, fn = COMMANDS[command]
+        fn()
+    else:
+        print(f"❌ Unknown command: {command}")
+        print(f"   Valid: {', '.join(COMMANDS.keys())}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

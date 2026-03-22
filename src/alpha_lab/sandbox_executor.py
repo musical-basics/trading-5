@@ -3,9 +3,12 @@ sandbox_executor.py — Restricted execution environment for LLM-generated strat
 
 Runs generated Polars expressions in a sandboxed scope with only `pl` and `np`
 available. Validates output shape and column presence.
+
+Level 5: Full traceback capture for self-healing reflection loop.
 """
 
 import re
+import traceback
 from typing import Optional
 
 import polars as pl
@@ -126,7 +129,8 @@ def execute_strategy(
     try:
         result = fn(data)
     except Exception as e:
-        return None, f"Runtime error: {type(e).__name__}: {e}"
+        tb = traceback.format_exc()
+        return None, f"Runtime error: {type(e).__name__}: {e}\n\nTraceback:\n{tb}"
 
     # Validate output
     if not isinstance(result, pl.DataFrame):
