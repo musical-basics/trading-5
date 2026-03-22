@@ -45,7 +45,7 @@ def run_ingest():
     def _ingest():
         from src.pipeline.data_sources.data_ingestion import ingest
         from src.pipeline.data_sources.macro_ingestion import ingest_macro_factors
-        from src.pipeline.data_sources.fundamental_ingestion import ingest_fundamentals
+        from src.pipeline.data_sources.yfinance.fundamentals import ingest_fundamentals
         ingest()
         ingest_fundamentals()
         ingest_macro_factors()
@@ -92,7 +92,7 @@ def run_full():
     def _full():
         from src.pipeline.data_sources.data_ingestion import ingest
         from src.pipeline.data_sources.macro_ingestion import ingest_macro_factors
-        from src.pipeline.data_sources.fundamental_ingestion import ingest_fundamentals
+        from src.pipeline.data_sources.yfinance.fundamentals import ingest_fundamentals
         from src.pipeline.scoring.factor_betas import compute_factor_betas
         from src.pipeline.scoring.cross_sectional_scoring import compute_cross_sectional_scores
         from src.pipeline.scoring.dynamic_dcf import compute_dynamic_dcf
