@@ -63,9 +63,42 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Auto-create tables in SQLite (Supabase tables created via SQL Editor)
 if str(engine.url).startswith("sqlite"):
-    from src.core.models import Base
+    from src.core.models import Base, AlphaLabExperiment
     Base.metadata.create_all(bind=engine)
     logger.info("✅ SQLite tables created/verified")
+
+    # Auto-seed from old Parquet experiments if SQLite is empty
+    _parquet_path = os.path.join(PROJECT_ROOT, "data", "alpha_lab", "experiments.parquet")
+    if os.path.exists(_parquet_path):
+        _seed_session = SessionLocal()
+        _count = _seed_session.query(AlphaLabExperiment).count()
+        if _count == 0:
+            try:
+                import polars as pl
+                from datetime import datetime as dt
+                _df = pl.read_parquet(_parquet_path)
+                for row in _df.to_dicts():
+                    _seed_session.add(AlphaLabExperiment(
+                        experiment_id=row["experiment_id"],
+                        hypothesis=row.get("hypothesis", ""),
+                        strategy_code=row.get("strategy_code", ""),
+                        strategy_name=row.get("strategy_name", ""),
+                        model_tier=row.get("model_tier", "sonnet"),
+                        status=row.get("status", "generated"),
+                        metrics_json=row.get("metrics_json"),
+                        rationale=row.get("rationale", ""),
+                        cost_input_tokens=row.get("cost_input_tokens", 0),
+                        cost_output_tokens=row.get("cost_output_tokens", 0),
+                        cost_usd=row.get("cost_usd", 0.0),
+                        created_at=dt.fromisoformat(row["created_at"]) if row.get("created_at") else dt.utcnow(),
+                    ))
+                _seed_session.commit()
+                logger.info(f"✅ Seeded {len(_df)} experiments from Parquet → SQLite")
+            except Exception as e:
+                logger.warning(f"⚠ Failed to seed from Parquet: {e}")
+                _seed_session.rollback()
+            finally:
+                _seed_session.close()
 
 
 def get_db():
