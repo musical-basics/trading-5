@@ -488,3 +488,19 @@ export async function updateAlphaCode(experimentId: string, code: string): Promi
   )
   return await res.json()
 }
+
+// ── Level 5: Promotion API ─────────────────────────────────
+
+export async function promoteAlphaExperiment(experimentId: string): Promise<{
+  status?: string
+  strategy_id?: string
+  file?: string
+  error?: string
+}> {
+  const res = await fetch(
+    `${API_BASE}/api/alpha-lab/${experimentId}/promote`,
+    { method: "POST" }
+  )
+  return await res.json()
+}
+
