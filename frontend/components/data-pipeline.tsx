@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Loader2, Database, CheckCircle2, AlertTriangle, XCircle, Play, RefreshCw } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { fetchPipelineCoverage, runPipelineIngest, runPipelineFull, getPipelineStatus, type TickerCoverage, type ComponentCoverage } from "@/lib/api"
+import { fetchPipelineCoverage, runPipelineIngest, runPipelineFull, runPipelineScoring, getPipelineStatus, type TickerCoverage, type ComponentCoverage } from "@/lib/api"
 
 const STAGES = [
   { key: "market_data", label: "Market Data", cols: ["adj_close", "volume", "daily_return"] },
@@ -88,6 +88,19 @@ export function DataPipeline() {
     }
   }
 
+  const handleRunCompute = async () => {
+    setPipelineError(null)
+    setPipelineMessage(null)
+    const result = await runPipelineScoring()
+    if (result.ok) {
+      setPipelineRunning(true)
+      setPipelinePhase("pipeline")
+      setPipelineMessage(result.message ?? "Computing scores...")
+    } else {
+      setPipelineError(result.error ?? "Failed to start")
+    }
+  }
+
   const handleRunFull = async () => {
     setPipelineError(null)
     setPipelineMessage(null)
@@ -155,6 +168,19 @@ export function DataPipeline() {
               <Play className="w-3.5 h-3.5 mr-1.5" />
             )}
             Ingest Data
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRunCompute}
+            disabled={pipelineRunning}
+          >
+            {pipelineRunning && pipelinePhase === "pipeline" ? (
+              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+            ) : (
+              <Play className="w-3.5 h-3.5 mr-1.5" />
+            )}
+            Compute All
           </Button>
           <Button
             size="sm"

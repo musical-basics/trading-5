@@ -4707,6 +4707,18 @@ function DataPipeline() {
             setPipelineError(result.error ?? "Failed to start");
         }
     };
+    const handleRunCompute = async ()=>{
+        setPipelineError(null);
+        setPipelineMessage(null);
+        const result = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$api$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["runPipelineScoring"])();
+        if (result.ok) {
+            setPipelineRunning(true);
+            setPipelinePhase("pipeline");
+            setPipelineMessage(result.message ?? "Computing scores...");
+        } else {
+            setPipelineError(result.error ?? "Failed to start");
+        }
+    };
     const handleRunFull = async ()=>{
         setPipelineError(null);
         setPipelineMessage(null);
@@ -4726,12 +4738,12 @@ function DataPipeline() {
                 className: "h-8 w-8 animate-spin text-muted-foreground"
             }, void 0, false, {
                 fileName: "[project]/components/data-pipeline.tsx",
-                lineNumber: 107,
+                lineNumber: 120,
                 columnNumber: 9
             }, this)
         }, void 0, false, {
             fileName: "[project]/components/data-pipeline.tsx",
-            lineNumber: 106,
+            lineNumber: 119,
             columnNumber: 7
         }, this);
     }
@@ -4755,12 +4767,12 @@ function DataPipeline() {
                                     className: "w-5 h-5 text-primary"
                                 }, void 0, false, {
                                     fileName: "[project]/components/data-pipeline.tsx",
-                                    lineNumber: 127,
+                                    lineNumber: 140,
                                     columnNumber: 13
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/components/data-pipeline.tsx",
-                                lineNumber: 126,
+                                lineNumber: 139,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4770,7 +4782,7 @@ function DataPipeline() {
                                         children: "Data Pipeline"
                                     }, void 0, false, {
                                         fileName: "[project]/components/data-pipeline.tsx",
-                                        lineNumber: 130,
+                                        lineNumber: 143,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -4786,19 +4798,19 @@ function DataPipeline() {
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/data-pipeline.tsx",
-                                        lineNumber: 131,
+                                        lineNumber: 144,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/data-pipeline.tsx",
-                                lineNumber: 129,
+                                lineNumber: 142,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/data-pipeline.tsx",
-                        lineNumber: 125,
+                        lineNumber: 138,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4814,14 +4826,14 @@ function DataPipeline() {
                                         className: "w-3.5 h-3.5 mr-1.5"
                                     }, void 0, false, {
                                         fileName: "[project]/components/data-pipeline.tsx",
-                                        lineNumber: 143,
+                                        lineNumber: 156,
                                         columnNumber: 13
                                     }, this),
                                     "Refresh"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/data-pipeline.tsx",
-                                lineNumber: 137,
+                                lineNumber: 150,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -4834,20 +4846,46 @@ function DataPipeline() {
                                         className: "w-3.5 h-3.5 mr-1.5 animate-spin"
                                     }, void 0, false, {
                                         fileName: "[project]/components/data-pipeline.tsx",
-                                        lineNumber: 153,
+                                        lineNumber: 166,
                                         columnNumber: 15
                                     }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$564$2e$0_react$40$19$2e$2$2e$4$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$play$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Play$3e$__["Play"], {
                                         className: "w-3.5 h-3.5 mr-1.5"
                                     }, void 0, false, {
                                         fileName: "[project]/components/data-pipeline.tsx",
-                                        lineNumber: 155,
+                                        lineNumber: 168,
                                         columnNumber: 15
                                     }, this),
                                     "Ingest Data"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/data-pipeline.tsx",
-                                lineNumber: 146,
+                                lineNumber: 159,
+                                columnNumber: 11
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
+                                variant: "outline",
+                                size: "sm",
+                                onClick: handleRunCompute,
+                                disabled: pipelineRunning,
+                                children: [
+                                    pipelineRunning && pipelinePhase === "pipeline" ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$564$2e$0_react$40$19$2e$2$2e$4$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$loader$2d$circle$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Loader2$3e$__["Loader2"], {
+                                        className: "w-3.5 h-3.5 mr-1.5 animate-spin"
+                                    }, void 0, false, {
+                                        fileName: "[project]/components/data-pipeline.tsx",
+                                        lineNumber: 179,
+                                        columnNumber: 15
+                                    }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$564$2e$0_react$40$19$2e$2$2e$4$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$play$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Play$3e$__["Play"], {
+                                        className: "w-3.5 h-3.5 mr-1.5"
+                                    }, void 0, false, {
+                                        fileName: "[project]/components/data-pipeline.tsx",
+                                        lineNumber: 181,
+                                        columnNumber: 15
+                                    }, this),
+                                    "Compute All"
+                                ]
+                            }, void 0, true, {
+                                fileName: "[project]/components/data-pipeline.tsx",
+                                lineNumber: 172,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -4860,32 +4898,32 @@ function DataPipeline() {
                                         className: "w-3.5 h-3.5 mr-1.5 animate-spin"
                                     }, void 0, false, {
                                         fileName: "[project]/components/data-pipeline.tsx",
-                                        lineNumber: 166,
+                                        lineNumber: 192,
                                         columnNumber: 15
                                     }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$564$2e$0_react$40$19$2e$2$2e$4$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$play$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Play$3e$__["Play"], {
                                         className: "w-3.5 h-3.5 mr-1.5"
                                     }, void 0, false, {
                                         fileName: "[project]/components/data-pipeline.tsx",
-                                        lineNumber: 168,
+                                        lineNumber: 194,
                                         columnNumber: 15
                                     }, this),
                                     "Run Full Pipeline"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/data-pipeline.tsx",
-                                lineNumber: 159,
+                                lineNumber: 185,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/data-pipeline.tsx",
-                        lineNumber: 136,
+                        lineNumber: 149,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/data-pipeline.tsx",
-                lineNumber: 124,
+                lineNumber: 137,
                 columnNumber: 7
             }, this),
             (pipelineMessage || pipelineError) && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4895,14 +4933,14 @@ function DataPipeline() {
                         className: "w-3.5 h-3.5 inline mr-2 animate-spin"
                     }, void 0, false, {
                         fileName: "[project]/components/data-pipeline.tsx",
-                        lineNumber: 181,
+                        lineNumber: 207,
                         columnNumber: 31
                     }, this),
                     pipelineError || pipelineMessage
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/data-pipeline.tsx",
-                lineNumber: 177,
+                lineNumber: 203,
                 columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Card"], {
@@ -4916,7 +4954,7 @@ function DataPipeline() {
                                 children: "Coverage Matrix"
                             }, void 0, false, {
                                 fileName: "[project]/components/data-pipeline.tsx",
-                                lineNumber: 189,
+                                lineNumber: 215,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardDescription"], {
@@ -4929,14 +4967,14 @@ function DataPipeline() {
                                                 className: "w-3 h-3 text-green-400"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/data-pipeline.tsx",
-                                                lineNumber: 191,
+                                                lineNumber: 217,
                                                 columnNumber: 62
                                             }, this),
                                             " Full"
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/data-pipeline.tsx",
-                                        lineNumber: 191,
+                                        lineNumber: 217,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -4946,14 +4984,14 @@ function DataPipeline() {
                                                 className: "w-3 h-3 text-amber-400"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/data-pipeline.tsx",
-                                                lineNumber: 192,
+                                                lineNumber: 218,
                                                 columnNumber: 67
                                             }, this),
                                             " Gaps (>20% null)"
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/data-pipeline.tsx",
-                                        lineNumber: 192,
+                                        lineNumber: 218,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -4963,26 +5001,26 @@ function DataPipeline() {
                                                 className: "w-3 h-3 text-red-400/50"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/data-pipeline.tsx",
-                                                lineNumber: 193,
+                                                lineNumber: 219,
                                                 columnNumber: 67
                                             }, this),
                                             " Empty"
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/data-pipeline.tsx",
-                                        lineNumber: 193,
+                                        lineNumber: 219,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/data-pipeline.tsx",
-                                lineNumber: 190,
+                                lineNumber: 216,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/data-pipeline.tsx",
-                        lineNumber: 188,
+                        lineNumber: 214,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -5001,7 +5039,7 @@ function DataPipeline() {
                                                     children: "Ticker"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/data-pipeline.tsx",
-                                                    lineNumber: 201,
+                                                    lineNumber: 227,
                                                     columnNumber: 19
                                                 }, this),
                                                 STAGES.map((s)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
@@ -5009,18 +5047,18 @@ function DataPipeline() {
                                                         children: s.label
                                                     }, s.key, false, {
                                                         fileName: "[project]/components/data-pipeline.tsx",
-                                                        lineNumber: 205,
+                                                        lineNumber: 231,
                                                         columnNumber: 21
                                                     }, this))
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/data-pipeline.tsx",
-                                            lineNumber: 200,
+                                            lineNumber: 226,
                                             columnNumber: 17
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/components/data-pipeline.tsx",
-                                        lineNumber: 199,
+                                        lineNumber: 225,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("tbody", {
@@ -5033,7 +5071,7 @@ function DataPipeline() {
                                                         children: ticker.ticker
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/data-pipeline.tsx",
-                                                        lineNumber: 223,
+                                                        lineNumber: 249,
                                                         columnNumber: 21
                                                     }, this),
                                                     STAGES.map((s)=>{
@@ -5048,7 +5086,7 @@ function DataPipeline() {
                                                                         status: status
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/components/data-pipeline.tsx",
-                                                                        lineNumber: 232,
+                                                                        lineNumber: 258,
                                                                         columnNumber: 29
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -5056,52 +5094,52 @@ function DataPipeline() {
                                                                         children: comp?.rows?.toLocaleString() ?? "0"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/components/data-pipeline.tsx",
-                                                                        lineNumber: 233,
+                                                                        lineNumber: 259,
                                                                         columnNumber: 29
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/components/data-pipeline.tsx",
-                                                                lineNumber: 231,
+                                                                lineNumber: 257,
                                                                 columnNumber: 27
                                                             }, this)
                                                         }, s.key, false, {
                                                             fileName: "[project]/components/data-pipeline.tsx",
-                                                            lineNumber: 230,
+                                                            lineNumber: 256,
                                                             columnNumber: 25
                                                         }, this);
                                                     })
                                                 ]
                                             }, ticker.ticker, true, {
                                                 fileName: "[project]/components/data-pipeline.tsx",
-                                                lineNumber: 213,
+                                                lineNumber: 239,
                                                 columnNumber: 19
                                             }, this))
                                     }, void 0, false, {
                                         fileName: "[project]/components/data-pipeline.tsx",
-                                        lineNumber: 211,
+                                        lineNumber: 237,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/data-pipeline.tsx",
-                                lineNumber: 198,
+                                lineNumber: 224,
                                 columnNumber: 13
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/components/data-pipeline.tsx",
-                            lineNumber: 197,
+                            lineNumber: 223,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/components/data-pipeline.tsx",
-                        lineNumber: 196,
+                        lineNumber: 222,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/data-pipeline.tsx",
-                lineNumber: 187,
+                lineNumber: 213,
                 columnNumber: 7
             }, this),
             selected && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Card"], {
@@ -5117,12 +5155,12 @@ function DataPipeline() {
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/data-pipeline.tsx",
-                            lineNumber: 252,
+                            lineNumber: 278,
                             columnNumber: 13
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/components/data-pipeline.tsx",
-                        lineNumber: 251,
+                        lineNumber: 277,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -5142,20 +5180,20 @@ function DataPipeline() {
                                                     children: stage.label
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/data-pipeline.tsx",
-                                                    lineNumber: 270,
+                                                    lineNumber: 296,
                                                     columnNumber: 23
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(StatusDot, {
                                                     status: status
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/data-pipeline.tsx",
-                                                    lineNumber: 271,
+                                                    lineNumber: 297,
                                                     columnNumber: 23
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/data-pipeline.tsx",
-                                            lineNumber: 269,
+                                            lineNumber: 295,
                                             columnNumber: 21
                                         }, this),
                                         comp && comp.rows > 0 ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
@@ -5170,7 +5208,7 @@ function DataPipeline() {
                                                                     children: "Rows"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/data-pipeline.tsx",
-                                                                    lineNumber: 277,
+                                                                    lineNumber: 303,
                                                                     columnNumber: 29
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -5178,13 +5216,13 @@ function DataPipeline() {
                                                                     children: comp.rows.toLocaleString()
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/data-pipeline.tsx",
-                                                                    lineNumber: 278,
+                                                                    lineNumber: 304,
                                                                     columnNumber: 29
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/data-pipeline.tsx",
-                                                            lineNumber: 276,
+                                                            lineNumber: 302,
                                                             columnNumber: 27
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5194,7 +5232,7 @@ function DataPipeline() {
                                                                     children: "Period"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/data-pipeline.tsx",
-                                                                    lineNumber: 281,
+                                                                    lineNumber: 307,
                                                                     columnNumber: 29
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -5206,19 +5244,19 @@ function DataPipeline() {
                                                                     ]
                                                                 }, void 0, true, {
                                                                     fileName: "[project]/components/data-pipeline.tsx",
-                                                                    lineNumber: 282,
+                                                                    lineNumber: 308,
                                                                     columnNumber: 29
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/data-pipeline.tsx",
-                                                            lineNumber: 280,
+                                                            lineNumber: 306,
                                                             columnNumber: 27
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/data-pipeline.tsx",
-                                                    lineNumber: 275,
+                                                    lineNumber: 301,
                                                     columnNumber: 25
                                                 }, this),
                                                 comp.null_pct && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5229,7 +5267,7 @@ function DataPipeline() {
                                                             children: "Column Fill"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/data-pipeline.tsx",
-                                                            lineNumber: 287,
+                                                            lineNumber: 313,
                                                             columnNumber: 29
                                                         }, this),
                                                         Object.entries(comp.null_pct).map(([col, pct])=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -5240,7 +5278,7 @@ function DataPipeline() {
                                                                         children: col
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/components/data-pipeline.tsx",
-                                                                        lineNumber: 290,
+                                                                        lineNumber: 316,
                                                                         columnNumber: 33
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$badge$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Badge"], {
@@ -5249,19 +5287,19 @@ function DataPipeline() {
                                                                         children: pct === 0 ? "100%" : `${(100 - pct).toFixed(0)}%`
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/components/data-pipeline.tsx",
-                                                                        lineNumber: 291,
+                                                                        lineNumber: 317,
                                                                         columnNumber: 33
                                                                     }, this)
                                                                 ]
                                                             }, col, true, {
                                                                 fileName: "[project]/components/data-pipeline.tsx",
-                                                                lineNumber: 289,
+                                                                lineNumber: 315,
                                                                 columnNumber: 31
                                                             }, this))
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/data-pipeline.tsx",
-                                                    lineNumber: 286,
+                                                    lineNumber: 312,
                                                     columnNumber: 27
                                                 }, this)
                                             ]
@@ -5270,36 +5308,36 @@ function DataPipeline() {
                                             children: "No data"
                                         }, void 0, false, {
                                             fileName: "[project]/components/data-pipeline.tsx",
-                                            lineNumber: 308,
+                                            lineNumber: 334,
                                             columnNumber: 23
                                         }, this)
                                     ]
                                 }, stage.key, true, {
                                     fileName: "[project]/components/data-pipeline.tsx",
-                                    lineNumber: 260,
+                                    lineNumber: 286,
                                     columnNumber: 19
                                 }, this);
                             })
                         }, void 0, false, {
                             fileName: "[project]/components/data-pipeline.tsx",
-                            lineNumber: 255,
+                            lineNumber: 281,
                             columnNumber: 13
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/components/data-pipeline.tsx",
-                        lineNumber: 254,
+                        lineNumber: 280,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/data-pipeline.tsx",
-                lineNumber: 250,
+                lineNumber: 276,
                 columnNumber: 9
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/components/data-pipeline.tsx",
-        lineNumber: 122,
+        lineNumber: 135,
         columnNumber: 5
     }, this);
 }
