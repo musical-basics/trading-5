@@ -366,3 +366,64 @@ def evaluate_strategies(
 
     return df
 
+
+# ═══════════════════════════════════════════════════════════════
+# LEVEL 5: Dynamic Custom Strategy Discovery
+# ═══════════════════════════════════════════════════════════════
+
+def discover_custom_strategies():
+    """Dynamically scan src/ecs/strategies/custom/ for promoted Alpha Lab strategies.
+
+    Each module must define STRATEGY_ID and a callable strategy function
+    (any function whose name starts with 'strategy_' or matches the
+    pattern used by generate_signals).
+    """
+    import importlib
+    import pkgutil
+    from pathlib import Path
+
+    custom_dir = Path(__file__).parent / "strategies" / "custom"
+    if not custom_dir.exists():
+        return
+
+    # Ensure __init__.py exists for the custom package
+    init_file = custom_dir / "__init__.py"
+    if not init_file.exists():
+        init_file.write_text("")
+
+    for module_info in pkgutil.iter_modules([str(custom_dir)]):
+        try:
+            module = importlib.import_module(
+                f"src.ecs.strategies.custom.{module_info.name}"
+            )
+            strategy_id = getattr(module, "STRATEGY_ID", module_info.name)
+            strategy_name = getattr(module, "STRATEGY_NAME", strategy_id)
+
+            # Find the strategy function — look for common patterns
+            strategy_fn = None
+            for fn_name in ["generate_signals", "strategy", module_info.name]:
+                fn = getattr(module, fn_name, None)
+                if callable(fn):
+                    strategy_fn = fn
+                    break
+
+            # Fallback: find any callable that isn't a builtin
+            if strategy_fn is None:
+                for name, obj in vars(module).items():
+                    if callable(obj) and not name.startswith("_") and name not in ("pl", "np"):
+                        strategy_fn = obj
+                        break
+
+            if strategy_fn:
+                STRATEGY_REGISTRY[strategy_id] = strategy_fn
+                STRATEGY_NAMES[strategy_id] = f"🤖 {strategy_name}"
+                print(f"  ✓ Loaded custom strategy: {strategy_id} ({strategy_name})")
+
+        except Exception as e:
+            print(f"  ⚠ Failed to load custom strategy {module_info.name}: {e}")
+
+
+# Run discovery on import
+discover_custom_strategies()
+
+

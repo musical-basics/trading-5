@@ -3,11 +3,13 @@ alpha_lab.py — API endpoints for the Alpha Lab autonomous strategy discovery.
 
 All endpoints are prefixed with /api/alpha-lab/.
 Fully isolated from production strategy/portfolio/trader endpoints.
+Level 5 additions: /promote endpoint for one-click production promotion.
 """
 
 import json
 import math
 from datetime import date, datetime
+from pathlib import Path
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
@@ -186,3 +188,81 @@ async def delete_experiment_endpoint(experiment_id: str):
     """Delete an experiment and its data."""
     success = delete_experiment(experiment_id)
     return _safe_response({"deleted": success})
+
+
+# ═══════════════════════════════════════════════════════════════
+# LEVEL 5: One-Click Production Promotion
+# ═══════════════════════════════════════════════════════════════
+
+CUSTOM_STRATEGIES_DIR = Path("src/ecs/strategies/custom")
+
+
+@router.post("/{experiment_id}/promote")
+async def promote_to_production(experiment_id: str):
+    """Promote a passed experiment to production.
+
+    1. Extract successful Python code from the store.
+    2. Write it to src/ecs/strategies/custom/generated_{id}.py
+    3. The strategy registry auto-discovers it on next startup.
+    4. Mark the experiment as promoted.
+    """
+    exp = get_experiment(experiment_id)
+    if not exp:
+        return _safe_response({"error": f"Experiment {experiment_id} not found"})
+    if exp.get("status") != "passed":
+        return _safe_response({"error": "Only passed experiments can be promoted"})
+
+    # Ensure custom directory exists
+    CUSTOM_STRATEGIES_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Write the strategy file
+    strategy_name = exp.get("strategy_name", f"strategy_{experiment_id}")
+    safe_id = experiment_id.replace("-", "_")
+    filename = f"generated_{safe_id}.py"
+    filepath = CUSTOM_STRATEGIES_DIR / filename
+
+    # Parse metrics for the docstring
+    metrics_str = "N/A"
+    if exp.get("metrics_json"):
+        try:
+            metrics = json.loads(exp["metrics_json"]) if isinstance(exp["metrics_json"], str) else exp["metrics_json"]
+            metrics_str = f"Sharpe: {metrics.get('sharpe', 'N/A')}"
+        except (json.JSONDecodeError, TypeError):
+            pass
+
+    strategy_module = (
+        f'"""\n'
+        f'Auto-generated strategy from Alpha Lab experiment #{experiment_id}.\n'
+        f'Experiment: {strategy_name}\n'
+        f'Metrics: {metrics_str}\n'
+        f'"""\n\n'
+        f'import polars as pl\n'
+        f'import numpy as np\n\n'
+        f'STRATEGY_ID = "alphalab_{safe_id}"\n'
+        f'STRATEGY_NAME = "{strategy_name}"\n\n'
+        f'{exp["strategy_code"]}\n'
+    )
+
+    filepath.write_text(strategy_module)
+
+    # Publish promotion event via Redis (for WebSocket broadcast)
+    try:
+        import redis as _redis
+        from src.config import REDIS_URL
+        r = _redis.from_url(REDIS_URL)
+        r.publish("system_events", json.dumps({
+            "event_type": "strategy_promoted",
+            "payload": {
+                "experiment_id": experiment_id,
+                "strategy_id": f"alphalab_{safe_id}",
+                "strategy_name": strategy_name,
+            },
+        }))
+    except Exception:
+        pass  # Redis not available — non-critical
+
+    return _safe_response({
+        "status": "promoted",
+        "strategy_id": f"alphalab_{safe_id}",
+        "file": str(filepath),
+    })

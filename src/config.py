@@ -25,6 +25,16 @@ if os.path.exists(_env_local):
 else:
     load_dotenv(_env_default)
 
+# ═══════════════════════════════════════════════════════════════
+# LEVEL 5 — Infrastructure Configuration
+# ═══════════════════════════════════════════════════════════════
+
+# Transactional database — Postgres in production, SQLite fallback for local dev
+DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DB_PATH}")
+
+# Task queue broker
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+
 # ── Default Universe (Expanded S&P 50 Subset) ───────────────
 DEFAULT_UNIVERSE = [
     # Technology

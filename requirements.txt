@@ -17,6 +17,14 @@ yfinance
 alpaca-trade-api
 python-dotenv
 
+# ── Level 5 Infrastructure ───────────────────────────────────
+sqlalchemy>=2.0
+alembic>=1.13
+psycopg2-binary>=2.9
+celery[redis]>=5.3
+redis>=5.0
+websockets>=12.0
+
 # ── Legacy (kept for backup Streamlit UI) ────────────────────
 pandas
 streamlit

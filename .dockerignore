@@ -1,0 +1,15 @@
+node_modules
+.next
+__pycache__
+*.pyc
+.DS_Store
+.git
+.env
+.env.local
+.env.production
+*.db
+data/components/*.parquet
+data/alpha_lab/
+docs/
+ui/
+.venv/
