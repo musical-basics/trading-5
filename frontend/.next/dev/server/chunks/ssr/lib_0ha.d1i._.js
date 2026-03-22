@@ -44,6 +44,8 @@ __turbopack_context__.s([
     ()=>getPortfolios,
     "getTraders",
     ()=>getTraders,
+    "promoteAlphaExperiment",
+    ()=>promoteAlphaExperiment,
     "runAlphaBacktest",
     ()=>runAlphaBacktest,
     "runTournament",
@@ -231,6 +233,12 @@ async function deleteAlphaExperiment(experimentId) {
 async function updateAlphaCode(experimentId, code) {
     const res = await fetch(`${API_BASE}/api/alpha-lab/${experimentId}/code?code=${encodeURIComponent(code)}`, {
         method: "PATCH"
+    });
+    return await res.json();
+}
+async function promoteAlphaExperiment(experimentId) {
+    const res = await fetch(`${API_BASE}/api/alpha-lab/${experimentId}/promote`, {
+        method: "POST"
     });
     return await res.json();
 }
