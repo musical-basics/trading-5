@@ -1,0 +1,648 @@
+"use client"
+
+import { useState, useEffect, useCallback } from "react"
+import {
+  fetchAlphaExperiments,
+  fetchAlphaExperiment,
+  generateAlphaStrategy,
+  runAlphaBacktest,
+  deleteAlphaExperiment,
+  updateAlphaCode,
+  type AlphaExperiment,
+  type AlphaEquityPoint,
+} from "@/lib/api"
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts"
+
+const TIER_CONFIG = {
+  haiku: {
+    label: "Haiku",
+    sublabel: "Fast · Low Cost",
+    color: "#22d3ee",
+    inputCost: "$1.00/M",
+    outputCost: "$5.00/M",
+    icon: "⚡",
+  },
+  sonnet: {
+    label: "Sonnet",
+    sublabel: "Balanced",
+    color: "#a78bfa",
+    inputCost: "$3.00/M",
+    outputCost: "$15.00/M",
+    icon: "🎯",
+  },
+  opus: {
+    label: "Opus",
+    sublabel: "Premium Quality",
+    color: "#f59e0b",
+    inputCost: "$15.00/M",
+    outputCost: "$75.00/M",
+    icon: "👑",
+  },
+} as const
+
+type TierKey = keyof typeof TIER_CONFIG
+type Tab = "generate" | "results"
+
+const STATUS_BADGES: Record<string, { bg: string; text: string; label: string }> = {
+  generated: { bg: "bg-blue-500/20", text: "text-blue-400", label: "Generated" },
+  backtesting: { bg: "bg-yellow-500/20", text: "text-yellow-400", label: "Backtesting…" },
+  passed: { bg: "bg-emerald-500/20", text: "text-emerald-400", label: "Passed" },
+  failed: { bg: "bg-red-500/20", text: "text-red-400", label: "Failed" },
+  error: { bg: "bg-orange-500/20", text: "text-orange-400", label: "Error" },
+}
+
+export default function AlphaLab() {
+  const [activeTab, setActiveTab] = useState<Tab>("generate")
+  const [experiments, setExperiments] = useState<AlphaExperiment[]>([])
+  const [selectedExp, setSelectedExp] = useState<AlphaExperiment | null>(null)
+  const [prompt, setPrompt] = useState("")
+  const [selectedTier, setSelectedTier] = useState<TierKey>("sonnet")
+  const [strategyStyle, setStrategyStyle] = useState<"academic" | "hedge_fund">("academic")
+  const [generating, setGenerating] = useState(false)
+  const [backtesting, setBacktesting] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [editedCode, setEditedCode] = useState<string>("")
+  const [isEditing, setIsEditing] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  const loadExperiments = useCallback(async () => {
+    const data = await fetchAlphaExperiments()
+    setExperiments(data)
+  }, [])
+
+  useEffect(() => {
+    loadExperiments()
+  }, [loadExperiments])
+
+  const handleGenerate = async () => {
+    setGenerating(true)
+    setError(null)
+    try {
+      const result = await generateAlphaStrategy(prompt, selectedTier, strategyStyle)
+      if (result.error) {
+        setError(result.error)
+      } else {
+        setPrompt("")
+        await loadExperiments()
+        // Auto-select and switch to results tab
+        if (result.experiment_id) {
+          const exp = await fetchAlphaExperiment(result.experiment_id)
+          if (exp) {
+            setSelectedExp(exp)
+            setActiveTab("results")
+          }
+        }
+      }
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Generation failed")
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  const handleBacktest = async (experimentId: string) => {
+    setBacktesting(experimentId)
+    try {
+      const result = await runAlphaBacktest(experimentId)
+      await loadExperiments()
+      if (result.error) {
+        setError(result.error)
+      }
+      const updated = await fetchAlphaExperiment(experimentId)
+      if (updated) setSelectedExp(updated)
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Backtest failed")
+    } finally {
+      setBacktesting(null)
+    }
+  }
+
+  const handleDelete = async (experimentId: string) => {
+    await deleteAlphaExperiment(experimentId)
+    if (selectedExp?.experiment_id === experimentId) setSelectedExp(null)
+    await loadExperiments()
+  }
+
+  const handleSelectExp = async (exp: AlphaExperiment) => {
+    const full = await fetchAlphaExperiment(exp.experiment_id)
+    if (full) {
+      setSelectedExp(full)
+      setEditedCode(full.strategy_code || "")
+      setIsEditing(false)
+    }
+  }
+
+  const handleSaveCode = async () => {
+    if (!selectedExp) return
+    setSaving(true)
+    try {
+      await updateAlphaCode(selectedExp.experiment_id, editedCode)
+      // Reload to reflect updated code + status reset to 'generated'
+      const updated = await fetchAlphaExperiment(selectedExp.experiment_id)
+      if (updated) {
+        setSelectedExp(updated)
+        setIsEditing(false)
+      }
+      await loadExperiments()
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Save failed")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleSaveAndBacktest = async () => {
+    if (!selectedExp) return
+    setSaving(true)
+    setBacktesting(selectedExp.experiment_id)
+    try {
+      // Save code first
+      await updateAlphaCode(selectedExp.experiment_id, editedCode)
+      setIsEditing(false)
+      // Then run backtest
+      const result = await runAlphaBacktest(selectedExp.experiment_id)
+      await loadExperiments()
+      if (result.error) setError(result.error)
+      const updated = await fetchAlphaExperiment(selectedExp.experiment_id)
+      if (updated) {
+        setSelectedExp(updated)
+        setEditedCode(updated.strategy_code || "")
+      }
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Save & backtest failed")
+    } finally {
+      setSaving(false)
+      setBacktesting(null)
+    }
+  }
+
+  const totalCost = experiments.reduce((sum, e) => sum + (e.cost_usd || 0), 0)
+
+  return (
+    <div className="flex flex-col h-full gap-4 p-1">
+      {/* Header + Tabs */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-6">
+          <div>
+            <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+              <span className="text-3xl">🧪</span>
+              Alpha Lab
+            </h1>
+            <p className="text-sm text-zinc-400 mt-1">
+              Autonomous strategy discovery — generate, backtest, evaluate
+            </p>
+          </div>
+
+          {/* Tab Switcher */}
+          <div className="flex bg-zinc-900/80 rounded-lg border border-zinc-800 p-1 ml-4">
+            <button
+              onClick={() => setActiveTab("generate")}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                activeTab === "generate"
+                  ? "bg-violet-600 text-white shadow-lg shadow-violet-500/20"
+                  : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              🚀 Generate
+            </button>
+            <button
+              onClick={() => setActiveTab("results")}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
+                activeTab === "results"
+                  ? "bg-violet-600 text-white shadow-lg shadow-violet-500/20"
+                  : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              📊 Results
+              {experiments.length > 0 && (
+                <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                  activeTab === "results" ? "bg-white/20" : "bg-zinc-700"
+                }`}>
+                  {experiments.length}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <div className="text-right">
+            <div className="text-xs text-zinc-500">Experiments</div>
+            <div className="text-lg font-semibold text-white">{experiments.length}</div>
+          </div>
+          <div className="text-right">
+            <div className="text-xs text-zinc-500">API Cost</div>
+            <div className="text-lg font-semibold text-emerald-400">${totalCost.toFixed(4)}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── GENERATE TAB ──────────────────────────────────── */}
+      {activeTab === "generate" && (
+        <div className="flex-1 flex flex-col gap-6">
+          <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 max-w-4xl">
+            <h2 className="text-sm font-semibold text-zinc-300 uppercase tracking-wider mb-4">
+              Strategy Hypothesis
+            </h2>
+
+            <textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Describe your strategy idea... e.g. 'Find mean-reverting signals using RSI + Bollinger bands for undervalued stocks with low beta'"
+              className="w-full bg-zinc-800/50 border border-zinc-700 rounded-lg p-4 text-sm text-white placeholder-zinc-500 focus:border-violet-500 focus:outline-none resize-none"
+              rows={4}
+            />
+
+            <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mt-5 mb-3">
+              Strategy Style
+            </h3>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setStrategyStyle("academic")}
+                className={`flex-1 p-3 rounded-lg border transition-all ${
+                  strategyStyle === "academic"
+                    ? "border-blue-500 bg-blue-500/10"
+                    : "border-zinc-700 bg-zinc-800/30 hover:border-zinc-600"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">🎓</span>
+                  <div className="text-left">
+                    <div className="text-sm font-semibold text-white">Academic</div>
+                    <div className="text-xs text-zinc-500">Market-neutral, diversified</div>
+                  </div>
+                </div>
+              </button>
+              <button
+                onClick={() => setStrategyStyle("hedge_fund")}
+                className={`flex-1 p-3 rounded-lg border transition-all ${
+                  strategyStyle === "hedge_fund"
+                    ? "border-amber-500 bg-amber-500/10"
+                    : "border-zinc-700 bg-zinc-800/30 hover:border-zinc-600"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">🏦</span>
+                  <div className="text-left">
+                    <div className="text-sm font-semibold text-white">Hedge Fund</div>
+                    <div className="text-xs text-zinc-500">Concentrated, alpha-seeking</div>
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mt-5 mb-3">
+              Model Tier
+            </h3>
+            <div className="flex items-center gap-3">
+              {(Object.entries(TIER_CONFIG) as [TierKey, (typeof TIER_CONFIG)[TierKey]][]).map(([key, tier]) => (
+                <button
+                  key={key}
+                  onClick={() => setSelectedTier(key)}
+                  className={`flex-1 p-4 rounded-lg border transition-all ${
+                    selectedTier === key
+                      ? "border-violet-500 bg-violet-500/10"
+                      : "border-zinc-700 bg-zinc-800/30 hover:border-zinc-600"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">{tier.icon}</span>
+                    <div className="text-left">
+                      <div className="text-sm font-semibold text-white">{tier.label}</div>
+                      <div className="text-xs text-zinc-500">{tier.sublabel}</div>
+                    </div>
+                  </div>
+                  <div className="text-xs text-zinc-500 mt-2">
+                    In: {tier.inputCost} · Out: {tier.outputCost}
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={handleGenerate}
+              disabled={generating}
+              className="mt-5 w-full px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 disabled:from-zinc-700 disabled:to-zinc-700 disabled:text-zinc-500 text-white font-semibold rounded-lg transition-all text-sm"
+            >
+              {generating ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="animate-spin">⏳</span> Generating strategy…
+                </span>
+              ) : (
+                "🚀 Generate Strategy"
+              )}
+            </button>
+
+            {error && (
+              <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-sm text-red-400">
+                {error}
+              </div>
+            )}
+          </div>
+
+          {/* Quick tip */}
+          <div className="text-xs text-zinc-600 max-w-4xl">
+            💡 Leave the prompt empty for the AI to generate a novel strategy from scratch, or describe specific
+            signals/factors you want explored. After generation, you'll be switched to the Results tab to review and backtest.
+          </div>
+        </div>
+      )}
+
+      {/* ─── RESULTS TAB ───────────────────────────────────── */}
+      {activeTab === "results" && (
+        <div className="flex gap-5 flex-1 min-h-0">
+          {/* Experiments List */}
+          <div className="w-[340px] flex-shrink-0 flex flex-col">
+            <h2 className="text-sm font-semibold text-zinc-300 uppercase tracking-wider mb-3">
+              Experiments ({experiments.length})
+            </h2>
+            <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+              {experiments.length === 0 && (
+                <div className="text-center py-12 text-zinc-500 text-sm">
+                  No experiments yet.
+                  <button
+                    onClick={() => setActiveTab("generate")}
+                    className="text-violet-400 hover:text-violet-300 ml-1 underline"
+                  >
+                    Generate one →
+                  </button>
+                </div>
+              )}
+              {experiments.map((exp) => {
+                const badge = STATUS_BADGES[exp.status] || STATUS_BADGES.error
+                const tierInfo = TIER_CONFIG[exp.model_tier as TierKey]
+                const isSelected = selectedExp?.experiment_id === exp.experiment_id
+
+                return (
+                  <button
+                    key={exp.experiment_id}
+                    onClick={() => handleSelectExp(exp)}
+                    className={`w-full text-left p-3 rounded-lg border transition-all ${
+                      isSelected
+                        ? "border-violet-500 bg-violet-500/10"
+                        : "border-zinc-800 bg-zinc-900/50 hover:border-zinc-700"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-semibold text-white truncate">
+                          {exp.strategy_name || "Unnamed"}
+                        </div>
+                        <div className="text-xs text-zinc-500 mt-0.5 truncate">
+                          {exp.hypothesis}
+                        </div>
+                      </div>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${badge.bg} ${badge.text} whitespace-nowrap`}>
+                        {badge.label}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-3 mt-2 text-xs text-zinc-500">
+                      <span>{tierInfo?.icon} {tierInfo?.label}</span>
+                      <span>·</span>
+                      <span className="text-emerald-400">${exp.cost_usd?.toFixed(4)}</span>
+                      <span>·</span>
+                      <span>{exp.experiment_id}</span>
+                    </div>
+
+                    {exp.metrics && !exp.metrics.error && (
+                      <div className="flex gap-3 mt-2 text-xs">
+                        <span className={exp.metrics.sharpe > 0 ? "text-emerald-400" : "text-red-400"}>
+                          Sharpe {exp.metrics.sharpe.toFixed(2)}
+                        </span>
+                        <span className="text-zinc-500">
+                          MaxDD {(exp.metrics.max_drawdown * 100).toFixed(1)}%
+                        </span>
+                        <span className={exp.metrics.total_return > 0 ? "text-emerald-400" : "text-red-400"}>
+                          {(exp.metrics.total_return * 100).toFixed(1)}% Return
+                        </span>
+                      </div>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Detail View — full width */}
+          <div className="flex-1 min-w-0 flex flex-col">
+            {!selectedExp ? (
+              <div className="flex-1 flex items-center justify-center text-zinc-500 text-sm">
+                Select an experiment to view details
+              </div>
+            ) : (
+              <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+                {/* Detail Header */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-bold text-white">
+                      {selectedExp.strategy_name}
+                    </h2>
+                    <p className="text-sm text-zinc-400 mt-0.5">
+                      {selectedExp.rationale}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleBacktest(selectedExp.experiment_id)}
+                      disabled={backtesting === selectedExp.experiment_id}
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-700 text-white text-sm font-semibold rounded-lg transition-colors"
+                    >
+                      {backtesting === selectedExp.experiment_id
+                        ? "⏳ Running…"
+                        : selectedExp.status === "generated"
+                          ? "▶ Backtest"
+                          : "🔄 Re-run Backtest"}
+                    </button>
+                    <button
+                      onClick={() => handleDelete(selectedExp.experiment_id)}
+                      className="px-4 py-2 bg-zinc-800 hover:bg-red-500/20 text-zinc-400 hover:text-red-400 text-sm rounded-lg transition-colors border border-zinc-700"
+                    >
+                      🗑 Delete
+                    </button>
+                  </div>
+                </div>
+
+                {/* Cost Card */}
+                <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
+                  <div className="grid grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <div className="text-xs text-zinc-500">Model</div>
+                      <div className="text-white font-semibold">
+                        {TIER_CONFIG[selectedExp.model_tier as TierKey]?.icon}{" "}
+                        {TIER_CONFIG[selectedExp.model_tier as TierKey]?.label}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-zinc-500">Input Tokens</div>
+                      <div className="text-white font-mono">{selectedExp.cost_input_tokens?.toLocaleString()}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-zinc-500">Output Tokens</div>
+                      <div className="text-white font-mono">{selectedExp.cost_output_tokens?.toLocaleString()}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-zinc-500">API Cost</div>
+                      <div className="text-emerald-400 font-semibold">${selectedExp.cost_usd?.toFixed(4)}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Metrics Card */}
+                {selectedExp.metrics && !selectedExp.metrics.error && (
+                  <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
+                    <h3 className="text-sm font-semibold text-zinc-300 uppercase tracking-wider mb-3">
+                      Backtest Results
+                    </h3>
+                    <div className="grid grid-cols-5 gap-4 text-sm">
+                      <div>
+                        <div className="text-xs text-zinc-500">Sharpe Ratio</div>
+                        <div className={`text-lg font-bold ${selectedExp.metrics.sharpe > 0 ? "text-emerald-400" : "text-red-400"}`}>
+                          {selectedExp.metrics.sharpe.toFixed(3)}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-zinc-500">CAGR</div>
+                        <div className={`text-lg font-bold ${selectedExp.metrics.cagr > 0 ? "text-emerald-400" : "text-red-400"}`}>
+                          {(selectedExp.metrics.cagr * 100).toFixed(2)}%
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-zinc-500">Total Return</div>
+                        <div className={`text-lg font-bold ${selectedExp.metrics.total_return > 0 ? "text-emerald-400" : "text-red-400"}`}>
+                          {(selectedExp.metrics.total_return * 100).toFixed(2)}%
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-zinc-500">Max Drawdown</div>
+                        <div className="text-lg font-bold text-orange-400">
+                          {(selectedExp.metrics.max_drawdown * 100).toFixed(2)}%
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-zinc-500">Trading Days</div>
+                        <div className="text-lg font-bold text-white">
+                          {selectedExp.metrics.trading_days?.toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Equity Curve Chart */}
+                {selectedExp.equity_curve && selectedExp.equity_curve.length > 0 && (
+                  <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
+                    <h3 className="text-sm font-semibold text-zinc-300 uppercase tracking-wider mb-3">
+                      Equity Curve
+                    </h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <LineChart data={selectedExp.equity_curve.map((p: AlphaEquityPoint) => ({
+                        date: p.date?.split("T")[0],
+                        equity: Number(p.equity?.toFixed(2)),
+                      }))}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                        <XAxis
+                          dataKey="date"
+                          tick={{ fontSize: 10, fill: "#71717a" }}
+                          tickFormatter={(v: string) => v?.slice(5)}
+                          interval="preserveStartEnd"
+                        />
+                        <YAxis
+                          tick={{ fontSize: 10, fill: "#71717a" }}
+                          tickFormatter={(v: number) => `$${(v / 1000).toFixed(1)}k`}
+                        />
+                        <Tooltip
+                          contentStyle={{ background: "#18181b", border: "1px solid #3f3f46", borderRadius: "8px", fontSize: 12 }}
+                          labelStyle={{ color: "#a1a1aa" }}
+                          formatter={(v: number) => [`$${v.toLocaleString()}`, "Equity"]}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="equity"
+                          stroke="#a78bfa"
+                          strokeWidth={2}
+                          dot={false}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+
+                {/* Error */}
+                {selectedExp.metrics?.error && (
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-sm text-red-400">
+                    <div className="font-semibold mb-1">Backtest Error</div>
+                    {selectedExp.metrics.error}
+                  </div>
+                )}
+
+                {/* Strategy Code — Editable */}
+                <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-zinc-300 uppercase tracking-wider">
+                      Strategy Code
+                    </h3>
+                    <div className="flex gap-2">
+                      {!isEditing ? (
+                        <button
+                          onClick={() => { setEditedCode(selectedExp.strategy_code || ""); setIsEditing(true); }}
+                          className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium rounded-md border border-zinc-700 transition-colors"
+                        >
+                          ✏️ Edit Code
+                        </button>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => setIsEditing(false)}
+                            className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-xs font-medium rounded-md border border-zinc-700 transition-colors"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={handleSaveCode}
+                            disabled={saving}
+                            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-700 text-white text-xs font-medium rounded-md transition-colors"
+                          >
+                            {saving ? "Saving…" : "💾 Save Code"}
+                          </button>
+                          <button
+                            onClick={handleSaveAndBacktest}
+                            disabled={saving || backtesting !== null}
+                            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-700 text-white text-xs font-medium rounded-md transition-colors"
+                          >
+                            {backtesting ? "⏳ Running…" : "💾 Save & Backtest"}
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  {isEditing ? (
+                    <textarea
+                      value={editedCode}
+                      onChange={(e) => setEditedCode(e.target.value)}
+                      className="w-full bg-black/50 rounded-lg p-4 text-xs text-emerald-300 font-mono leading-relaxed border border-zinc-700 focus:border-violet-500 focus:outline-none resize-y min-h-[200px]"
+                      rows={Math.max(15, (editedCode.match(/\n/g) || []).length + 2)}
+                      spellCheck={false}
+                    />
+                  ) : (
+                    <pre className="bg-black/50 rounded-lg p-4 overflow-x-auto text-xs text-emerald-300 font-mono leading-relaxed">
+                      {selectedExp.strategy_code}
+                    </pre>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

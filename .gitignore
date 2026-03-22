@@ -1,0 +1,15 @@
+node_modules/
+.next/
+__pycache__/
+*.pyc
+.DS_Store
+.env
+.env.local
+.env.production
+*.egg-info/
+dist/
+build/
+*.db
+data/components/
+docs/level_5/
+repomix-output.xml

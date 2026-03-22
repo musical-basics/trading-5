@@ -1,0 +1,24 @@
+# ── Level 4 Backend ──────────────────────────────────────────
+polars
+duckdb
+fastapi
+uvicorn[standard]
+pyarrow
+orjson
+
+# ── Core Math ────────────────────────────────────────────────
+numpy
+scipy
+xgboost
+scikit-learn
+
+# ── Data Sources ─────────────────────────────────────────────
+yfinance
+alpaca-trade-api
+python-dotenv
+
+# ── Legacy (kept for backup Streamlit UI) ────────────────────
+pandas
+streamlit
+plotly
+statsmodels
