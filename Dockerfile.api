@@ -2,9 +2,9 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# System deps for psycopg2
+# System deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc libpq-dev && \
+    gcc && \
     rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
@@ -13,8 +13,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY src/ ./src/
 COPY main.py .
 
-# Data directory will be mounted as a volume
+# Data directory for Parquet/DuckDB (analytical data)
 RUN mkdir -p data/components data/alpha_lab
 
 EXPOSE 8000
-CMD ["uvicorn", "src.api.server:app", "--host", "0.0.0.0", "--port", "8000"]
+
+# Railway provides PORT env var — default to 8000
+CMD uvicorn src.api.server:app --host 0.0.0.0 --port ${PORT:-8000}
