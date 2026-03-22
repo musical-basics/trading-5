@@ -43,7 +43,6 @@ export function DataPipeline() {
   const [pipelineMessage, setPipelineMessage] = useState<string | null>(null)
   const [logs, setLogs] = useState<Array<{ ts: string; level: string; msg: string }>>([])
   const [showLogs, setShowLogs] = useState(false)
-  const logEndRef = useRef<HTMLDivElement>(null)
   const logIndexRef = useRef(0)
 
   const loadCoverage = useCallback(() => {
@@ -85,9 +84,12 @@ export function DataPipeline() {
     return () => clearInterval(interval)
   }, [pipelineRunning, loadCoverage])
 
-  // Auto-scroll logs to bottom
+  // Auto-scroll logs to bottom (within container only, not the page)
+  const logContainerRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    logEndRef.current?.scrollIntoView({ behavior: "smooth" })
+    if (logContainerRef.current) {
+      logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight
+    }
   }, [logs])
 
   const startPipeline = (phase: string) => {
@@ -240,7 +242,7 @@ export function DataPipeline() {
             </Button>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="max-h-64 overflow-y-auto font-mono text-xs bg-black/30 rounded-b-lg">
+            <div ref={logContainerRef} className="max-h-64 overflow-y-auto font-mono text-xs bg-black/30 rounded-b-lg">
               {logs.length === 0 && pipelineRunning && (
                 <div className="px-4 py-3 text-muted-foreground">Waiting for logs...</div>
               )}
@@ -258,7 +260,6 @@ export function DataPipeline() {
                   {log.msg}
                 </div>
               ))}
-              <div ref={logEndRef} />
             </div>
           </CardContent>
         </Card>
