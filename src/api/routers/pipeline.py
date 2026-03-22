@@ -11,7 +11,7 @@ from fastapi import APIRouter
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/pipeline", tags=["Pipeline"])
+router = APIRouter(prefix="/api/pipeline", tags=["Pipeline"])
 
 # Track running state to prevent duplicate runs
 _pipeline_status = {"running": False, "phase": None, "error": None}
