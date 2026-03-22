@@ -20,7 +20,7 @@ python-dotenv
 # ── Level 5 Infrastructure ───────────────────────────────────
 sqlalchemy>=2.0
 alembic>=1.13
-psycopg2-binary>=2.9
+supabase>=2.0
 celery[redis]>=5.3
 redis>=5.0
 websockets>=12.0

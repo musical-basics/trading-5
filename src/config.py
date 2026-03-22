@@ -29,7 +29,11 @@ else:
 # LEVEL 5 — Infrastructure Configuration
 # ═══════════════════════════════════════════════════════════════
 
-# Transactional database — Postgres in production, SQLite fallback for local dev
+# Supabase REST API (transactional data — traders, experiments, executions)
+SUPABASE_URL = os.getenv("SUPABASE_URL", "")
+SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+
+# Legacy SQLite path (analytical data fallback)
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DB_PATH}")
 
 # Task queue broker
