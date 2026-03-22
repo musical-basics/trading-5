@@ -3,37 +3,96 @@ pipeline.py — Pipeline Trigger API Router
 
 Provides endpoints to trigger data ingestion phases from the UI.
 Runs pipeline phases in background threads to avoid blocking the API.
+Captures log output and streams it to the frontend via /logs endpoint.
 """
 
 import threading
 import logging
+import time
+from collections import deque
 from fastapi import APIRouter
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/pipeline", tags=["Pipeline"])
 
-# Track running state to prevent duplicate runs
+# Track running state + log buffer
 _pipeline_status = {"running": False, "phase": None, "error": None}
+_pipeline_logs: deque = deque(maxlen=500)
+
+
+class PipelineLogHandler(logging.Handler):
+    """Custom log handler that captures pipeline logs to a deque."""
+    def emit(self, record):
+        try:
+            msg = self.format(record)
+            _pipeline_logs.append({
+                "ts": time.strftime("%H:%M:%S"),
+                "level": record.levelname,
+                "msg": msg,
+            })
+        except Exception:
+            pass
+
+
+# Install the handler on the root logger so all pipeline modules' logs are captured
+_log_handler = PipelineLogHandler()
+_log_handler.setLevel(logging.INFO)
+_log_handler.setFormatter(logging.Formatter("%(name)s — %(message)s"))
 
 
 def _run_in_background(phase: str, func):
-    """Run a pipeline phase in a background thread."""
+    """Run a pipeline phase in a background thread with log capture."""
     global _pipeline_status
+    _pipeline_logs.clear()
     _pipeline_status = {"running": True, "phase": phase, "error": None}
+
+    # Attach handler to root logger to capture all output
+    root_logger = logging.getLogger()
+    root_logger.addHandler(_log_handler)
+
+    _pipeline_logs.append({
+        "ts": time.strftime("%H:%M:%S"),
+        "level": "INFO",
+        "msg": f"🚀 Starting pipeline phase: {phase}",
+    })
+
     try:
         func()
         _pipeline_status = {"running": False, "phase": phase, "error": None}
+        _pipeline_logs.append({
+            "ts": time.strftime("%H:%M:%S"),
+            "level": "INFO",
+            "msg": f"✅ Pipeline phase '{phase}' completed successfully",
+        })
         logger.info(f"✅ Pipeline phase '{phase}' completed")
     except Exception as e:
         _pipeline_status = {"running": False, "phase": phase, "error": str(e)}
+        _pipeline_logs.append({
+            "ts": time.strftime("%H:%M:%S"),
+            "level": "ERROR",
+            "msg": f"❌ Pipeline phase '{phase}' failed: {e}",
+        })
         logger.error(f"❌ Pipeline phase '{phase}' failed: {e}")
+    finally:
+        root_logger.removeHandler(_log_handler)
 
 
 @router.get("/status")
 def pipeline_status():
     """Get current pipeline run status."""
     return _pipeline_status
+
+
+@router.get("/logs")
+def pipeline_logs(since: int = 0):
+    """Get pipeline logs. Pass 'since' as the last index you received."""
+    logs = list(_pipeline_logs)
+    return {
+        "logs": logs[since:],
+        "total": len(logs),
+        "running": _pipeline_status["running"],
+    }
 
 
 @router.post("/run/ingest")
@@ -43,9 +102,11 @@ def run_ingest():
         return {"ok": False, "error": f"Pipeline already running: {_pipeline_status['phase']}"}
 
     def _ingest():
+        from src.pipeline.core.db_init import init_db
         from src.pipeline.data_sources.data_ingestion import ingest
         from src.pipeline.data_sources.macro_ingestion import ingest_macro_factors
         from src.pipeline.data_sources.yfinance.fundamentals import ingest_fundamentals
+        init_db()
         ingest()
         ingest_fundamentals()
         ingest_macro_factors()
@@ -90,6 +151,7 @@ def run_full():
         return {"ok": False, "error": f"Pipeline already running: {_pipeline_status['phase']}"}
 
     def _full():
+        from src.pipeline.core.db_init import init_db
         from src.pipeline.data_sources.data_ingestion import ingest
         from src.pipeline.data_sources.macro_ingestion import ingest_macro_factors
         from src.pipeline.data_sources.yfinance.fundamentals import ingest_fundamentals
@@ -99,6 +161,7 @@ def run_full():
         from src.pipeline.scoring.ml_feature_assembly import assemble_features
         from src.pipeline.scoring.risk_apt import apply_risk_constraints
 
+        init_db()
         ingest()
         ingest_fundamentals()
         ingest_macro_factors()

@@ -1,12 +1,12 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Loader2, Database, CheckCircle2, AlertTriangle, XCircle, Play, RefreshCw } from "lucide-react"
+import { Loader2, Database, CheckCircle2, AlertTriangle, XCircle, Play, RefreshCw, Terminal } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { fetchPipelineCoverage, runPipelineIngest, runPipelineFull, runPipelineScoring, getPipelineStatus, type TickerCoverage, type ComponentCoverage } from "@/lib/api"
+import { fetchPipelineCoverage, runPipelineIngest, runPipelineFull, runPipelineScoring, getPipelineLogs, type TickerCoverage, type ComponentCoverage } from "@/lib/api"
 
 const STAGES = [
   { key: "market_data", label: "Market Data", cols: ["adj_close", "volume", "daily_return"] },
@@ -41,6 +41,10 @@ export function DataPipeline() {
   const [pipelinePhase, setPipelinePhase] = useState<string | null>(null)
   const [pipelineError, setPipelineError] = useState<string | null>(null)
   const [pipelineMessage, setPipelineMessage] = useState<string | null>(null)
+  const [logs, setLogs] = useState<Array<{ ts: string; level: string; msg: string }>>([])
+  const [showLogs, setShowLogs] = useState(false)
+  const logEndRef = useRef<HTMLDivElement>(null)
+  const logIndexRef = useRef(0)
 
   const loadCoverage = useCallback(() => {
     fetchPipelineCoverage().then((d) => {
@@ -51,17 +55,23 @@ export function DataPipeline() {
 
   useEffect(() => { loadCoverage() }, [loadCoverage])
 
-  // Poll pipeline status when running
+  // Poll pipeline logs when running
   useEffect(() => {
     if (!pipelineRunning) return
     const interval = setInterval(async () => {
       try {
-        const status = await getPipelineStatus()
-        if (!status.running) {
+        const result = await getPipelineLogs(logIndexRef.current)
+        if (result.logs.length > 0) {
+          setLogs(prev => [...prev, ...result.logs])
+          logIndexRef.current = result.total
+        }
+        if (!result.running) {
           setPipelineRunning(false)
           setPipelinePhase(null)
-          if (status.error) {
-            setPipelineError(status.error)
+          // Check last log for error indicator
+          const lastLog = result.logs[result.logs.length - 1]
+          if (lastLog?.level === "ERROR") {
+            setPipelineError(lastLog.msg)
             setPipelineMessage(null)
           } else {
             setPipelineMessage("✅ Pipeline completed successfully!")
@@ -71,44 +81,47 @@ export function DataPipeline() {
           clearInterval(interval)
         }
       } catch { /* ignore polling errors */ }
-    }, 3000)
+    }, 2000)
     return () => clearInterval(interval)
   }, [pipelineRunning, loadCoverage])
 
-  const handleRunIngest = async () => {
+  // Auto-scroll logs to bottom
+  useEffect(() => {
+    logEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [logs])
+
+  const startPipeline = (phase: string) => {
+    setLogs([])
+    logIndexRef.current = 0
+    setShowLogs(true)
     setPipelineError(null)
     setPipelineMessage(null)
+    setPipelineRunning(true)
+    setPipelinePhase(phase)
+  }
+
+  const handleRunIngest = async () => {
     const result = await runPipelineIngest()
     if (result.ok) {
-      setPipelineRunning(true)
-      setPipelinePhase("ingest")
-      setPipelineMessage(result.message ?? "Ingesting data...")
+      startPipeline("ingest")
     } else {
       setPipelineError(result.error ?? "Failed to start")
     }
   }
 
   const handleRunCompute = async () => {
-    setPipelineError(null)
-    setPipelineMessage(null)
     const result = await runPipelineScoring()
     if (result.ok) {
-      setPipelineRunning(true)
-      setPipelinePhase("pipeline")
-      setPipelineMessage(result.message ?? "Computing scores...")
+      startPipeline("pipeline")
     } else {
       setPipelineError(result.error ?? "Failed to start")
     }
   }
 
   const handleRunFull = async () => {
-    setPipelineError(null)
-    setPipelineMessage(null)
     const result = await runPipelineFull()
     if (result.ok) {
-      setPipelineRunning(true)
-      setPipelinePhase("full")
-      setPipelineMessage(result.message ?? "Running full pipeline...")
+      startPipeline("full")
     } else {
       setPipelineError(result.error ?? "Failed to start")
     }
@@ -198,15 +211,57 @@ export function DataPipeline() {
         </div>
       </div>
 
-      {/* Pipeline Status Banner */}
-      {(pipelineMessage || pipelineError) && (
-        <div className={cn(
-          "rounded-lg px-4 py-2 text-sm",
-          pipelineError ? "bg-red-500/10 text-red-400 border border-red-500/20" : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-        )}>
-          {pipelineRunning && <Loader2 className="w-3.5 h-3.5 inline mr-2 animate-spin" />}
-          {pipelineError || pipelineMessage}
-        </div>
+      {/* Pipeline Live Log Panel */}
+      {showLogs && (
+        <Card className="border-border/50 bg-card/50">
+          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Terminal className="w-4 h-4 text-muted-foreground" />
+              <CardTitle className="text-sm">Pipeline Logs</CardTitle>
+              {pipelineRunning && (
+                <Badge variant="outline" className="text-[10px] h-5 border-emerald-500/30 text-emerald-400">
+                  <Loader2 className="w-2.5 h-2.5 mr-1 animate-spin" />
+                  Running — {pipelinePhase}
+                </Badge>
+              )}
+              {!pipelineRunning && pipelineMessage && (
+                <Badge variant="outline" className="text-[10px] h-5 border-emerald-500/30 text-emerald-400">
+                  ✅ Done
+                </Badge>
+              )}
+              {!pipelineRunning && pipelineError && (
+                <Badge variant="outline" className="text-[10px] h-5 border-red-500/30 text-red-400">
+                  ❌ Error
+                </Badge>
+              )}
+            </div>
+            <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => setShowLogs(false)}>
+              Hide
+            </Button>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="max-h-64 overflow-y-auto font-mono text-xs bg-black/30 rounded-b-lg">
+              {logs.length === 0 && pipelineRunning && (
+                <div className="px-4 py-3 text-muted-foreground">Waiting for logs...</div>
+              )}
+              {logs.map((log, i) => (
+                <div
+                  key={i}
+                  className={cn(
+                    "px-4 py-0.5 border-b border-border/5",
+                    log.level === "ERROR" && "text-red-400 bg-red-500/5",
+                    log.level === "WARNING" && "text-amber-400",
+                    log.level === "INFO" && "text-muted-foreground"
+                  )}
+                >
+                  <span className="text-muted-foreground/50 mr-2">{log.ts}</span>
+                  {log.msg}
+                </div>
+              ))}
+              <div ref={logEndRef} />
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Coverage Matrix */}

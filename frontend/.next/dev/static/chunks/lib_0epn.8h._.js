@@ -43,6 +43,8 @@ __turbopack_context__.s([
     ()=>fetchXrayTickers,
     "generateAlphaStrategy",
     ()=>generateAlphaStrategy,
+    "getPipelineLogs",
+    ()=>getPipelineLogs,
     "getPipelineStatus",
     ()=>getPipelineStatus,
     "getPortfolios",
@@ -274,6 +276,10 @@ async function runPipelineScoring() {
 }
 async function getPipelineStatus() {
     const res = await fetch(`${API_BASE}/api/pipeline/status`);
+    return await res.json();
+}
+async function getPipelineLogs(since = 0) {
+    const res = await fetch(`${API_BASE}/api/pipeline/logs?since=${since}`);
     return await res.json();
 }
 if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {

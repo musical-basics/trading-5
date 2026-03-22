@@ -525,3 +525,12 @@ export async function getPipelineStatus(): Promise<{ running: boolean; phase: st
   const res = await fetch(`${API_BASE}/api/pipeline/status`)
   return await res.json()
 }
+
+export async function getPipelineLogs(since: number = 0): Promise<{
+  logs: Array<{ ts: string; level: string; msg: string }>
+  total: number
+  running: boolean
+}> {
+  const res = await fetch(`${API_BASE}/api/pipeline/logs?since=${since}`)
+  return await res.json()
+}

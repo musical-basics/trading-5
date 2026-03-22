@@ -1073,6 +1073,10 @@
     max-height: calc(var(--spacing) * 60);
   }
 
+  .max-h-64 {
+    max-height: calc(var(--spacing) * 64);
+  }
+
   .max-h-\[300px\] {
     max-height: 300px;
   }
@@ -1735,6 +1739,11 @@
     border-bottom-right-radius: calc(var(--radius) - 2px);
   }
 
+  .rounded-b-lg {
+    border-bottom-right-radius: var(--radius);
+    border-bottom-left-radius: var(--radius);
+  }
+
   .border {
     border-style: var(--tw-border-style);
     border-width: 1px;
@@ -1816,6 +1825,16 @@
     border-color: var(--border);
   }
 
+  .border-border\/5 {
+    border-color: var(--border);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .border-border\/5 {
+      border-color: color-mix(in oklab, var(--border) 5%, transparent);
+    }
+  }
+
   .border-border\/10 {
     border-color: var(--border);
   }
@@ -1877,6 +1896,16 @@
   @supports (color: color-mix(in lab, red, red)) {
     .border-emerald-500\/20 {
       border-color: color-mix(in oklab, var(--color-emerald-500) 20%, transparent);
+    }
+  }
+
+  .border-emerald-500\/30 {
+    border-color: #00bb7f4d;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .border-emerald-500\/30 {
+      border-color: color-mix(in oklab, var(--color-emerald-500) 30%, transparent);
     }
   }
 
@@ -2056,6 +2085,16 @@
 
   .bg-background {
     background-color: var(--background);
+  }
+
+  .bg-black\/30 {
+    background-color: #0000004d;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-black\/30 {
+      background-color: color-mix(in oklab, var(--color-black) 30%, transparent);
+    }
   }
 
   .bg-black\/50 {
@@ -2284,6 +2323,16 @@
 
   .bg-red-400 {
     background-color: var(--color-red-400);
+  }
+
+  .bg-red-500\/5 {
+    background-color: #fb2c360d;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-red-500\/5 {
+      background-color: color-mix(in oklab, var(--color-red-500) 5%, transparent);
+    }
   }
 
   .bg-red-500\/10 {
@@ -2899,6 +2948,16 @@
   @supports (color: color-mix(in lab, red, red)) {
     .text-muted-foreground\/30 {
       color: color-mix(in oklab, var(--muted-foreground) 30%, transparent);
+    }
+  }
+
+  .text-muted-foreground\/50 {
+    color: var(--muted-foreground);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .text-muted-foreground\/50 {
+      color: color-mix(in oklab, var(--muted-foreground) 50%, transparent);
     }
   }
 
