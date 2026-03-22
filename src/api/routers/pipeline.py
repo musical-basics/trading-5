@@ -3,9 +3,11 @@ pipeline.py — Pipeline Trigger API Router
 
 Provides endpoints to trigger data ingestion phases from the UI.
 Runs pipeline phases in background threads to avoid blocking the API.
-Captures log output and streams it to the frontend via /logs endpoint.
+Captures both logging output AND print() output for the live log panel.
 """
 
+import io
+import sys
 import threading
 import logging
 import time
@@ -35,6 +37,36 @@ class PipelineLogHandler(logging.Handler):
             pass
 
 
+class PrintCapture:
+    """Captures print() output and forwards to the log deque."""
+    def __init__(self, original_stdout):
+        self.original = original_stdout
+        self.buffer = ""
+
+    def write(self, text):
+        self.original.write(text)  # Still print to console
+        self.buffer += text
+        while "\n" in self.buffer:
+            line, self.buffer = self.buffer.split("\n", 1)
+            line = line.strip()
+            if line:
+                _pipeline_logs.append({
+                    "ts": time.strftime("%H:%M:%S"),
+                    "level": "INFO",
+                    "msg": line,
+                })
+
+    def flush(self):
+        self.original.flush()
+        if self.buffer.strip():
+            _pipeline_logs.append({
+                "ts": time.strftime("%H:%M:%S"),
+                "level": "INFO",
+                "msg": self.buffer.strip(),
+            })
+            self.buffer = ""
+
+
 # Install the handler on the root logger so all pipeline modules' logs are captured
 _log_handler = PipelineLogHandler()
 _log_handler.setLevel(logging.INFO)
@@ -47,9 +79,13 @@ def _run_in_background(phase: str, func):
     _pipeline_logs.clear()
     _pipeline_status = {"running": True, "phase": phase, "error": None}
 
-    # Attach handler to root logger to capture all output
+    # Attach handler to root logger to capture logging output
     root_logger = logging.getLogger()
     root_logger.addHandler(_log_handler)
+
+    # Capture print() output
+    original_stdout = sys.stdout
+    sys.stdout = PrintCapture(original_stdout)
 
     _pipeline_logs.append({
         "ts": time.strftime("%H:%M:%S"),
@@ -75,6 +111,7 @@ def _run_in_background(phase: str, func):
         })
         logger.error(f"❌ Pipeline phase '{phase}' failed: {e}")
     finally:
+        sys.stdout = original_stdout
         root_logger.removeHandler(_log_handler)
 
 
@@ -97,7 +134,7 @@ def pipeline_logs(since: int = 0):
 
 @router.post("/run/ingest")
 def run_ingest():
-    """Phase 1: Ingest market data, fundamentals, and macro factors."""
+    """Phase 1: Ingest market data, fundamentals, macro → SQLite → Parquet."""
     if _pipeline_status["running"]:
         return {"ok": False, "error": f"Pipeline already running: {_pipeline_status['phase']}"}
 
@@ -106,16 +143,21 @@ def run_ingest():
         from src.pipeline.data_sources.data_ingestion import ingest
         from src.pipeline.data_sources.macro_ingestion import ingest_macro_factors
         from src.pipeline.data_sources.yfinance.fundamentals import ingest_fundamentals
+        from src.core.migrate_sqlite_to_parquet import run_migration
+
         init_db()
         ingest()
         ingest_fundamentals()
         ingest_macro_factors()
 
+        # Convert SQLite → Parquet so DuckDB/coverage can read it
+        run_migration()
+
     thread = threading.Thread(target=_run_in_background, args=("ingest", _ingest))
     thread.daemon = True
     thread.start()
 
-    return {"ok": True, "message": "Ingestion started (market data + fundamentals + macro)"}
+    return {"ok": True, "message": "Ingestion started (market data + fundamentals + macro → parquet)"}
 
 
 @router.post("/run/pipeline")
@@ -146,7 +188,7 @@ def run_pipeline():
 
 @router.post("/run/full")
 def run_full():
-    """Run the complete pipeline: ingest + scoring + ML + risk."""
+    """Run the complete pipeline: ingest + migrate + scoring + ML + risk."""
     if _pipeline_status["running"]:
         return {"ok": False, "error": f"Pipeline already running: {_pipeline_status['phase']}"}
 
@@ -155,6 +197,7 @@ def run_full():
         from src.pipeline.data_sources.data_ingestion import ingest
         from src.pipeline.data_sources.macro_ingestion import ingest_macro_factors
         from src.pipeline.data_sources.yfinance.fundamentals import ingest_fundamentals
+        from src.core.migrate_sqlite_to_parquet import run_migration
         from src.pipeline.scoring.factor_betas import compute_factor_betas
         from src.pipeline.scoring.cross_sectional_scoring import compute_cross_sectional_scores
         from src.pipeline.scoring.dynamic_dcf import compute_dynamic_dcf
@@ -165,6 +208,11 @@ def run_full():
         ingest()
         ingest_fundamentals()
         ingest_macro_factors()
+
+        # Convert SQLite → Parquet
+        run_migration()
+
+        # Scoring pipeline
         compute_factor_betas()
         compute_cross_sectional_scores()
         compute_dynamic_dcf()
@@ -175,4 +223,4 @@ def run_full():
     thread.daemon = True
     thread.start()
 
-    return {"ok": True, "message": "Full pipeline started"}
+    return {"ok": True, "message": "Full pipeline started (ingest + migrate + scoring)"}
