@@ -8,6 +8,8 @@ import {
   runAlphaBacktest,
   deleteAlphaExperiment,
   updateAlphaCode,
+  promoteAlphaExperiment,
+  combineAlphaStrategies,
   type AlphaExperiment,
   type AlphaEquityPoint,
 } from "@/lib/api"
@@ -55,6 +57,7 @@ const STATUS_BADGES: Record<string, { bg: string; text: string; label: string }>
   generated: { bg: "bg-blue-500/20", text: "text-blue-400", label: "Generated" },
   backtesting: { bg: "bg-yellow-500/20", text: "text-yellow-400", label: "Backtesting…" },
   passed: { bg: "bg-emerald-500/20", text: "text-emerald-400", label: "Passed" },
+  promoted: { bg: "bg-cyan-500/20", text: "text-cyan-400", label: "Promoted" },
   failed: { bg: "bg-red-500/20", text: "text-red-400", label: "Failed" },
   error: { bg: "bg-orange-500/20", text: "text-orange-400", label: "Error" },
 }
@@ -72,6 +75,11 @@ export default function AlphaLab() {
   const [editedCode, setEditedCode] = useState<string>("")
   const [isEditing, setIsEditing] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [promoting, setPromoting] = useState(false)
+  const [combineMode, setCombineMode] = useState(false)
+  const [selectedForCombine, setSelectedForCombine] = useState<Set<string>>(new Set())
+  const [combining, setCombining] = useState(false)
+  const [combineTier, setCombineTier] = useState<TierKey>("sonnet")
 
   const loadExperiments = useCallback(async () => {
     const data = await fetchAlphaExperiments()
@@ -129,6 +137,67 @@ export default function AlphaLab() {
     await deleteAlphaExperiment(experimentId)
     if (selectedExp?.experiment_id === experimentId) setSelectedExp(null)
     await loadExperiments()
+  }
+
+  const handlePromote = async (experimentId: string) => {
+    setPromoting(true)
+    setError(null)
+    try {
+      const result = await promoteAlphaExperiment(experimentId)
+      if (result.error) {
+        setError(result.error)
+      } else {
+        await loadExperiments()
+        const updated = await fetchAlphaExperiment(experimentId)
+        if (updated) setSelectedExp(updated)
+      }
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Promote failed")
+    } finally {
+      setPromoting(false)
+    }
+  }
+
+  const toggleCombineSelect = (experimentId: string) => {
+    setSelectedForCombine(prev => {
+      const next = new Set(prev)
+      if (next.has(experimentId)) {
+        next.delete(experimentId)
+      } else if (next.size < 5) {
+        next.add(experimentId)
+      }
+      return next
+    })
+  }
+
+  const handleCombine = async () => {
+    if (selectedForCombine.size < 2) return
+    setCombining(true)
+    setError(null)
+    try {
+      const result = await combineAlphaStrategies(
+        Array.from(selectedForCombine),
+        combineTier,
+      )
+      if (result.error) {
+        setError(result.error)
+      } else {
+        setCombineMode(false)
+        setSelectedForCombine(new Set())
+        await loadExperiments()
+        if (result.experiment_id) {
+          const exp = await fetchAlphaExperiment(result.experiment_id)
+          if (exp) {
+            setSelectedExp(exp)
+            setActiveTab("results")
+          }
+        }
+      }
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Combine failed")
+    } finally {
+      setCombining(false)
+    }
   }
 
   const handleSelectExp = async (exp: AlphaExperiment) => {
@@ -361,9 +430,47 @@ export default function AlphaLab() {
         <div className="flex gap-5 flex-1 min-h-0">
           {/* Experiments List */}
           <div className="w-[340px] flex-shrink-0 flex flex-col">
-            <h2 className="text-sm font-semibold text-zinc-300 uppercase tracking-wider mb-3">
-              Experiments ({experiments.length})
-            </h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold text-zinc-300 uppercase tracking-wider">
+                Experiments ({experiments.length})
+              </h2>
+              <button
+                onClick={() => { setCombineMode(!combineMode); setSelectedForCombine(new Set()) }}
+                className={`text-xs px-3 py-1 rounded-md font-medium transition-all ${
+                  combineMode
+                    ? "bg-amber-500/20 text-amber-400 border border-amber-500/50"
+                    : "bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-700"
+                }`}
+              >
+                {combineMode ? "✕ Cancel" : "🧬 Combine"}
+              </button>
+            </div>
+
+            {/* Combine toolbar */}
+            {combineMode && (
+              <div className="mb-3 p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg space-y-2">
+                <div className="text-xs text-amber-300">Select 2-5 passed strategies to combine via AI</div>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={combineTier}
+                    onChange={(e) => setCombineTier(e.target.value as TierKey)}
+                    className="flex-1 bg-zinc-800 border border-zinc-700 rounded-md px-2 py-1 text-xs text-white"
+                  >
+                    {Object.entries(TIER_CONFIG).map(([key, tier]) => (
+                      <option key={key} value={key}>{tier.icon} {tier.label}</option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={handleCombine}
+                    disabled={selectedForCombine.size < 2 || combining}
+                    className="px-3 py-1 bg-amber-600 hover:bg-amber-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white text-xs font-semibold rounded-md transition-colors"
+                  >
+                    {combining ? "⏳ Combining…" : `🧬 Combine (${selectedForCombine.size})`}
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="flex-1 overflow-y-auto space-y-2 pr-1">
               {experiments.length === 0 && (
                 <div className="text-center py-12 text-zinc-500 text-sm">
@@ -381,17 +488,37 @@ export default function AlphaLab() {
                 const tierInfo = TIER_CONFIG[exp.model_tier as TierKey]
                 const isSelected = selectedExp?.experiment_id === exp.experiment_id
 
+                const isCombineSelected = selectedForCombine.has(exp.experiment_id)
+                const isPassed = exp.status === "passed"
+
                 return (
-                  <button
+                  <div
                     key={exp.experiment_id}
-                    onClick={() => handleSelectExp(exp)}
-                    className={`w-full text-left p-3 rounded-lg border transition-all ${
-                      isSelected
-                        ? "border-violet-500 bg-violet-500/10"
-                        : "border-zinc-800 bg-zinc-900/50 hover:border-zinc-700"
+                    className={`w-full text-left p-3 rounded-lg border transition-all cursor-pointer ${
+                      isCombineSelected
+                        ? "border-amber-500 bg-amber-500/10"
+                        : isSelected
+                          ? "border-violet-500 bg-violet-500/10"
+                          : "border-zinc-800 bg-zinc-900/50 hover:border-zinc-700"
                     }`}
+                    onClick={() => {
+                      if (combineMode && isPassed) {
+                        toggleCombineSelect(exp.experiment_id)
+                      } else {
+                        handleSelectExp(exp)
+                      }
+                    }}
                   >
                     <div className="flex items-start justify-between gap-2">
+                      {combineMode && isPassed && (
+                        <div className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center mt-0.5 transition-all ${
+                          isCombineSelected
+                            ? "bg-amber-500 border-amber-500 text-black"
+                            : "border-zinc-600"
+                        }`}>
+                          {isCombineSelected && "✓"}
+                        </div>
+                      )}
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-semibold text-white truncate">
                           {exp.strategy_name || "Unnamed"}
@@ -426,7 +553,7 @@ export default function AlphaLab() {
                         </span>
                       </div>
                     )}
-                  </button>
+                  </div>
                 )
               })}
             </div>
@@ -462,6 +589,15 @@ export default function AlphaLab() {
                           ? "▶ Backtest"
                           : "🔄 Re-run Backtest"}
                     </button>
+                    {selectedExp.status === "passed" && (
+                      <button
+                        onClick={() => handlePromote(selectedExp.experiment_id)}
+                        disabled={promoting}
+                        className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 disabled:bg-zinc-700 text-white text-sm font-semibold rounded-lg transition-colors"
+                      >
+                        {promoting ? "⏳ Promoting…" : "🚀 Promote to Live"}
+                      </button>
+                    )}
                     <button
                       onClick={() => handleDelete(selectedExp.experiment_id)}
                       className="px-4 py-2 bg-zinc-800 hover:bg-red-500/20 text-zinc-400 hover:text-red-400 text-sm rounded-lg transition-colors border border-zinc-700"

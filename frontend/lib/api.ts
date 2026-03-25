@@ -504,6 +504,31 @@ export async function promoteAlphaExperiment(experimentId: string): Promise<{
   return await res.json()
 }
 
+export async function combineAlphaStrategies(
+  experimentIds: string[],
+  modelTier: string = "sonnet",
+  guidance: string = "",
+): Promise<{
+  experiment_id?: string
+  strategy_name?: string
+  rationale?: string
+  code?: string
+  parent_strategies?: string[]
+  cost_usd?: number
+  error?: string
+}> {
+  const params = new URLSearchParams({
+    experiment_ids: experimentIds.join(","),
+    model_tier: modelTier,
+    guidance,
+  })
+  const res = await fetch(
+    `${API_BASE}/api/alpha-lab/combine?${params.toString()}`,
+    { method: "POST" }
+  )
+  return await res.json()
+}
+
 // ── Pipeline Triggers ──────────────────────────────────────
 
 export async function runPipelineIngest(): Promise<{ ok: boolean; message?: string; error?: string }> {

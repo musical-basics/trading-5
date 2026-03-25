@@ -13,7 +13,7 @@ from pathlib import Path
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
-from src.alpha_lab.strategy_generator import generate_strategy, get_tier_info
+from src.alpha_lab.strategy_generator import generate_strategy, get_tier_info, combine_strategies
 from src.alpha_lab.alpha_lab_store import (
     save_experiment,
     list_experiments,
@@ -266,3 +266,74 @@ async def promote_to_production(experiment_id: str):
         "strategy_id": f"alphalab_{safe_id}",
         "file": str(filepath),
     })
+
+
+# ═══════════════════════════════════════════════════════════════
+# LEVEL 5: Combine / Evolve Strategies (Manual Genetic Prompting)
+# ═══════════════════════════════════════════════════════════════
+
+@router.post("/combine")
+async def combine_experiments(
+    experiment_ids: str,
+    model_tier: str = "sonnet",
+    guidance: str = "",
+):
+    """Combine multiple passed strategies into a new evolved strategy.
+
+    experiment_ids: comma-separated experiment IDs to combine
+    model_tier: LLM tier to use
+    guidance: optional user guidance for the combination
+    """
+    ids = [eid.strip() for eid in experiment_ids.split(",") if eid.strip()]
+
+    if len(ids) < 2:
+        return _safe_response({"error": "Select at least 2 strategies to combine"})
+    if len(ids) > 5:
+        return _safe_response({"error": "Maximum 5 strategies can be combined"})
+
+    # Fetch experiments and validate they're all passed
+    strategy_codes = []
+    strategy_names = []
+    for eid in ids:
+        exp = get_experiment(eid)
+        if not exp:
+            return _safe_response({"error": f"Experiment {eid} not found"})
+        if exp.get("status") != "passed":
+            return _safe_response({"error": f"Experiment '{exp.get('strategy_name', eid)}' has not passed backtesting"})
+        strategy_codes.append(exp["strategy_code"])
+        strategy_names.append(exp.get("strategy_name", eid))
+
+    try:
+        hypothesis = combine_strategies(
+            strategy_codes=strategy_codes,
+            strategy_names=strategy_names,
+            model_tier=model_tier,
+            user_guidance=guidance,
+        )
+
+        experiment_id = save_experiment(
+            hypothesis=f"Combined from: {', '.join(strategy_names)}",
+            strategy_code=hypothesis.code,
+            strategy_name=hypothesis.name,
+            model_tier=model_tier,
+            rationale=hypothesis.rationale,
+            input_tokens=hypothesis.input_tokens,
+            output_tokens=hypothesis.output_tokens,
+            cost_usd=hypothesis.cost_usd,
+        )
+
+        return _safe_response({
+            "experiment_id": experiment_id,
+            "strategy_name": hypothesis.name,
+            "rationale": hypothesis.rationale,
+            "code": hypothesis.code,
+            "model_tier": model_tier,
+            "parent_strategies": strategy_names,
+            "input_tokens": hypothesis.input_tokens,
+            "output_tokens": hypothesis.output_tokens,
+            "cost_usd": hypothesis.cost_usd,
+        })
+    except ValueError as e:
+        return _safe_response({"error": str(e)})
+    except Exception as e:
+        return _safe_response({"error": f"Combine failed: {type(e).__name__}: {e}"})

@@ -21,6 +21,8 @@ if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelper
 "use strict";
 
 __turbopack_context__.s([
+    "combineAlphaStrategies",
+    ()=>combineAlphaStrategies,
     "createTrader",
     ()=>createTrader,
     "deleteAlphaExperiment",
@@ -252,6 +254,17 @@ async function updateAlphaCode(experimentId, code) {
 }
 async function promoteAlphaExperiment(experimentId) {
     const res = await fetch(`${API_BASE}/api/alpha-lab/${experimentId}/promote`, {
+        method: "POST"
+    });
+    return await res.json();
+}
+async function combineAlphaStrategies(experimentIds, modelTier = "sonnet", guidance = "") {
+    const params = new URLSearchParams({
+        experiment_ids: experimentIds.join(","),
+        model_tier: modelTier,
+        guidance
+    });
+    const res = await fetch(`${API_BASE}/api/alpha-lab/combine?${params.toString()}`, {
         method: "POST"
     });
     return await res.json();

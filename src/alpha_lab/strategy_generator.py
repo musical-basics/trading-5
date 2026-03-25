@@ -195,7 +195,7 @@ def generate_strategy(
 
     response = client.messages.create(
         model=tier["model_id"],
-        max_tokens=2000,
+        max_tokens=4000,
         system=full_system_prompt,
         messages=[{"role": "user", "content": user_msg}],
     )
@@ -281,3 +281,81 @@ def get_tier_info() -> dict:
         }
         for tier_id, tier in MODEL_TIERS.items()
     }
+
+
+# ── Combine / Evolve Strategies ──────────────────────────────
+
+COMBINE_SYSTEM_PROMPT = SYSTEM_PROMPT + """
+
+STRATEGY STYLE: Evolutionary Combination
+You are being given code from multiple top-performing strategies. Your task is to:
+1. Analyze the signals and logic used in each parent strategy
+2. Combine the BEST elements from each into a SINGLE new strategy
+3. Introduce at least ONE novel mutation or improvement (e.g. new window size, different weighting, additional signal)
+4. The new strategy must be meaningfully different from any one parent — not a trivial copy
+5. Aim to reduce max drawdown while maintaining or improving Sharpe ratio
+6. Name the strategy to reflect its combined heritage (e.g. 'momentum_value_hybrid')
+"""
+
+
+def combine_strategies(
+    strategy_codes: list[str],
+    strategy_names: list[str],
+    model_tier: str = "sonnet",
+    user_guidance: str = "",
+) -> StrategyHypothesis:
+    """Combine multiple passed strategies into a new evolved strategy.
+
+    This is a manual version of genetic prompting — the user selects
+    top strategies and the LLM creates a novel combination.
+    """
+    if model_tier not in MODEL_TIERS:
+        raise ValueError(f"Unknown model tier: {model_tier}. Use: {list(MODEL_TIERS.keys())}")
+
+    tier = MODEL_TIERS[model_tier]
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        raise ValueError("ANTHROPIC_API_KEY not set in .env.local")
+
+    client = anthropic.Anthropic(api_key=api_key)
+
+    # Build the user message with parent strategy code
+    parents_section = ""
+    for i, (name, code) in enumerate(zip(strategy_names, strategy_codes), 1):
+        parents_section += f"\n--- PARENT STRATEGY {i}: {name} ---\n```python\n{code}\n```\n\n"
+
+    user_msg = (
+        f"Here are {len(strategy_codes)} of our best-performing strategies:\n"
+        f"{parents_section}\n"
+        f"Combine the best elements from these strategies into ONE new, evolved strategy. "
+        f"Introduce at least one novel mutation or improvement.\n"
+    )
+    if user_guidance:
+        user_msg += f"\nAdditional guidance: {user_guidance}\n"
+
+    response = client.messages.create(
+        model=tier["model_id"],
+        max_tokens=4000,
+        system=COMBINE_SYSTEM_PROMPT,
+        messages=[{"role": "user", "content": user_msg}],
+    )
+
+    text = response.content[0].text
+    input_tokens = response.usage.input_tokens
+    output_tokens = response.usage.output_tokens
+    cost_usd = (
+        (input_tokens / 1_000_000) * tier["input_cost_per_mtok"]
+        + (output_tokens / 1_000_000) * tier["output_cost_per_mtok"]
+    )
+
+    name, rationale, code = _parse_response(text)
+
+    return StrategyHypothesis(
+        name=name,
+        rationale=f"[Combined from: {', '.join(strategy_names)}] {rationale}",
+        code=code,
+        model_tier=model_tier,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        cost_usd=round(cost_usd, 6),
+    )
