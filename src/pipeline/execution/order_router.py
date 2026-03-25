@@ -21,27 +21,22 @@ from src.config import DB_PATH
 
 def _get_alpaca_client():
     """
-    Attempt to create an Alpaca API client.
-    Returns None if keys are not configured.
+    Attempt to create an Alpaca API client using alpaca-py.
+    Returns None if keys are not configured or connection fails.
     Supports both paper and live mode based on ALPACA_PAPER env var.
     """
     api_key = os.getenv("ALPACA_API_KEY", "").strip()
     secret_key = os.getenv("ALPACA_SECRET_KEY", "").strip()
     is_paper = os.getenv("ALPACA_PAPER", "true").lower() in ("true", "1", "yes")
 
-    if is_paper:
-        base_url = "https://paper-api.alpaca.markets"
-    else:
-        base_url = "https://api.alpaca.markets"
-
     if not api_key or not secret_key:
         return None
 
     try:
-        import alpaca_trade_api as tradeapi
-        api = tradeapi.REST(api_key, secret_key, base_url, api_version="v2")
-        api.get_account()
-        return api
+        from alpaca.trading.client import TradingClient
+        client = TradingClient(api_key=api_key, secret_key=secret_key, paper=is_paper)
+        client.get_account()
+        return client
     except Exception as e:
         print(f"  ⚠ Alpaca API connection failed: {e}")
         print(f"  ⚠ Falling back to dry-run mode.")
@@ -97,7 +92,7 @@ def _publish_execution_event(event: dict):
         pass  # Redis not available — non-critical
 
 
-def _log_execution_orm(order: dict, trader_id=None, portfolio_id=None):
+def _log_execution_orm(exec_record: dict):
     """Log execution to Postgres/SQLite via SQLAlchemy ORM."""
     try:
         from src.core.database import SessionLocal
@@ -105,23 +100,23 @@ def _log_execution_orm(order: dict, trader_id=None, portfolio_id=None):
 
         session = SessionLocal()
         execution = PaperExecution(
-            ticker=order["ticker"],
-            action=order["action"],
-            quantity=order["quantity"],
-            simulated_price=order["price"],
-            strategy_id=order.get("strategy_id", "sma_crossover"),
-            trader_id=trader_id,
-            portfolio_id=portfolio_id,
+            ticker=exec_record["ticker"],
+            action=exec_record["side"],
+            quantity=exec_record["quantity"],
+            simulated_price=exec_record["price"],
+            strategy_id=exec_record.get("strategy_id", "sma_crossover"),
+            trader_id=exec_record.get("trader_id"),
+            portfolio_id=exec_record.get("portfolio_id"),
         )
         session.add(execution)
         session.commit()
         session.close()
     except Exception:
         # Fallback to raw SQLite if ORM not available
-        _log_execution_sqlite(order, trader_id, portfolio_id)
+        _log_execution_sqlite(exec_record)
 
 
-def _log_execution_sqlite(order: dict, trader_id=None, portfolio_id=None):
+def _log_execution_sqlite(exec_record: dict):
     """Fallback: log execution via raw SQLite (backward compat)."""
     import sqlite3
     conn = sqlite3.connect(DB_PATH)
@@ -132,31 +127,33 @@ def _log_execution_sqlite(order: dict, trader_id=None, portfolio_id=None):
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        order["ticker"], order["action"], order["quantity"],
-        order["price"], order.get("strategy_id", "sma_crossover"),
-        trader_id, portfolio_id,
+        exec_record["ticker"], exec_record["side"], exec_record["quantity"],
+        exec_record["price"], exec_record.get("strategy_id", "sma_crossover"),
+        exec_record.get("trader_id"), exec_record.get("portfolio_id"),
     ))
     conn.commit()
     conn.close()
 
 
-def route_orders(approved_orders, trader_id=None, portfolio_id=None):
+def route_orders(intents: list[dict]):
     """
-    Route approved orders to Alpaca (Paper/Live) or dry-run.
-    Large orders are automatically sliced via TWAP.
-    Executions are logged to the database and broadcast via WebSocket.
+    Route approved sub-portfolio intents to Alpaca (Paper/Live) or dry-run.
+    Implements true Level 5 Net-Delta aggregation:
+      1. Aggregates all long/short intents per ticker to a single net order.
+      2. Executes bulk net order via Alpaca.
+      3. Fractionally ledger fills back to sub-portfolios.
 
     Args:
-        approved_orders: List of order dicts with ticker, action, quantity, price
-        trader_id: Optional trader ID for execution provenance
-        portfolio_id: Optional portfolio ID for execution provenance
+        intents: List of dicts (ticker, side, quantity, price, portfolio_id, trader_id, strategy_id)
     """
+    from src.pipeline.execution.net_delta import calculate_net_delta, distribute_fills
+
     print("=" * 60)
-    print("PHASE 4: Execution Routing (Level 5)")
+    print("PHASE 4: Execution Routing (Net-Delta)")
     print("=" * 60)
 
-    if not approved_orders:
-        print("  No orders to route. Pipeline complete.")
+    if not intents:
+        print("  No intents to route. Pipeline complete.")
         print()
         return
 
@@ -169,31 +166,42 @@ def route_orders(approved_orders, trader_id=None, portfolio_id=None):
         from src.core.models import PaperExecution
         from sqlalchemy import func
         session = SessionLocal()
+        # Find all tickers executed today
         results = session.query(PaperExecution.ticker).filter(
             func.date(PaperExecution.timestamp) == today_str,
-        )
-        if portfolio_id is not None:
-            results = results.filter(PaperExecution.portfolio_id == portfolio_id)
-        already_executed = {r.ticker for r in results.all()}
+        ).all()
+        already_executed = {r.ticker for r in results}
         session.close()
     except Exception:
         # Fallback to SQLite
         import sqlite3
         conn = sqlite3.connect(DB_PATH)
-        idem_sql = "SELECT DISTINCT ticker FROM paper_executions WHERE DATE(timestamp) = ?"
-        idem_params = [today_str]
-        if portfolio_id is not None:
-            idem_sql += " AND portfolio_id = ?"
-            idem_params.append(portfolio_id)
         cursor = conn.cursor()
-        cursor.execute(idem_sql, idem_params)
+        cursor.execute("SELECT DISTINCT ticker FROM paper_executions WHERE DATE(timestamp) = ?", (today_str,))
         already_executed = {row[0] for row in cursor.fetchall()}
         conn.close()
 
     if already_executed:
-        print(f"  ⚠ Already executed today: {', '.join(already_executed)}")
+        print(f"  ⚠ Skipped execution for {len(already_executed)} tickers due to idempotency.")
+        # Filter out intents for tickers already executed today to avoid duplicate trades
+        intents = [i for i in intents if i["ticker"] not in already_executed]
 
-    # ── Try to connect to Alpaca ─────────────────────────────
+    if not intents:
+        print("  No net intents remaining after idempotency check. Pipeline complete.\n")
+        return
+
+    # ── 1. Calculate Net-Delta ───────────────────────────────
+    net_orders_df = calculate_net_delta(intents)
+    if net_orders_df.is_empty():
+        print("  Net-Delta perfectly neutral. No broker orders required.\n")
+        return
+
+    print("  Aggregated sub-portfolio intents into Net-Delta orders:")
+    for row in net_orders_df.iter_rows(named=True):
+        print(f"    {row['net_side']} {row['net_quantity']} x {row['ticker']}")
+    print()
+
+    # ── 2. Route Net Orders to Broker ────────────────────────
     alpaca = _get_alpaca_client()
     is_live = alpaca is not None
     is_paper = os.getenv("ALPACA_PAPER", "true").lower() in ("true", "1", "yes")
@@ -204,79 +212,97 @@ def route_orders(approved_orders, trader_id=None, portfolio_id=None):
     else:
         print("  ℹ Running in DRY-RUN mode (no Alpaca API keys configured)")
 
-    print()
+    net_fills = {}
+    
+    # We need a quick map to get the intent 'price' for dry-run
+    # Just take the first price for each ticker as reference
+    price_map = {}
+    for i in intents:
+        if i["ticker"] not in price_map:
+            price_map[i["ticker"]] = i["price"]
 
-    executed_count = 0
-    filled_orders = {}
+    for row in net_orders_df.iter_rows(named=True):
+        ticker = row["ticker"]
+        side = row["net_side"]
+        quantity = row["net_quantity"]
+        fallback_price = price_map.get(ticker, 0.0)
 
-    for order in approved_orders:
-        ticker = order["ticker"]
-        action = order["action"]
-        quantity = order["quantity"]
-        price = order["price"]
-
-        if ticker in already_executed:
-            print(f"  ⊘ SKIPPED {action} {ticker}: Already executed today")
-            continue
-
-        # Determine if TWAP slicing is needed
-        if _should_pace(order):
-            slices = _twap_slices(order)
-            print(f"  📊 TWAP: Splitting {action} {quantity} x {ticker} into {len(slices)} slices")
-        else:
-            slices = [order]
-
+        # Basic TWAP for huge net orders (placeholder for logic)
+        slices = _twap_slices({"ticker": ticker, "quantity": quantity, "price": fallback_price}) if _should_pace({"ticker": ticker, "quantity": quantity, "price": fallback_price}, 0) else [{"quantity": quantity}]
+        
+        total_filled_qty = 0
+        total_fill_cost = 0.0
+        
         for sl in slices:
             sl_qty = sl["quantity"]
             try:
                 if is_live:
-                    side = action.lower()
-                    alpaca_order = alpaca.submit_order(
-                        symbol=ticker, qty=sl_qty, side=side,
-                        type="market", time_in_force="day",
+                    from alpaca.trading.requests import MarketOrderRequest
+                    from alpaca.trading.enums import OrderSide, TimeInForce
+                    
+                    req = MarketOrderRequest(
+                        symbol=ticker,
+                        qty=sl_qty,
+                        side=OrderSide.BUY if side == "BUY" else OrderSide.SELL,
+                        time_in_force=TimeInForce.DAY,
                     )
-                    print(f"  ✓ ROUTED {action} {sl_qty} x {ticker} @ ~${price:.2f} → Alpaca")
+                    
+                    order = alpaca.submit_order(order_data=req)
+                    print(f"  ✓ ROUTED Net {side} {sl_qty} x {ticker} → Alpaca (ID: {order.id})")
+                    
+                    # For a market order, filled_qty might be 0 immediately, but we track it.
+                    # In a real async system, we'd wait for fill webhooks. 
+                    # For sync pipeline, we assume it fills immediately at the last close price for ledgering.
+                    total_filled_qty += sl_qty
+                    total_fill_cost += sl_qty * fallback_price # Fallback until webhook
                 else:
-                    print(f"  ✓ DRY-RUN {action} {sl_qty} x {ticker} @ ${price:.2f}")
-
-                # Log execution
-                _log_execution_orm(sl, trader_id, portfolio_id)
-
-                # Broadcast real-time event
-                _publish_execution_event({
-                    "ticker": ticker,
-                    "action": action,
-                    "quantity": sl_qty,
-                    "price": price,
-                    "timestamp": datetime.now().isoformat(),
-                    "trader_id": trader_id,
-                    "portfolio_id": portfolio_id,
-                })
-
-                executed_count += 1
-
-                # Track fills for Net-Delta distribution
-                if ticker not in filled_orders:
-                    filled_orders[ticker] = {"filled_qty": 0, "avg_price": price}
-                filled_orders[ticker]["filled_qty"] += sl_qty
-
-                # Small delay between TWAP slices
+                    print(f"  ✓ DRY-RUN Net {side} {sl_qty} x {ticker} @ ~${fallback_price:.2f}")
+                    total_filled_qty += sl_qty
+                    total_fill_cost += sl_qty * fallback_price
+                    
                 if len(slices) > 1:
                     time.sleep(0.1)
-
             except Exception as e:
-                print(f"  ✗ FAILED {action} {ticker}: {e}")
-                continue
+                print(f"  ✗ FAILED to route {side} {sl_qty} x {ticker}: {e}")
 
-    print()
-    print(f"  ✓ {executed_count} orders executed and logged.")
-    print()
+        # Record the net fill for this ticker
+        if total_filled_qty > 0:
+            avg_price = total_fill_cost / total_filled_qty if total_filled_qty > 0 else fallback_price
+            net_fills[ticker] = {
+                "filled_qty": total_filled_qty, 
+                "avg_price": avg_price
+            }
 
-    return filled_orders
+    # ── 3. Internal Ledger (Distribute Fills) ────────────────
+    print("\n  Distributing fractional fills back to sub-portfolios...")
+    executions = distribute_fills(intents, net_fills)
+    
+    for exec_record in executions:
+        _log_execution_orm(exec_record)
+        
+        # Ensure price is carried over for the event payload
+        if "price" not in exec_record and "simulated_price" in exec_record:
+            exec_record["price"] = exec_record["simulated_price"]
+            
+        _publish_execution_event({
+            "ticker": exec_record["ticker"],
+            "action": exec_record["side"],
+            "quantity": exec_record["quantity"],
+            "price": exec_record["price"],
+            "timestamp": datetime.now().isoformat(),
+            "trader_id": exec_record.get("trader_id"),
+            "portfolio_id": exec_record.get("portfolio_id"),
+            "strategy_id": exec_record.get("strategy_id", "default_ml"),
+        })
+
+    print(f"  ✓ Distributed and logged {len(executions)} fractional executions.\n")
+    return net_fills
 
 
 if __name__ == "__main__":
-    test_orders = [
-        {"ticker": "AAPL", "action": "BUY", "quantity": 5, "price": 195.50},
+    # Test intent payload
+    test_intents = [
+        {"ticker": "AAPL", "side": "BUY", "quantity": 5, "price": 400.50, "portfolio_id": 1, "strategy_id": "SMA_5_20"},
+        {"ticker": "AAPL", "side": "SELL", "quantity": 2, "price": 400.50, "portfolio_id": 2, "strategy_id": "MACD_DIV"},
     ]
-    route_orders(test_orders)
+    route_orders(test_intents)

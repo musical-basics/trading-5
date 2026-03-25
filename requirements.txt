@@ -31,3 +31,5 @@ pandas
 streamlit
 plotly
 statsmodels
+
+alpaca-py==0.35.2

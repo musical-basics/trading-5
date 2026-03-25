@@ -173,12 +173,18 @@ def run_pipeline():
         from src.pipeline.scoring.ml_feature_assembly import assemble_features
         from src.pipeline.scoring.risk_apt import apply_risk_constraints
         from src.core.migrate_sqlite_to_parquet import run_migration
+        from src.pipeline.execution.portfolio_rebalancer import extract_portfolio_intents
+        from src.pipeline.execution.order_router import route_orders
 
         compute_factor_betas()
         compute_cross_sectional_scores()
         compute_dynamic_dcf()
         assemble_features()
         apply_risk_constraints()
+
+        # Phase 4 (Level 5): Execution Engine
+        intents = extract_portfolio_intents()
+        route_orders(intents)
 
         # Convert SQLite → Parquet so coverage matrix can read it
         run_migration()
@@ -207,6 +213,8 @@ def run_full():
         from src.pipeline.scoring.dynamic_dcf import compute_dynamic_dcf
         from src.pipeline.scoring.ml_feature_assembly import assemble_features
         from src.pipeline.scoring.risk_apt import apply_risk_constraints
+        from src.pipeline.execution.portfolio_rebalancer import extract_portfolio_intents
+        from src.pipeline.execution.order_router import route_orders
 
         init_db()
         ingest()
@@ -222,6 +230,10 @@ def run_full():
         compute_dynamic_dcf()
         assemble_features()
         apply_risk_constraints()
+
+        # Phase 4 (Level 5): Execution Engine
+        intents = extract_portfolio_intents()
+        route_orders(intents)
 
     thread = threading.Thread(target=_run_in_background, args=("full", _full))
     thread.daemon = True
