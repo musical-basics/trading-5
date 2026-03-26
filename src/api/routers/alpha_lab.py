@@ -71,17 +71,19 @@ def _safe_response(data):
 
 @router.get("/aligned-profile")
 async def get_aligned_profile():
-    """Serve the aligned data profile (schema + stats) for the UI and LLM.
+    """Serves the semantic dictionary and statistical distribution of the feature store.
 
-    Returns per-source (market_data, feature, macro, fundamental) column stats
-    including min, max, mean, median, std, null_pct, plus universe metadata.
+    Returns {total_rows, features: {col: {dtype, category, description, stats}}}
+    from the joined aligned dataset — same data the backtester operates on.
     """
     try:
         from src.alpha_lab.stats_engine import generate_aligned_data_profile
-        profile = generate_aligned_data_profile()
-        return _safe_response({"status": "success", "profile": profile})
+        profile_data = generate_aligned_data_profile()
+        if "error" in profile_data:
+            return _safe_response({"error": profile_data["error"]})
+        return _safe_response(profile_data)
     except Exception as e:
-        return _safe_response({"status": "error", "error": str(e)})
+        return _safe_response({"error": f"Failed to generate profile: {e}"})
 
 
 @router.get("/tiers")

@@ -196,18 +196,18 @@ def _build_data_profile_block() -> str:
 
     Kept separate from the core schema so the LLM treats it as a
     calibration reference (thresholds, ranges) rather than core rules.
+    Uses JSON format for structured parsing by Claude.
     """
     try:
         from src.alpha_lab.stats_engine import build_profile_for_llm
-        profile_text = build_profile_for_llm()
-        if not profile_text:
+        profile_json = build_profile_for_llm()
+        if not profile_json:
             return ""
         return (
-            "\n\nDATA PROFILE REFERENCE:\n"
-            "Below are the statistical distributions of the aligned dataset. "
-            "Use these to set optimal thresholds (e.g. use the mean or std to "
-            "calibrate signal triggers, not arbitrary magic numbers).\n\n"
-            f"{profile_text}"
+            "\n\n=== DYNAMIC DATA DICTIONARY & STATISTICAL PROFILE ===\n"
+            "Use these statistics to calibrate your thresholds "
+            "(e.g., setting Z-score cutoffs based on the actual distribution).\n"
+            f"```json\n{profile_json}\n```"
         )
     except Exception:
         return ""  # Non-critical — degrade gracefully

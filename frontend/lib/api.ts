@@ -562,45 +562,31 @@ export async function getPipelineLogs(since: number = 0): Promise<{
 
 // ── Aligned Data Pipeline API ────────────────────────────────
 
-export interface ColumnStats {
-  min?: number
-  max?: number
-  mean?: number
-  median?: number
-  std?: number
-  p25?: number
-  p75?: number
+export interface FeatureStat {
+  min: number | null
+  max: number | null
+  mean: number | null
+  median: number | null
+  std_dev: number | null
   null_pct: number
-  count: number
 }
 
-export interface ColumnProfile {
+export interface FeatureProfile {
   dtype: string
   category: string
   description: string
-  stats: ColumnStats
-}
-
-export interface AlignedProfileMeta {
-  total_tickers: number
-  sample_tickers: string[]
+  stats: FeatureStat
 }
 
 export interface AlignedProfileResponse {
-  status: string
-  profile: {
-    market_data?: Record<string, ColumnProfile>
-    feature?: Record<string, ColumnProfile>
-    macro?: Record<string, ColumnProfile>
-    fundamental?: Record<string, ColumnProfile>
-    meta?: AlignedProfileMeta
-  }
+  total_rows?: number
+  features?: Record<string, FeatureProfile>
   error?: string
 }
 
 export async function fetchAlignedProfile(): Promise<AlignedProfileResponse> {
   const res = await fetch(`${API_BASE}/api/alpha-lab/aligned-profile`)
-  if (!res.ok) return { status: "error", profile: {}, error: `HTTP ${res.status}` }
+  if (!res.ok) throw new Error(`Failed to fetch profile: ${res.status}`)
   return await res.json()
 }
 

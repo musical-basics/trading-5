@@ -16,7 +16,7 @@ import {
   Users,
   Database,
   Sparkles,
-  Layers,
+  BookOpen,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -32,7 +32,7 @@ import { TraderManager } from "./trader-manager"
 import { DataPipeline } from "./data-pipeline"
 import { IndicatorsAnalysis } from "./indicators-analysis"
 import AlphaLab from "./alpha-lab"
-import { AlignedPipeline } from "./aligned-pipeline"
+import { AlignedDataPipeline } from "./aligned-pipeline"
 
 type View = "data-pipeline" | "aligned-pipeline" | "indicators-analysis" | "alpha-lab" | "strategy-studio" | "xray-inspector" | "risk-war-room" | "execution-ledger" | "trader-manager"
 
@@ -53,10 +53,10 @@ const navItems = [
   },
   {
     id: "aligned-pipeline" as const,
-    label: "Aligned Pipeline",
-    icon: Layers,
-    description: "Schema & Distributions",
-    badge: "Reference"
+    label: "Data Dictionary",
+    icon: BookOpen,
+    description: "LLM Statistical Context",
+    badge: "Profile"
   },
   {
     id: "alpha-lab" as const,
@@ -264,7 +264,7 @@ export function DashboardShell() {
         {/* Page Content */}
         <main className="flex-1 overflow-auto p-4 lg:p-6">
           {currentView === "data-pipeline" && <DataPipeline />}
-          {currentView === "aligned-pipeline" && <AlignedPipeline />}
+          {currentView === "aligned-pipeline" && <AlignedDataPipeline />}
           {currentView === "indicators-analysis" && <IndicatorsAnalysis />}
           {currentView === "alpha-lab" && <AlphaLab />}
           {currentView === "strategy-studio" && <StrategyStudio />}
