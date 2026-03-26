@@ -129,3 +129,104 @@ VIX_RISK_OFF_THRESHOLD = 30     # VIX > 30 → risk-off
 VIX_SPIKE_ROC_PCT = 0.40        # 20-day VIX ROC > 40% → risk-off
 TNX_RATE_SHOCK_ROC_PCT = 0.10   # 50-day yield ROC > 10% → caution
 
+
+# ═══════════════════════════════════════════════════════════════
+# INDICATOR METADATA — Self-Documenting Data Dictionary
+# ═══════════════════════════════════════════════════════════════
+# Each entry: {"category": str, "description": str}
+# Update this when you add new indicators to the pipeline.
+# The Alpha Lab reads this at runtime to build LLM prompts.
+
+INDICATOR_METADATA = {
+    # ── Market Data ──────────────────────────────────────────
+    "adj_close": {
+        "category": "market",
+        "description": "Adjusted close price (split/dividend corrected).",
+    },
+    "volume": {
+        "category": "market",
+        "description": "Daily trading volume (shares).",
+    },
+    "daily_return": {
+        "category": "market",
+        "description": "Daily percentage return.",
+    },
+    # ── Feature / Statistical ────────────────────────────────
+    "ev_sales_zscore": {
+        "category": "fundamental",
+        "description": "EV/Sales cross-sectional z-score (lower = cheaper vs peers).",
+    },
+    "dcf_npv_gap": {
+        "category": "fundamental",
+        "description": "DCF intrinsic value gap (positive = undervalued).",
+    },
+    "dynamic_discount_rate": {
+        "category": "fundamental",
+        "description": "CAPM-derived per-stock discount rate (Rf + β·ERP + β_vix·λ).",
+    },
+    "beta_spy": {
+        "category": "statistical",
+        "description": "Beta vs S&P 500 (1.0 = market neutral). 90-day rolling OLS.",
+    },
+    "beta_tnx": {
+        "category": "statistical",
+        "description": "Beta vs 10Y Treasury yield. Measures interest rate sensitivity.",
+    },
+    "beta_vix": {
+        "category": "statistical",
+        "description": "Beta vs VIX. Measures volatility sensitivity.",
+    },
+    # ── Macro ────────────────────────────────────────────────
+    "vix": {
+        "category": "macro",
+        "description": "VIX index level (fear gauge, typically 12-30).",
+    },
+    "vix3m": {
+        "category": "macro",
+        "description": "3-month VIX. Compare with VIX for term structure (backwardation = fear).",
+    },
+    "tnx": {
+        "category": "macro",
+        "description": "10Y Treasury yield (in %). Rising = tighter financial conditions.",
+    },
+    "irx": {
+        "category": "macro",
+        "description": "13-week T-bill rate (%). Proxy for risk-free rate.",
+    },
+    "spy": {
+        "category": "macro",
+        "description": "S&P 500 price level. Use for regime detection (e.g. vs 200-day SMA).",
+    },
+    # ── Fundamental ──────────────────────────────────────────
+    "total_debt": {
+        "category": "fundamental",
+        "description": "Total debt on balance sheet (quarterly filing).",
+    },
+    "cash": {
+        "category": "fundamental",
+        "description": "Cash and equivalents (quarterly filing).",
+    },
+    "shares_out": {
+        "category": "fundamental",
+        "description": "Shares outstanding.",
+    },
+    "revenue": {
+        "category": "fundamental",
+        "description": "Quarterly revenue.",
+    },
+    # ── Identifiers (excluded from LLM feature list) ────────
+    "entity_id": {
+        "category": "_internal",
+        "description": "Internal entity identifier.",
+    },
+    "date": {
+        "category": "_internal",
+        "description": "Trading date.",
+    },
+    "ticker": {
+        "category": "_internal",
+        "description": "Stock ticker symbol.",
+    },
+}
+
+

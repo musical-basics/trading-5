@@ -13,10 +13,12 @@ Supports three model tiers with cost tracking:
 import os
 import re
 from dataclasses import dataclass
+from collections import defaultdict
 
 import anthropic
+import polars as pl
 
-from src.config import PROJECT_ROOT
+from src.config import PROJECT_ROOT, INDICATOR_METADATA
 
 # ── Model Configuration ─────────────────────────────────────
 MODEL_TIERS = {
@@ -52,7 +54,86 @@ class StrategyHypothesis:
     cost_usd: float
 
 
-SYSTEM_PROMPT = """You are a quantitative strategist generating trading strategies for a backtesting platform.
+# ═══════════════════════════════════════════════════════════════
+# Dynamic Schema Discovery
+# ═══════════════════════════════════════════════════════════════
+
+def _build_dynamic_schema() -> str:
+    """Read live parquet schemas and build categorized column context for the LLM.
+
+    Uses pl.read_parquet_schema() which reads only file headers — zero data loaded.
+    Cross-references INDICATOR_METADATA for semantic descriptions and categories.
+    New columns added to any parquet are auto-discovered.
+    """
+    from src.core.duckdb_store import get_parquet_path
+
+    columns = {}  # {name: (dtype_str, description, category)}
+
+    for source in ["market_data", "feature", "macro", "fundamental"]:
+        path = get_parquet_path(source)
+        if os.path.exists(path):
+            schema = pl.read_parquet_schema(path)
+            for col_name, dtype in schema.items():
+                if col_name not in columns:
+                    meta = INDICATOR_METADATA.get(col_name, {})
+                    category = meta.get("category", "other")
+                    desc = meta.get("description", f"Numerical feature ({dtype}).")
+                    columns[col_name] = (str(dtype), desc, category)
+
+    # Group by category for organized output
+    by_category = defaultdict(list)
+    for name, (dtype, desc, category) in sorted(columns.items()):
+        if category == "_internal":
+            continue  # Skip entity_id, date — mentioned separately
+        by_category[category].append(f"   - {name} ({dtype}): {desc}")
+
+    # Build formatted output
+    category_labels = {
+        "market": "Market Data",
+        "fundamental": "Fundamental",
+        "statistical": "Statistical / Factor",
+        "macro": "Macro",
+        "other": "Other",
+    }
+    sections = []
+    for cat_key in ["market", "fundamental", "statistical", "macro", "other"]:
+        if cat_key in by_category:
+            sections.append(f"   [{category_labels.get(cat_key, cat_key)}]")
+            sections.extend(by_category[cat_key])
+
+    return "\n".join(sections)
+
+
+def _build_ticker_summary() -> str:
+    """Build a truncated ticker summary: total count + small sample.
+
+    Avoids injecting 3000+ tickers into the prompt at Russell 3000 scale.
+    """
+    from src.core.duckdb_store import PARQUET_DIR
+
+    entity_map_path = os.path.join(PARQUET_DIR, "entity_map.parquet")
+    if not os.path.exists(entity_map_path):
+        # Fallback to config
+        from src.config import DEFAULT_UNIVERSE
+        tickers = DEFAULT_UNIVERSE
+    else:
+        emap = pl.read_parquet(entity_map_path)
+        tickers = sorted(emap["ticker"].to_list()) if "ticker" in emap.columns else []
+
+    if not tickers:
+        return "Universe information unavailable."
+
+    total = len(tickers)
+    sample = tickers[:5]
+    return (
+        f"{total} stocks in the universe (e.g. {', '.join(sample)}, ...).\n"
+        f"   You can use ticker for ticker-specific strategies, e.g.:\n"
+        f'   pl.when(pl.col("ticker") == "AAPL").then(1.0).otherwise(0.0)'
+    )
+
+
+# Template with {dynamic_schema} and {ticker_summary} placeholders
+_SYSTEM_PROMPT_TEMPLATE = """You are a quantitative strategist generating trading strategies for a backtesting platform.
 
 You must generate a Python function that follows this EXACT signature:
 
@@ -63,33 +144,15 @@ def strategy_name(df: pl.DataFrame) -> pl.DataFrame:
 ```
 
 RULES:
-1. The function takes a Polars DataFrame with these available columns:
+1. The function takes a Polars DataFrame with these columns (auto-discovered from live data):
    - entity_id (int): unique stock identifier
-   - ticker (str): stock ticker symbol (e.g. "AAPL", "MSFT", "SPY")
+   - ticker (str): stock ticker symbol
    - date (date): trading date
-   - adj_close (float): adjusted close price
-   - volume (int): trading volume
-   - ev_sales_zscore (float): enterprise value / sales z-score
-   - beta_spy (float): beta vs S&P 500
-   - beta_tnx (float): beta vs 10Y yield
-   - beta_vix (float): beta vs VIX
-   - dcf_npv_gap (float): DCF intrinsic value gap (positive = undervalued)
-   - total_debt (float): total debt
-   - cash (float): cash on balance sheet
-   - shares_out (float): shares outstanding
-   - revenue (float): quarterly revenue
-   - vix (float): VIX index value
-   - tnx (float): 10Y Treasury yield
+{dynamic_schema}
 
-   Available tickers: AAPL, ABBV, ADBE, AMD, AMZN, AVGO, BAC, BRK-B, CMCSA, COST,
-   CRM, CSCO, CVX, DHR, DIS, GOOG, GS, HD, INTC, JNJ, JPM, KO, LIN, LLY, LOW,
-   MA, MCD, META, MRK, MSFT, NEE, NFLX, NKE, NVDA, ORCL, PEP, PFE, PG, PM, QCOM,
-   RTX, SBUX, SPY, TMO, TMUS, TSLA, TXN, UNH, V, VZ, WFC, WMT, XOM
+   Universe: {ticker_summary}
 
-   You can use ticker for ticker-specific strategies, e.g.:
-   pl.when(pl.col("ticker") == "AAPL").then(1.0).otherwise(0.0)
-
-2. The function MUST add exactly ONE new column named `raw_weight_{strategy_id}` where strategy_id is a snake_case name
+2. The function MUST add exactly ONE new column named `raw_weight_{{strategy_id}}` where strategy_id is a snake_case name
 3. Weights should be float values. Positive = long, negative = short, 0 = no position
 4. Only use `polars` (imported as `pl`) and `numpy` (imported as `np`) — no other imports
 5. The function name must match the strategy_id in the column name
@@ -118,6 +181,14 @@ CODE:
 def snake_case_name(df: pl.DataFrame) -> pl.DataFrame:
     ...
 ```"""
+
+
+def _build_system_prompt() -> str:
+    """Build the full system prompt with live schema and ticker data."""
+    return _SYSTEM_PROMPT_TEMPLATE.format(
+        dynamic_schema=_build_dynamic_schema(),
+        ticker_summary=_build_ticker_summary(),
+    )
 
 # ── Style-specific addons ────────────────────────────────────
 STYLE_ADDONS = {
@@ -191,7 +262,7 @@ def generate_strategy(
     )
 
     # Compose system prompt with style addon
-    full_system_prompt = SYSTEM_PROMPT + STYLE_ADDONS.get(strategy_style, STYLE_ADDONS["academic"])
+    full_system_prompt = _build_system_prompt() + STYLE_ADDONS.get(strategy_style, STYLE_ADDONS["academic"])
 
     response = client.messages.create(
         model=tier["model_id"],
@@ -285,7 +356,7 @@ def get_tier_info() -> dict:
 
 # ── Combine / Evolve Strategies ──────────────────────────────
 
-COMBINE_SYSTEM_PROMPT = SYSTEM_PROMPT + """
+COMBINE_STYLE_ADDON = """
 
 STRATEGY STYLE: Evolutionary Combination
 You are being given code from multiple top-performing strategies. Your task is to:
@@ -336,7 +407,7 @@ def combine_strategies(
     response = client.messages.create(
         model=tier["model_id"],
         max_tokens=4000,
-        system=COMBINE_SYSTEM_PROMPT,
+        system=_build_system_prompt() + COMBINE_STYLE_ADDON,
         messages=[{"role": "user", "content": user_msg}],
     )
 
