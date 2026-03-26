@@ -21,7 +21,13 @@ const CATEGORY_COLORS: Record<string, string> = {
   statistical: "border-blue-500/30 text-blue-400 bg-blue-500/10",
   macro: "border-amber-500/30 text-amber-400 bg-amber-500/10",
   other: "border-zinc-500/30 text-zinc-400 bg-zinc-500/10",
-  _internal: "border-zinc-500/30 text-zinc-400 bg-zinc-500/10",
+}
+
+const SOURCE_LABELS: Record<string, string> = {
+  market_data: "Market",
+  feature: "Feature",
+  macro: "Macro",
+  fundamental: "Fundamental",
 }
 
 function fmt(val: number | null | undefined, dec = 2): string {
@@ -92,11 +98,22 @@ export function AlignedDataPipeline() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <Badge variant="outline" className="border-blue-500/30 text-blue-400 text-xs px-3 py-1">
-            <Database className="w-3 h-3 mr-1 inline" />
-            {data.total_rows?.toLocaleString()} Aligned Rows
-          </Badge>
-          <Badge variant="outline" className="border-border/50 text-muted-foreground text-xs px-3 py-1">
+          {data.sources && Object.entries(data.sources).map(([src, rows]) => (
+            <Badge
+              key={src}
+              variant="outline"
+              className="text-xs border-border/50 text-muted-foreground px-2 py-0.5"
+            >
+              {SOURCE_LABELS[src] || src}: {(rows as number).toLocaleString()} rows
+            </Badge>
+          ))}
+          {data.universe_size && (
+            <Badge variant="outline" className="border-blue-500/30 text-blue-400 text-xs px-2 py-0.5">
+              <Database className="w-3 h-3 mr-1 inline" />
+              {data.universe_size} Tickers
+            </Badge>
+          )}
+          <Badge variant="outline" className="border-border/50 text-muted-foreground text-xs px-2 py-0.5">
             {featureEntries.length} Features
           </Badge>
           <Button
@@ -134,7 +151,7 @@ export function AlignedDataPipeline() {
               </CardHeader>
               <CardContent className="px-4 pb-4">
                 {/* Badges */}
-                <div className="flex items-center gap-2 mb-3 flex-wrap">
+                <div className="flex items-center gap-1.5 mb-3 flex-wrap">
                   <Badge variant="outline" className="text-[10px] bg-secondary/50 border-border/50 text-muted-foreground">
                     <Binary className="w-3 h-3 mr-1 inline" />
                     {info.dtype}
@@ -145,6 +162,9 @@ export function AlignedDataPipeline() {
                   >
                     {info.category}
                   </Badge>
+                  <Badge variant="outline" className="text-[10px] border-border/50 text-muted-foreground">
+                    {SOURCE_LABELS[info.source] || info.source}
+                  </Badge>
                   {stats.null_pct > 0 && (
                     <Badge
                       variant="outline"
@@ -152,7 +172,9 @@ export function AlignedDataPipeline() {
                         "text-[10px]",
                         stats.null_pct > 20
                           ? "border-red-500/30 text-red-400"
-                          : "border-amber-500/30 text-amber-400"
+                          : stats.null_pct > 5
+                            ? "border-amber-500/30 text-amber-400"
+                            : "border-zinc-500/30 text-zinc-400"
                       )}
                     >
                       {stats.null_pct}% Null

@@ -1,88 +1,87 @@
 """
 stats_engine.py — Aligned Data Profile Generator
 
-Computes statistical distributions from the JOINED aligned dataset —
-the exact same data that the backtester and LLM strategies operate on.
+Computes statistical distributions (min, max, mean, median, std, null%)
+per column. Stats are computed PER SOURCE (raw parquet) to avoid the
+sparse-join problem where fundamental data shows 99% null because it
+only exists on quarterly filing dates but market_data is daily.
 
-Uses _load_aligned_data() + Polars .describe() for accurate stats that
-reflect what Claude will actually see when generating strategies.
-
-Separate from INDICATOR_METADATA (schema/semantics) in config.py.
-This module provides the distribution layer (how the data behaves).
+The features are then flattened into a single dict for the LLM and UI.
 """
 
 import math
 import json
+import os
 from typing import Optional
 
 import polars as pl
 
-from src.alpha_lab.lab_backtester import _load_aligned_data
+from src.core.duckdb_store import get_parquet_path, PARQUET_DIR
 from src.config import INDICATOR_METADATA
 
 
 # Columns to skip in stats (identifiers, not features)
 _SKIP_COLS = {"entity_id", "date", "ticker", "filing_date"}
 
+# Which parquet sources to scan, and which columns to skip per source
+_SOURCES = {
+    "market_data": {"select_cols": None},  # None = all columns
+    "feature": {"select_cols": None},
+    "macro": {"select_cols": None},
+    "fundamental": {"select_cols": None},
+}
 
-def generate_aligned_data_profile() -> dict:
-    """Generate the statistical profile from the joined aligned dataset.
 
-    This loads the exact same data the backtester uses (market + feature +
-    macro + fundamental joined), so the stats reflect reality.
+def _compute_column_stats(col: pl.Series, total_rows: int) -> dict:
+    """Compute stats for a single Polars Series."""
+    null_count = col.null_count()
+    stats = {
+        "null_pct": round((null_count / total_rows) * 100, 2) if total_rows > 0 else 0,
+    }
 
-    Returns:
-        {
-            "total_rows": int,
-            "features": {
-                "col_name": {
-                    "dtype": str,
-                    "category": str,
-                    "description": str,
-                    "stats": { "min", "max", "mean", "median", "std_dev", "null_pct" }
-                }
+    if col.dtype.is_numeric():
+        numeric = col.drop_nulls().cast(pl.Float64)
+        if len(numeric) > 0:
+            vals = {
+                "min": float(numeric.min()),
+                "max": float(numeric.max()),
+                "mean": float(numeric.mean()),
+                "median": float(numeric.median()),
+                "std_dev": float(numeric.std()) if len(numeric) > 1 else 0.0,
             }
-        }
+            # Clean NaN/Inf
+            for k, v in vals.items():
+                if isinstance(v, float) and (math.isnan(v) or math.isinf(v)):
+                    vals[k] = None
+            stats.update(vals)
+
+    return stats
+
+
+def _compute_source_profile(source_name: str) -> Optional[dict]:
+    """Compute stats from a single parquet source (raw, not joined).
+
+    This avoids the sparse-join problem where fundamental data shows
+    99% null because it only exists on quarterly filing dates.
     """
-    try:
-        df = _load_aligned_data()
-    except Exception as e:
-        return {"error": f"Failed to load aligned data: {e}"}
+    path = get_parquet_path(source_name)
+    if not os.path.exists(path):
+        return None
 
+    df = pl.read_parquet(path)
     if df.is_empty():
-        return {"error": "Aligned dataset is empty."}
-
-    # Use Polars .describe() to get standard stats
-    stats_df = df.describe()
-    stats_dicts = stats_df.to_dicts()
-
-    # Polars .describe() key column name varies by version
-    stat_key_col = "statistic" if "statistic" in stats_df.columns else "describe"
+        return None
 
     total_rows = len(df)
-    features = {}
+    profile = {}
 
-    for col in df.columns:
-        if col in _SKIP_COLS:
+    for col_name in df.columns:
+        if col_name in _SKIP_COLS:
             continue
 
-        # Map stats for this column from .describe() output
-        col_stats = {}
-        for row in stats_dicts:
-            stat_name = row[stat_key_col]
-            val = row.get(col)
-            # Clean up NaN/Inf for JSON serialization
-            if isinstance(val, float) and (math.isnan(val) or math.isinf(val)):
-                col_stats[stat_name] = None
-            else:
-                col_stats[stat_name] = val
-
-        null_count = float(col_stats.get("null_count", 0) or 0)
-
-        # Get semantic metadata from config
-        meta = INDICATOR_METADATA.get(col, {})
+        col = df[col_name]
+        meta = INDICATOR_METADATA.get(col_name, {})
         if isinstance(meta, str):
-            # Handle flat string format (backward compat)
             category = "other"
             description = meta
         elif isinstance(meta, dict):
@@ -92,21 +91,51 @@ def generate_aligned_data_profile() -> dict:
             category = "other"
             description = "Engineered feature component."
 
-        features[col] = {
-            "dtype": str(df[col].dtype),
+        profile[col_name] = {
+            "dtype": str(col.dtype),
             "category": category,
             "description": description,
-            "stats": {
-                "min": col_stats.get("min"),
-                "max": col_stats.get("max"),
-                "mean": col_stats.get("mean"),
-                "median": col_stats.get("50%"),
-                "std_dev": col_stats.get("std"),
-                "null_pct": round((null_count / total_rows) * 100, 2) if total_rows > 0 else 0,
-            },
+            "source": source_name,
+            "source_rows": total_rows,
+            "stats": _compute_column_stats(col, total_rows),
         }
 
-    return {"total_rows": total_rows, "features": features}
+    return profile
+
+
+def generate_aligned_data_profile() -> dict:
+    """Generate the full profile by scanning each parquet source independently.
+
+    Returns:
+        {
+            "sources": {source_name: row_count, ...},
+            "features": {col: {dtype, category, description, source, stats}, ...}
+        }
+    """
+    all_features = {}
+    sources_info = {}
+
+    for source_name in _SOURCES:
+        source_profile = _compute_source_profile(source_name)
+        if source_profile:
+            # Track source metadata
+            first_col = next(iter(source_profile.values()), {})
+            sources_info[source_name] = first_col.get("source_rows", 0)
+            # Merge into flat dict
+            all_features.update(source_profile)
+
+    # Add universe metadata
+    entity_map_path = os.path.join(PARQUET_DIR, "entity_map.parquet")
+    universe_count = 0
+    if os.path.exists(entity_map_path):
+        emap = pl.read_parquet(entity_map_path)
+        universe_count = len(emap)
+
+    return {
+        "sources": sources_info,
+        "universe_size": universe_count,
+        "features": all_features,
+    }
 
 
 def build_profile_for_llm() -> str:
@@ -116,19 +145,26 @@ def build_profile_for_llm() -> str:
     structured data reference for calibrating thresholds.
     """
     profile = generate_aligned_data_profile()
-    if "error" in profile:
+    if not profile.get("features"):
         return ""
 
-    # Build a compact version for the LLM (exclude category, keep description + stats)
+    # Build compact version — description + key stats only
     llm_profile = {}
-    for col_name, col_info in profile.get("features", {}).items():
-        llm_profile[col_name] = {
+    for col_name, col_info in profile["features"].items():
+        entry = {
             "description": col_info["description"],
             "dtype": col_info["dtype"],
-            **{k: v for k, v in col_info["stats"].items() if v is not None},
         }
+        stats = col_info.get("stats", {})
+        for k in ["min", "max", "mean", "median", "std_dev", "null_pct"]:
+            if k in stats and stats[k] is not None:
+                entry[k] = stats[k]
+        llm_profile[col_name] = entry
 
     return json.dumps(
-        {"total_rows": profile.get("total_rows", 0), "features": llm_profile},
+        {
+            "universe_size": profile.get("universe_size", 0),
+            "features": llm_profile,
+        },
         indent=2,
     )

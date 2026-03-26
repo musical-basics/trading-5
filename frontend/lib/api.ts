@@ -575,11 +575,14 @@ export interface FeatureProfile {
   dtype: string
   category: string
   description: string
+  source: string
+  source_rows: number
   stats: FeatureStat
 }
 
 export interface AlignedProfileResponse {
-  total_rows?: number
+  sources?: Record<string, number>
+  universe_size?: number
   features?: Record<string, FeatureProfile>
   error?: string
 }
