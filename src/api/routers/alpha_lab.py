@@ -69,6 +69,21 @@ def _safe_response(data):
     return JSONResponse(content=_sanitize(data))
 
 
+@router.get("/aligned-profile")
+async def get_aligned_profile():
+    """Serve the aligned data profile (schema + stats) for the UI and LLM.
+
+    Returns per-source (market_data, feature, macro, fundamental) column stats
+    including min, max, mean, median, std, null_pct, plus universe metadata.
+    """
+    try:
+        from src.alpha_lab.stats_engine import generate_aligned_data_profile
+        profile = generate_aligned_data_profile()
+        return _safe_response({"status": "success", "profile": profile})
+    except Exception as e:
+        return _safe_response({"status": "error", "error": str(e)})
+
+
 @router.get("/tiers")
 async def get_model_tiers():
     """Return available model tiers and their pricing."""

@@ -559,3 +559,48 @@ export async function getPipelineLogs(since: number = 0): Promise<{
   const res = await fetch(`${API_BASE}/api/pipeline/logs?since=${since}`)
   return await res.json()
 }
+
+// ── Aligned Data Pipeline API ────────────────────────────────
+
+export interface ColumnStats {
+  min?: number
+  max?: number
+  mean?: number
+  median?: number
+  std?: number
+  p25?: number
+  p75?: number
+  null_pct: number
+  count: number
+}
+
+export interface ColumnProfile {
+  dtype: string
+  category: string
+  description: string
+  stats: ColumnStats
+}
+
+export interface AlignedProfileMeta {
+  total_tickers: number
+  sample_tickers: string[]
+}
+
+export interface AlignedProfileResponse {
+  status: string
+  profile: {
+    market_data?: Record<string, ColumnProfile>
+    feature?: Record<string, ColumnProfile>
+    macro?: Record<string, ColumnProfile>
+    fundamental?: Record<string, ColumnProfile>
+    meta?: AlignedProfileMeta
+  }
+  error?: string
+}
+
+export async function fetchAlignedProfile(): Promise<AlignedProfileResponse> {
+  const res = await fetch(`${API_BASE}/api/alpha-lab/aligned-profile`)
+  if (!res.ok) return { status: "error", profile: {}, error: `HTTP ${res.status}` }
+  return await res.json()
+}
+

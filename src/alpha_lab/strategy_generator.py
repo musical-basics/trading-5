@@ -190,6 +190,28 @@ def _build_system_prompt() -> str:
         ticker_summary=_build_ticker_summary(),
     )
 
+
+def _build_data_profile_block() -> str:
+    """Build the statistical profile reference block for the LLM.
+
+    Kept separate from the core schema so the LLM treats it as a
+    calibration reference (thresholds, ranges) rather than core rules.
+    """
+    try:
+        from src.alpha_lab.stats_engine import build_profile_for_llm
+        profile_text = build_profile_for_llm()
+        if not profile_text:
+            return ""
+        return (
+            "\n\nDATA PROFILE REFERENCE:\n"
+            "Below are the statistical distributions of the aligned dataset. "
+            "Use these to set optimal thresholds (e.g. use the mean or std to "
+            "calibrate signal triggers, not arbitrary magic numbers).\n\n"
+            f"{profile_text}"
+        )
+    except Exception:
+        return ""  # Non-critical — degrade gracefully
+
 # ── Style-specific addons ────────────────────────────────────
 STYLE_ADDONS = {
     "academic": """
@@ -262,7 +284,11 @@ def generate_strategy(
     )
 
     # Compose system prompt with style addon
-    full_system_prompt = _build_system_prompt() + STYLE_ADDONS.get(strategy_style, STYLE_ADDONS["academic"])
+    full_system_prompt = (
+        _build_system_prompt()
+        + STYLE_ADDONS.get(strategy_style, STYLE_ADDONS["academic"])
+        + _build_data_profile_block()
+    )
 
     response = client.messages.create(
         model=tier["model_id"],
@@ -407,7 +433,7 @@ def combine_strategies(
     response = client.messages.create(
         model=tier["model_id"],
         max_tokens=4000,
-        system=_build_system_prompt() + COMBINE_STYLE_ADDON,
+        system=_build_system_prompt() + COMBINE_STYLE_ADDON + _build_data_profile_block(),
         messages=[{"role": "user", "content": user_msg}],
     )
 
