@@ -234,18 +234,21 @@ function getSwarmStreamUrl(prompt, strategyStyle, agentTiers, agentNotes) {
     return `${API_BASE}/api/alpha-lab/generate-swarm-stream?${params.toString()}`;
 }
 async function saveSwarmResult(data) {
-    const params = new URLSearchParams({
-        name: data.name,
-        hypothesis: data.hypothesis,
-        rationale: data.rationale,
-        code: data.code,
-        model_tier: data.model_tier,
-        input_tokens: String(data.input_tokens),
-        output_tokens: String(data.output_tokens),
-        cost_usd: String(data.cost_usd)
-    });
-    const res = await fetch(`${API_BASE}/api/alpha-lab/generate-swarm-save?${params}`, {
-        method: "POST"
+    const res = await fetch(`${API_BASE}/api/alpha-lab/generate-swarm-save`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            name: data.name,
+            hypothesis: data.hypothesis,
+            rationale: data.rationale,
+            code: data.code,
+            model_tier: data.model_tier,
+            input_tokens: data.input_tokens,
+            output_tokens: data.output_tokens,
+            cost_usd: data.cost_usd
+        })
     });
     return await res.json();
 }
@@ -273,8 +276,14 @@ async function deleteAlphaExperiment(experimentId) {
     return data.deleted === true;
 }
 async function updateAlphaCode(experimentId, code) {
-    const res = await fetch(`${API_BASE}/api/alpha-lab/${experimentId}/code?code=${encodeURIComponent(code)}`, {
-        method: "PATCH"
+    const res = await fetch(`${API_BASE}/api/alpha-lab/${experimentId}/code`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            code
+        })
     });
     return await res.json();
 }

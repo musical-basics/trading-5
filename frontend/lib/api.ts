@@ -482,17 +482,20 @@ export async function saveSwarmResult(data: {
   output_tokens: number
   cost_usd: number
 }): Promise<AlphaGenerateResult> {
-  const params = new URLSearchParams({
-    name: data.name,
-    hypothesis: data.hypothesis,
-    rationale: data.rationale,
-    code: data.code,
-    model_tier: data.model_tier,
-    input_tokens: String(data.input_tokens),
-    output_tokens: String(data.output_tokens),
-    cost_usd: String(data.cost_usd),
+  const res = await fetch(`${API_BASE}/api/alpha-lab/generate-swarm-save`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: data.name,
+      hypothesis: data.hypothesis,
+      rationale: data.rationale,
+      code: data.code,
+      model_tier: data.model_tier,
+      input_tokens: data.input_tokens,
+      output_tokens: data.output_tokens,
+      cost_usd: data.cost_usd,
+    }),
   })
-  const res = await fetch(`${API_BASE}/api/alpha-lab/generate-swarm-save?${params}`, { method: "POST" })
   return await res.json()
 }
 
@@ -521,8 +524,12 @@ export async function deleteAlphaExperiment(experimentId: string): Promise<boole
 
 export async function updateAlphaCode(experimentId: string, code: string): Promise<{ ok?: boolean; error?: string }> {
   const res = await fetch(
-    `${API_BASE}/api/alpha-lab/${experimentId}/code?code=${encodeURIComponent(code)}`,
-    { method: "PATCH" }
+    `${API_BASE}/api/alpha-lab/${experimentId}/code`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code }),
+    }
   )
   return await res.json()
 }

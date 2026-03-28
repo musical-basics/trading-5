@@ -12,6 +12,7 @@ from datetime import date, datetime
 from pathlib import Path
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse, StreamingResponse
+from pydantic import BaseModel
 
 from src.alpha_lab.strategy_generator import generate_strategy, get_tier_info, combine_strategies
 from src.alpha_lab.alpha_lab_store import (
@@ -219,38 +220,42 @@ async def generate_swarm_strategy_stream(
     )
 
 
+class SwarmSaveRequest(BaseModel):
+    name: str
+    hypothesis: str
+    rationale: str
+    code: str
+    model_tier: str
+    input_tokens: int
+    output_tokens: int
+    cost_usd: float
+
 @router.post("/generate-swarm-save")
-async def save_swarm_result(
-    name: str,
-    hypothesis: str,
-    rationale: str,
-    code: str,
-    model_tier: str,
-    input_tokens: int,
-    output_tokens: int,
-    cost_usd: float,
-):
+async def save_swarm_result(request: SwarmSaveRequest):
     """Save a completed swarm result. Called by the frontend after result event."""
     experiment_id = save_experiment(
-        hypothesis=hypothesis or "(swarm-generated)",
-        strategy_code=code,
-        strategy_name=name,
-        model_tier=f"swarm/{model_tier}",
-        rationale=rationale,
-        input_tokens=input_tokens,
-        output_tokens=output_tokens,
-        cost_usd=cost_usd,
+        hypothesis=request.hypothesis or "(swarm-generated)",
+        strategy_code=request.code,
+        strategy_name=request.name,
+        model_tier=f"swarm/{request.model_tier}",
+        rationale=request.rationale,
+        input_tokens=request.input_tokens,
+        output_tokens=request.output_tokens,
+        cost_usd=request.cost_usd,
     )
-    return _safe_response({"experiment_id": experiment_id, "strategy_name": name})
+    return _safe_response({"experiment_id": experiment_id, "strategy_name": request.name})
 
+
+class UpdateCodeRequest(BaseModel):
+    code: str
 
 @router.patch("/{experiment_id}/code")
-async def update_code(experiment_id: str, code: str):
+async def update_code(experiment_id: str, request: UpdateCodeRequest):
     """Update the strategy code for an experiment (human edits)."""
     exp = get_experiment(experiment_id)
     if not exp:
         return _safe_response({"error": f"Experiment {experiment_id} not found"})
-    update_experiment_code(experiment_id, code)
+    update_experiment_code(experiment_id, request.code)
     return _safe_response({"ok": True, "experiment_id": experiment_id})
 
 
