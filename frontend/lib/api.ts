@@ -458,6 +458,18 @@ export async function generateAlphaStrategy(prompt: string, modelTier: string, s
   return await res.json()
 }
 
+export async function generateSwarmStrategy(
+  prompt: string,
+  modelTier: string,
+  strategyStyle: string = "academic",
+): Promise<AlphaGenerateResult> {
+  const res = await fetch(
+    `${API_BASE}/api/alpha-lab/generate-swarm?prompt=${encodeURIComponent(prompt)}&model_tier=${modelTier}&strategy_style=${strategyStyle}`,
+    { method: "POST" }
+  )
+  return await res.json()
+}
+
 export async function runAlphaBacktest(experimentId: string): Promise<{ metrics?: AlphaMetrics; equity_curve?: AlphaEquityPoint[]; status?: string; error?: string }> {
   const res = await fetch(`${API_BASE}/api/alpha-lab/${experimentId}/backtest`, { method: "POST" })
   return await res.json()

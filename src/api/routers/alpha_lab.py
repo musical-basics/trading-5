@@ -98,10 +98,7 @@ async def generate_new_strategy(
     model_tier: str = "sonnet",
     strategy_style: str = "academic",
 ):
-    """Generate a new strategy hypothesis using the LLM.
-
-    Returns the generated experiment details including code, rationale, and cost.
-    """
+    """Generate a new strategy hypothesis using a single LLM call (1-shot)."""
     try:
         hypothesis = generate_strategy(prompt=prompt, model_tier=model_tier, strategy_style=strategy_style)
 
@@ -131,6 +128,46 @@ async def generate_new_strategy(
         return _safe_response({"error": str(e)})
     except Exception as e:
         return _safe_response({"error": f"Generation failed: {type(e).__name__}: {e}"})
+
+
+@router.post("/generate-swarm")
+async def generate_swarm_strategy(
+    prompt: str = "",
+    model_tier: str = "sonnet",
+    strategy_style: str = "academic",
+):
+    """Generate a strategy using the 3-agent swarm pipeline:
+       Researcher → Risk Manager → Quantitative Developer.
+    """
+    try:
+        from src.alpha_lab.swarm_generator import generate_strategy_swarm
+        hypothesis = generate_strategy_swarm(prompt=prompt, model_tier=model_tier, strategy_style=strategy_style)
+
+        experiment_id = save_experiment(
+            hypothesis=prompt or "(swarm-generated)",
+            strategy_code=hypothesis.code,
+            strategy_name=hypothesis.name,
+            model_tier=f"swarm/{model_tier}",
+            rationale=hypothesis.rationale,
+            input_tokens=hypothesis.input_tokens,
+            output_tokens=hypothesis.output_tokens,
+            cost_usd=hypothesis.cost_usd,
+        )
+
+        return _safe_response({
+            "experiment_id": experiment_id,
+            "strategy_name": hypothesis.name,
+            "rationale": hypothesis.rationale,
+            "code": hypothesis.code,
+            "model_tier": f"swarm/{model_tier}",
+            "input_tokens": hypothesis.input_tokens,
+            "output_tokens": hypothesis.output_tokens,
+            "cost_usd": hypothesis.cost_usd,
+        })
+    except ValueError as e:
+        return _safe_response({"error": str(e)})
+    except Exception as e:
+        return _safe_response({"error": f"Swarm generation failed: {type(e).__name__}: {e}"})
 
 
 @router.patch("/{experiment_id}/code")

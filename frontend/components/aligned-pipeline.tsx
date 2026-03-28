@@ -61,7 +61,24 @@ export function AlignedDataPipeline() {
     }
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    setError(null)
+    fetchAlignedProfile()
+      .then((result) => {
+        if (cancelled) return
+        if (result.error) setError(result.error)
+        else setData(result)
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load")
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => { cancelled = true }
+  }, [])
 
   if (loading) {
     return (

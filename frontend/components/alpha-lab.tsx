@@ -5,6 +5,7 @@ import {
   fetchAlphaExperiments,
   fetchAlphaExperiment,
   generateAlphaStrategy,
+  generateSwarmStrategy,
   runAlphaBacktest,
   deleteAlphaExperiment,
   updateAlphaCode,
@@ -51,7 +52,37 @@ const TIER_CONFIG = {
 } as const
 
 type TierKey = keyof typeof TIER_CONFIG
-type Tab = "generate" | "results"
+type Tab = "generate" | "results" | "swarm_config"
+
+const SWARM_AGENT_ROLES = [
+  {
+    id: "researcher",
+    label: "Researcher",
+    icon: "🔬",
+    color: "text-blue-400",
+    borderColor: "border-blue-500/30",
+    bgColor: "bg-blue-500/5",
+    description: "Proposes strategy hypotheses and selects alpha signals.",
+  },
+  {
+    id: "risk_manager",
+    label: "Risk Manager",
+    icon: "🛡️",
+    color: "text-amber-400",
+    borderColor: "border-amber-500/30",
+    bgColor: "bg-amber-500/5",
+    description: "Enforces drawdown limits, regime filters, and concentration rules.",
+  },
+  {
+    id: "developer",
+    label: "Developer",
+    icon: "💻",
+    color: "text-emerald-400",
+    borderColor: "border-emerald-500/30",
+    bgColor: "bg-emerald-500/5",
+    description: "Implements the finalized strategy in Polars code.",
+  },
+] as const
 
 const STATUS_BADGES: Record<string, { bg: string; text: string; label: string }> = {
   generated: { bg: "bg-blue-500/20", text: "text-blue-400", label: "Generated" },
@@ -80,6 +111,18 @@ export default function AlphaLab() {
   const [selectedForCombine, setSelectedForCombine] = useState<Set<string>>(new Set())
   const [combining, setCombining] = useState(false)
   const [combineTier, setCombineTier] = useState<TierKey>("sonnet")
+  const [generatingSwarm, setGeneratingSwarm] = useState(false)
+  // Swarm config state
+  const [swarmAgentTiers, setSwarmAgentTiers] = useState<Record<string, TierKey>>({
+    researcher: "haiku",
+    risk_manager: "haiku",
+    developer: "sonnet",
+  })
+  const [swarmAgentNotes, setSwarmAgentNotes] = useState<Record<string, string>>({
+    researcher: "",
+    risk_manager: "",
+    developer: "",
+  })
 
   const loadExperiments = useCallback(async () => {
     const data = await fetchAlphaExperiments()
@@ -100,7 +143,6 @@ export default function AlphaLab() {
       } else {
         setPrompt("")
         await loadExperiments()
-        // Auto-select and switch to results tab
         if (result.experiment_id) {
           const exp = await fetchAlphaExperiment(result.experiment_id)
           if (exp) {
@@ -113,6 +155,31 @@ export default function AlphaLab() {
       setError(e instanceof Error ? e.message : "Generation failed")
     } finally {
       setGenerating(false)
+    }
+  }
+
+  const handleGenerateSwarm = async () => {
+    setGeneratingSwarm(true)
+    setError(null)
+    try {
+      const result = await generateSwarmStrategy(prompt, selectedTier, strategyStyle)
+      if (result.error) {
+        setError(result.error)
+      } else {
+        setPrompt("")
+        await loadExperiments()
+        if (result.experiment_id) {
+          const exp = await fetchAlphaExperiment(result.experiment_id)
+          if (exp) {
+            setSelectedExp(exp)
+            setActiveTab("results")
+          }
+        }
+      }
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Swarm generation failed")
+    } finally {
+      setGeneratingSwarm(false)
     }
   }
 
@@ -299,6 +366,16 @@ export default function AlphaLab() {
                 </span>
               )}
             </button>
+            <button
+              onClick={() => setActiveTab("swarm_config")}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                activeTab === "swarm_config"
+                  ? "bg-violet-600 text-white shadow-lg shadow-violet-500/20"
+                  : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              🤖 Swarm Config
+            </button>
           </div>
         </div>
 
@@ -396,19 +473,34 @@ export default function AlphaLab() {
               ))}
             </div>
 
-            <button
-              onClick={handleGenerate}
-              disabled={generating}
-              className="mt-5 w-full px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 disabled:from-zinc-700 disabled:to-zinc-700 disabled:text-zinc-500 text-white font-semibold rounded-lg transition-all text-sm"
-            >
-              {generating ? (
-                <span className="flex items-center justify-center gap-2">
-                  <span className="animate-spin">⏳</span> Generating strategy…
-                </span>
-              ) : (
-                "🚀 Generate Strategy"
-              )}
-            </button>
+            <div className="flex gap-3 mt-5">
+              <button
+                onClick={handleGenerate}
+                disabled={generating || generatingSwarm}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 disabled:from-zinc-700 disabled:to-zinc-700 disabled:text-zinc-500 text-white font-semibold rounded-lg transition-all text-sm"
+              >
+                {generating ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="animate-spin">⏳</span> Generating (1-shot)…
+                  </span>
+                ) : (
+                  "🚀 Generate Strategy"
+                )}
+              </button>
+              <button
+                onClick={handleGenerateSwarm}
+                disabled={generating || generatingSwarm}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-cyan-700 to-blue-700 hover:from-cyan-600 hover:to-blue-600 disabled:from-zinc-700 disabled:to-zinc-700 disabled:text-zinc-500 text-white font-semibold rounded-lg transition-all text-sm border border-cyan-500/30"
+              >
+                {generatingSwarm ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="animate-spin">🌀</span> Swarm thinking…
+                  </span>
+                ) : (
+                  "🤖 Generate via Swarm"
+                )}
+              </button>
+            </div>
 
             {error && (
               <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-sm text-red-400">
@@ -777,6 +869,89 @@ export default function AlphaLab() {
               </div>
             )}
           </div>
+        </div>
+      )}
+      {activeTab === "swarm_config" && (
+        <div className="flex-1 flex flex-col gap-6 max-w-4xl">
+          <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6">
+            <div className="flex items-center gap-3 mb-2">
+              <span className="text-2xl">🤖</span>
+              <div>
+                <h2 className="text-lg font-bold text-white">Swarm Configuration</h2>
+                <p className="text-sm text-zinc-400">Configure each agent in the hedge fund pod. Changes apply on the next Swarm generation.</p>
+              </div>
+            </div>
+
+            <div className="mt-6 space-y-5">
+              {SWARM_AGENT_ROLES.map((agent) => (
+                <div key={agent.id} className={`rounded-xl border ${agent.borderColor} ${agent.bgColor} p-5`}>
+                  <div className="flex items-start justify-between gap-4 mb-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">{agent.icon}</span>
+                      <div>
+                        <div className={`font-semibold text-base ${agent.color}`}>{agent.label}</div>
+                        <div className="text-xs text-zinc-500 mt-0.5">{agent.description}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-zinc-500">Model:</span>
+                      <div className="flex gap-1">
+                        {(Object.entries(TIER_CONFIG) as [TierKey, (typeof TIER_CONFIG)[TierKey]][]).map(([key, tier]) => (
+                          <button
+                            key={key}
+                            onClick={() => setSwarmAgentTiers(prev => ({ ...prev, [agent.id]: key }))}
+                            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all border ${
+                              swarmAgentTiers[agent.id] === key
+                                ? "border-violet-500 bg-violet-500/20 text-white"
+                                : "border-zinc-700 bg-zinc-800/30 text-zinc-400 hover:text-white"
+                            }`}
+                          >
+                            {tier.icon} {tier.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-zinc-500 block mb-1.5">Additional instructions (optional)</label>
+                    <textarea
+                      value={swarmAgentNotes[agent.id]}
+                      onChange={(e) => setSwarmAgentNotes(prev => ({ ...prev, [agent.id]: e.target.value }))}
+                      placeholder={`Extra guidance for the ${agent.label}…`}
+                      className="w-full bg-zinc-800/50 border border-zinc-700 rounded-lg p-3 text-sm text-white placeholder-zinc-600 focus:border-violet-500 focus:outline-none resize-none"
+                      rows={2}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-6 p-4 bg-zinc-800/40 rounded-lg border border-zinc-700">
+              <div className="text-xs text-zinc-400 mb-3 font-semibold uppercase tracking-wider">Pipeline Flow</div>
+              <div className="flex items-center gap-2 text-sm flex-wrap">
+                {SWARM_AGENT_ROLES.map((agent, i) => (
+                  <div key={agent.id} className="flex items-center gap-2">
+                    <span className={`flex items-center gap-1 px-3 py-1.5 rounded-lg border ${agent.borderColor} ${agent.bgColor} ${agent.color} text-xs font-medium`}>
+                      {agent.icon} {agent.label}
+                      <span className="text-zinc-500 ml-1">[{TIER_CONFIG[swarmAgentTiers[agent.id]]?.label}]</span>
+                    </span>
+                    {i < SWARM_AGENT_ROLES.length - 1 && <span className="text-zinc-600">→</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-4 text-xs text-zinc-600">
+              🧠 The Swarm runs 3 sequential LLM calls. Total cost ≈ 3× the cost of a single generation at the configured model tiers.
+            </div>
+          </div>
+
+          <button
+            onClick={() => setActiveTab("generate")}
+            className="w-full max-w-sm px-6 py-3 bg-gradient-to-r from-cyan-700 to-blue-700 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-lg transition-all text-sm border border-cyan-500/30"
+          >
+            🤖 Go Generate via Swarm →
+          </button>
         </div>
       )}
     </div>
