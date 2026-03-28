@@ -116,17 +116,20 @@ export default function AlphaLab() {
   const swarmAbortRef = useRef<AbortController | null>(null)
   type SwarmLogEntry = { agent: string; label: string; status: "running" | "done" | "error"; preview?: string; tokens?: number }
   const [swarmLogs, setSwarmLogs] = useState<SwarmLogEntry[]>([])
-  // Swarm config state
-  const [swarmAgentTiers, setSwarmAgentTiers] = useState<Record<string, TierKey>>({
-    researcher: "haiku",
-    risk_manager: "haiku",
-    developer: "sonnet",
+  // Swarm config state — initialized from localStorage
+  const [swarmAgentTiers, setSwarmAgentTiers] = useState<Record<string, TierKey>>(() => {
+    try {
+      const saved = localStorage.getItem("swarm_agent_tiers")
+      return saved ? JSON.parse(saved) : { researcher: "haiku", risk_manager: "haiku", developer: "sonnet" }
+    } catch { return { researcher: "haiku", risk_manager: "haiku", developer: "sonnet" } }
   })
-  const [swarmAgentNotes, setSwarmAgentNotes] = useState<Record<string, string>>({
-    researcher: "",
-    risk_manager: "",
-    developer: "",
+  const [swarmAgentNotes, setSwarmAgentNotes] = useState<Record<string, string>>(() => {
+    try {
+      const saved = localStorage.getItem("swarm_agent_notes")
+      return saved ? JSON.parse(saved) : { researcher: "", risk_manager: "", developer: "" }
+    } catch { return { researcher: "", risk_manager: "", developer: "" } }
   })
+  const [configSaved, setConfigSaved] = useState(false)
 
   const loadExperiments = useCallback(async () => {
     const data = await fetchAlphaExperiments()
@@ -136,6 +139,15 @@ export default function AlphaLab() {
   useEffect(() => {
     loadExperiments()
   }, [loadExperiments])
+
+  const handleSaveSwarmConfig = () => {
+    try {
+      localStorage.setItem("swarm_agent_tiers", JSON.stringify(swarmAgentTiers))
+      localStorage.setItem("swarm_agent_notes", JSON.stringify(swarmAgentNotes))
+      setConfigSaved(true)
+      setTimeout(() => setConfigSaved(false), 2000)
+    } catch { /* ignore */ }
+  }
 
   const handleGenerate = async () => {
     setGenerating(true)
@@ -1025,12 +1037,24 @@ export default function AlphaLab() {
             </div>
           </div>
 
-          <button
-            onClick={() => setActiveTab("generate")}
-            className="w-full max-w-sm px-6 py-3 bg-gradient-to-r from-cyan-700 to-blue-700 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-lg transition-all text-sm border border-cyan-500/30"
-          >
-            🤖 Go Generate via Swarm →
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleSaveSwarmConfig}
+              className={`px-5 py-3 rounded-lg text-sm font-semibold border transition-all ${
+                configSaved
+                  ? "bg-emerald-600/20 border-emerald-500/50 text-emerald-400"
+                  : "bg-zinc-800 border-zinc-700 text-zinc-300 hover:border-zinc-500 hover:text-white"
+              }`}
+            >
+              {configSaved ? "✅ Saved!" : "💾 Save Config"}
+            </button>
+            <button
+              onClick={() => setActiveTab("generate")}
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-cyan-700 to-blue-700 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-lg transition-all text-sm border border-cyan-500/30"
+            >
+              🤖 Go Generate via Swarm →
+            </button>
+          </div>
         </div>
       )}
     </div>
