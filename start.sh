@@ -20,6 +20,8 @@ echo ""
 
 # Frontend (prefixed)
 (
+  # Wipe next cache to avoid SST/Turbopack corruption bugs
+  rm -rf frontend/.next
   cd frontend && pnpm dev 2>&1 | \
     sed 's/^/[WEB] /'
 ) &

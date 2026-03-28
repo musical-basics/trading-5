@@ -451,8 +451,9 @@ import json as _json
 
 def generate_strategy_swarm_stream(
     prompt: str = "",
-    model_tier: str = "sonnet",
     strategy_style: str = "academic",
+    agent_tiers: dict[str, str] = None,
+    agent_notes: dict[str, str] = None,
 ):
     """Synchronous generator version of generate_strategy_swarm.
 
@@ -465,17 +466,16 @@ def generate_strategy_swarm_stream(
       {"type": "result",   "name": ..., "rationale": ..., "cost_usd": ...}
       {"type": "error",    "message": ...}
     """
+    if agent_tiers is None:
+        agent_tiers = {"researcher": "haiku", "risk_manager": "haiku", "developer": "sonnet"}
+    if agent_notes is None:
+        agent_notes = {}
 
     def _sse(payload: dict) -> str:
         return f"data: {_json.dumps(payload)}\n\n"
-
-    if model_tier not in MODEL_TIERS:
-        yield _sse({"type": "error", "message": f"Unknown model tier: {model_tier}"})
-        return
     if strategy_style not in STYLE_ADDONS:
         strategy_style = "academic"
 
-    tier = MODEL_TIERS[model_tier]
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
         yield _sse({"type": "error", "message": "ANTHROPIC_API_KEY not set"})
@@ -492,12 +492,19 @@ def generate_strategy_swarm_stream(
     try:
         # ── AGENT 1: Researcher ──
         yield _sse({"type": "start", "agent": "researcher", "label": "🔬 Researcher is formulating hypothesis…"})
+        r_tier_key = agent_tiers.get("researcher", "haiku")
+        r_tier = MODEL_TIERS.get(r_tier_key, MODEL_TIERS["haiku"])
+        r_note = agent_notes.get("researcher", "").strip()
+        
         researcher_sys = _RESEARCHER_SYS_PROMPT.format(
             dynamic_schema=_build_dynamic_schema(),
             ticker_summary=_build_ticker_summary()
         ) + _build_data_profile_block()
+        if r_note:
+            researcher_sys += f"\n\nAdditional Instructions:\n{r_note}"
+
         resp_researcher = client.messages.create(
-            model=tier["model_id"], max_tokens=2000,
+            model=r_tier["model_id"], max_tokens=2000,
             system=researcher_sys,
             messages=[{"role": "user", "content": user_msg}],
         )
@@ -511,11 +518,18 @@ def generate_strategy_swarm_stream(
 
         # ── AGENT 2: Risk Manager ──
         yield _sse({"type": "start", "agent": "risk_manager", "label": "🛡️ Risk Manager reviewing & applying constraints…"})
+        rm_tier_key = agent_tiers.get("risk_manager", "haiku")
+        rm_tier = MODEL_TIERS.get(rm_tier_key, MODEL_TIERS["haiku"])
+        rm_note = agent_notes.get("risk_manager", "").strip()
+
         risk_sys = _RISK_MANAGER_SYS_PROMPT.format(
             style_addon=STYLE_ADDONS.get(strategy_style, STYLE_ADDONS["academic"])
         )
+        if rm_note:
+            risk_sys += f"\n\nAdditional Instructions:\n{rm_note}"
+
         resp_risk = client.messages.create(
-            model=tier["model_id"], max_tokens=2000,
+            model=rm_tier["model_id"], max_tokens=2000,
             system=risk_sys,
             messages=[
                 {"role": "user", "content": f"Original prompt: {user_msg}"},
@@ -533,12 +547,19 @@ def generate_strategy_swarm_stream(
 
         # ── AGENT 3: Developer ──
         yield _sse({"type": "start", "agent": "developer", "label": "💻 Developer writing Polars implementation…"})
+        d_tier_key = agent_tiers.get("developer", "sonnet")
+        d_tier = MODEL_TIERS.get(d_tier_key, MODEL_TIERS["sonnet"])
+        d_note = agent_notes.get("developer", "").strip()
+
         dev_sys = _DEVELOPER_SYS_PROMPT.format(
             dynamic_schema=_build_dynamic_schema(),
             ticker_summary=_build_ticker_summary()
         )
+        if d_note:
+            dev_sys += f"\n\nAdditional Instructions:\n{d_note}"
+
         resp_dev = client.messages.create(
-            model=tier["model_id"], max_tokens=4000,
+            model=d_tier["model_id"], max_tokens=4000,
             system=dev_sys,
             messages=[{"role": "user", "content": f"Please implement the following finalized strategy logic into Polars code:\n\n{risk_text}"}],
         )
@@ -562,8 +583,12 @@ def generate_strategy_swarm_stream(
             resp_dev.usage.output_tokens
         )
         cost_usd = (
-            (input_tokens / 1_000_000) * tier["input_cost_per_mtok"]
-            + (output_tokens / 1_000_000) * tier["output_cost_per_mtok"]
+            (resp_researcher.usage.input_tokens / 1_000_000) * r_tier["input_cost_per_mtok"] +
+            (resp_researcher.usage.output_tokens / 1_000_000) * r_tier["output_cost_per_mtok"] +
+            (resp_risk.usage.input_tokens / 1_000_000) * rm_tier["input_cost_per_mtok"] +
+            (resp_risk.usage.output_tokens / 1_000_000) * rm_tier["output_cost_per_mtok"] +
+            (resp_dev.usage.input_tokens / 1_000_000) * d_tier["input_cost_per_mtok"] +
+            (resp_dev.usage.output_tokens / 1_000_000) * d_tier["output_cost_per_mtok"]
         )
 
         name, dev_rationale, code = _parse_response(dev_text)
@@ -577,11 +602,12 @@ def generate_strategy_swarm_stream(
             name=name,
             rationale=combined_rationale,
             code=code,
-            model_tier=model_tier,
+            model_tier=f"{r_tier_key}-{rm_tier_key}-{d_tier_key}",
             input_tokens=input_tokens,
             output_tokens=output_tokens,
             cost_usd=round(cost_usd, 6),
         )
+
 
         yield _sse({
             "type": "result",

@@ -458,8 +458,18 @@ export async function generateAlphaStrategy(prompt: string, modelTier: string, s
   return await res.json()
 }
 
-export function getSwarmStreamUrl(prompt: string, modelTier: string, strategyStyle: string): string {
-  return `${API_BASE}/api/alpha-lab/generate-swarm-stream?prompt=${encodeURIComponent(prompt)}&model_tier=${modelTier}&strategy_style=${strategyStyle}`
+export function getSwarmStreamUrl(
+  prompt: string,
+  strategyStyle: string,
+  agentTiers: Record<string, string>,
+  agentNotes: Record<string, string>
+): string {
+  const params = new URLSearchParams()
+  if (prompt) params.append("prompt", prompt)
+  params.append("strategy_style", strategyStyle)
+  params.append("agent_tiers", JSON.stringify(agentTiers))
+  params.append("agent_notes", JSON.stringify(agentNotes))
+  return `${API_BASE}/api/alpha-lab/generate-swarm-stream?${params.toString()}`
 }
 
 export async function saveSwarmResult(data: {

@@ -172,8 +172,9 @@ async def generate_swarm_strategy(
 @router.get("/generate-swarm-stream")
 async def generate_swarm_strategy_stream(
     prompt: str = "",
-    model_tier: str = "sonnet",
     strategy_style: str = "academic",
+    agent_tiers: str = "{}", # JSON string
+    agent_notes: str = "{}"  # JSON string
 ):
     """SSE stream for the 3-agent swarm. Yields JSON events per agent step.
 
@@ -181,13 +182,18 @@ async def generate_swarm_strategy_stream(
     Closing the connection (Kill button) aborts the generator naturally.
     """
     import asyncio
+    import json as _json
     import concurrent.futures
     from src.alpha_lab.swarm_generator import generate_strategy_swarm_stream
 
+    parsed_tiers = _json.loads(agent_tiers)
+    parsed_notes = _json.loads(agent_notes)
+
     gen = generate_strategy_swarm_stream(
         prompt=prompt,
-        model_tier=model_tier,
         strategy_style=strategy_style,
+        agent_tiers=parsed_tiers,
+        agent_notes=parsed_notes,
     )
 
     async def _async_stream():

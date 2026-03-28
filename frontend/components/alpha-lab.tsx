@@ -53,7 +53,7 @@ const TIER_CONFIG = {
 } as const
 
 type TierKey = keyof typeof TIER_CONFIG
-type Tab = "generate" | "results" | "swarm_config"
+type Tab = "generate" | "swarm" | "results"
 
 const SWARM_AGENT_ROLES = [
   {
@@ -181,7 +181,7 @@ export default function AlphaLab() {
     const ctrl = new AbortController()
     swarmAbortRef.current = ctrl
 
-    const url = getSwarmStreamUrl(prompt, selectedTier, strategyStyle)
+    const url = getSwarmStreamUrl(prompt, strategyStyle, swarmAgentTiers, swarmAgentNotes)
     try {
       const res = await fetch(url, { signal: ctrl.signal })
       if (!res.body) throw new Error("No stream body")
@@ -403,7 +403,7 @@ export default function AlphaLab() {
           <div className="flex bg-zinc-900/80 rounded-lg border border-zinc-800 p-1 ml-4">
             <button
               onClick={() => setActiveTab("generate")}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
                 activeTab === "generate"
                   ? "bg-violet-600 text-white shadow-lg shadow-violet-500/20"
                   : "text-zinc-400 hover:text-white"
@@ -412,10 +412,20 @@ export default function AlphaLab() {
               🚀 Generate
             </button>
             <button
+              onClick={() => setActiveTab("swarm")}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
+                activeTab === "swarm"
+                  ? "bg-cyan-600 text-white shadow-lg shadow-cyan-500/20"
+                  : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              🤖 Swarm
+            </button>
+            <button
               onClick={() => setActiveTab("results")}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
                 activeTab === "results"
-                  ? "bg-violet-600 text-white shadow-lg shadow-violet-500/20"
+                  ? "bg-emerald-600 text-white shadow-lg shadow-emerald-500/20"
                   : "text-zinc-400 hover:text-white"
               }`}
             >
@@ -427,16 +437,6 @@ export default function AlphaLab() {
                   {experiments.length}
                 </span>
               )}
-            </button>
-            <button
-              onClick={() => setActiveTab("swarm_config")}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                activeTab === "swarm_config"
-                  ? "bg-violet-600 text-white shadow-lg shadow-violet-500/20"
-                  : "text-zinc-400 hover:text-white"
-              }`}
-            >
-              🤖 Swarm Config
             </button>
           </div>
         </div>
@@ -538,60 +538,18 @@ export default function AlphaLab() {
             <div className="flex gap-3 mt-5">
               <button
                 onClick={handleGenerate}
-                disabled={generating || generatingSwarm}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 disabled:from-zinc-700 disabled:to-zinc-700 disabled:text-zinc-500 text-white font-semibold rounded-lg transition-all text-sm"
+                disabled={generating}
+                className="w-full px-6 py-4 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 disabled:from-zinc-700 disabled:to-zinc-700 disabled:text-zinc-500 text-white font-semibold rounded-lg transition-all text-base shadow-lg shadow-violet-900/30"
               >
                 {generating ? (
                   <span className="flex items-center justify-center gap-2">
-                    <span className="animate-spin">⏳</span> Generating (1-shot)…
+                    <span className="animate-spin text-lg">⏳</span> Generating (1-shot)…
                   </span>
                 ) : (
                   "🚀 Generate Strategy"
                 )}
               </button>
-              {!generatingSwarm ? (
-                <button
-                  onClick={handleGenerateSwarm}
-                  disabled={generating}
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-cyan-700 to-blue-700 hover:from-cyan-600 hover:to-blue-600 disabled:from-zinc-700 disabled:to-zinc-700 disabled:text-zinc-500 text-white font-semibold rounded-lg transition-all text-sm border border-cyan-500/30"
-                >
-                  🤖 Generate via Swarm
-                </button>
-              ) : (
-                <button
-                  onClick={handleKillSwarm}
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-red-700 to-rose-700 hover:from-red-600 hover:to-rose-600 text-white font-semibold rounded-lg transition-all text-sm border border-red-500/40 animate-pulse"
-                >
-                  ⛔ Kill Swarm
-                </button>
-              )}
             </div>
-
-            {/* Live Swarm Log */}
-            {swarmLogs.length > 0 && (
-              <div className="mt-4 bg-black/40 border border-zinc-700 rounded-lg p-4 space-y-2 font-mono text-xs">
-                <div className="text-zinc-500 uppercase tracking-wider text-[10px] mb-2">Swarm Activity Log</div>
-                {swarmLogs.map((log, i) => (
-                  <div key={i} className={`flex items-start gap-2 ${
-                    log.status === "running" ? "text-cyan-300" :
-                    log.status === "done" ? "text-emerald-400" : "text-red-400"
-                  }`}>
-                    <span className={log.status === "running" ? "animate-spin inline-block" : "inline-block"}>
-                      {log.status === "running" ? "🌀" : log.status === "done" ? "✅" : "❌"}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <div>{log.label}{log.tokens ? <span className="text-zinc-500 ml-2">[{log.tokens} tokens]</span> : null}</div>
-                      {log.preview && (
-                        <div className="text-zinc-500 mt-1 truncate max-w-full">{log.preview}</div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                {generatingSwarm && (
-                  <div className="text-zinc-600 animate-pulse">…waiting for next agent…</div>
-                )}
-              </div>
-            )}
 
             {error && (
               <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-sm text-red-400">
@@ -962,16 +920,83 @@ export default function AlphaLab() {
           </div>
         </div>
       )}
-      {activeTab === "swarm_config" && (
+      {activeTab === "swarm" && (
         <div className="flex-1 flex flex-col gap-6 max-w-4xl">
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6">
-            <div className="flex items-center gap-3 mb-2">
-              <span className="text-2xl">🤖</span>
+          <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 shadow-xl">
+            <div className="flex items-center gap-3 mb-8">
+              <span className="text-3xl">🤖</span>
               <div>
-                <h2 className="text-lg font-bold text-white">Swarm Configuration</h2>
-                <p className="text-sm text-zinc-400">Configure each agent in the hedge fund pod. Changes apply on the next Swarm generation.</p>
+                <h2 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">Agent Swarm Generation</h2>
+                <p className="text-sm text-zinc-400 mt-1">Configure your hedge fund pod. Changes persist automatically.</p>
               </div>
             </div>
+
+            {/* Prompt */}
+            <h3 className="text-sm font-semibold text-zinc-300 uppercase tracking-wider mb-4">
+              Strategy Hypothesis
+            </h3>
+            <textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Describe your strategy idea... or leave empty to let the Swarm brainstorm from scratch"
+              className="w-full bg-black/40 border border-zinc-700/60 rounded-lg p-4 text-sm text-cyan-50 placeholder-zinc-500 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 focus:outline-none resize-none transition-all shadow-inner"
+              rows={4}
+            />
+
+            {/* Strategy Style */}
+            <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mt-6 mb-3">
+              Strategy Style
+            </h3>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setStrategyStyle("academic")}
+                className={`flex-1 p-3 rounded-xl border transition-all ${
+                  strategyStyle === "academic"
+                    ? "border-cyan-500 bg-cyan-500/10 shadow-lg shadow-cyan-900/20"
+                    : "border-zinc-700/60 bg-zinc-800/30 hover:border-zinc-500 hover:bg-zinc-800/50"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl drop-shadow-md">🎓</span>
+                  <div className="text-left">
+                    <div className="text-sm font-semibold text-white">Academic</div>
+                    <div className="text-xs text-zinc-400 mt-0.5">Market-neutral, diversified</div>
+                  </div>
+                </div>
+              </button>
+              <button
+                onClick={() => setStrategyStyle("hedge_fund")}
+                className={`flex-1 p-3 rounded-xl border transition-all ${
+                  strategyStyle === "hedge_fund"
+                    ? "border-amber-500 bg-amber-500/10 shadow-lg shadow-amber-900/20"
+                    : "border-zinc-700/60 bg-zinc-800/30 hover:border-zinc-500 hover:bg-zinc-800/50"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl drop-shadow-md">🏦</span>
+                  <div className="text-left">
+                    <div className="text-sm font-semibold text-white">Hedge Fund</div>
+                    <div className="text-xs text-zinc-400 mt-0.5">Concentrated, alpha-seeking</div>
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            <div className="w-full h-px bg-zinc-800 my-8"></div>
+
+            <h3 className="text-sm font-semibold text-zinc-300 uppercase tracking-wider mb-5 flex items-center gap-2">
+              <span>Swarm Configuration</span>
+              <button
+                onClick={handleSaveSwarmConfig}
+                className={`px-3 py-1 rounded text-xs font-semibold border transition-all ${
+                  configSaved
+                    ? "bg-emerald-600/20 border-emerald-500/50 text-emerald-400"
+                    : "bg-zinc-800 border-zinc-700/50 text-zinc-400 hover:text-white"
+                }`}
+              >
+                {configSaved ? "✅ Saved" : "💾 Save"}
+              </button>
+            </h3>
 
             <div className="mt-6 space-y-5">
               {SWARM_AGENT_ROLES.map((agent) => (
@@ -1037,24 +1062,73 @@ export default function AlphaLab() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleSaveSwarmConfig}
-              className={`px-5 py-3 rounded-lg text-sm font-semibold border transition-all ${
-                configSaved
-                  ? "bg-emerald-600/20 border-emerald-500/50 text-emerald-400"
-                  : "bg-zinc-800 border-zinc-700 text-zinc-300 hover:border-zinc-500 hover:text-white"
-              }`}
-            >
-              {configSaved ? "✅ Saved!" : "💾 Save Config"}
-            </button>
-            <button
-              onClick={() => setActiveTab("generate")}
-              className="flex-1 px-6 py-3 bg-gradient-to-r from-cyan-700 to-blue-700 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-lg transition-all text-sm border border-cyan-500/30"
-            >
-              🤖 Go Generate via Swarm →
-            </button>
+          {/* Action Buttons */}
+          <div className="flex items-center justify-between gap-4 mt-2">
+            {!generatingSwarm ? (
+              <button
+                onClick={handleGenerateSwarm}
+                disabled={generating}
+                className="flex-1 px-6 py-4 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:from-zinc-700 disabled:to-zinc-700 disabled:text-zinc-500 text-white font-semibold rounded-xl transition-all text-base border-t border-cyan-400/30 shadow-lg shadow-cyan-900/40 flex items-center justify-center gap-2"
+              >
+                <span className="text-xl">🚀</span> Deploy Swarm
+              </button>
+            ) : (
+              <button
+                onClick={handleKillSwarm}
+                className="flex-1 px-6 py-4 bg-gradient-to-r from-red-700 to-rose-700 hover:from-red-600 hover:to-rose-600 text-white font-semibold rounded-xl transition-all text-base border-t border-red-400/30 shadow-lg shadow-red-900/40 flex items-center justify-center gap-2 animate-pulse"
+              >
+                <span className="text-xl">⛔</span> Abort Protocol
+              </button>
+            )}
           </div>
+
+          {error && (
+            <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-sm text-red-400">
+              {error}
+            </div>
+          )}
+
+          {/* Live Swarm Log */}
+          {swarmLogs.length > 0 && (
+            <div className="mt-2 bg-black/60 border border-zinc-700/50 rounded-xl p-5 space-y-3 font-mono text-sm shadow-2xl backdrop-blur-sm">
+              <div className="text-cyan-400 font-semibold tracking-wider text-xs mb-4 flex items-center gap-2">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
+                </span>
+                LIVE SWARM TELEMETRY
+              </div>
+              
+              <div className="space-y-4">
+                {swarmLogs.map((log, i) => (
+                  <div key={i} className={`flex items-start gap-4 ${
+                    log.status === "running" ? "text-cyan-300" :
+                    log.status === "done" ? "text-emerald-400" : "text-red-400"
+                  }`}>
+                    <span className={log.status === "running" ? "animate-spin inline-block text-lg" : "inline-block text-lg"}>
+                      {log.status === "running" ? "🌀" : log.status === "done" ? "✅" : "❌"}
+                    </span>
+                    <div className="flex-1 min-w-0 pt-0.5">
+                      <div className="font-semibold text-[13px]">{log.label}
+                        {log.tokens ? <span className="text-zinc-500 ml-2 font-normal text-[11px] bg-zinc-800 px-1.5 py-0.5 rounded">[{log.tokens} tkns]</span> : null}
+                      </div>
+                      {log.preview && (
+                        <div className="text-zinc-400 mt-2 truncate bg-zinc-900/80 p-2.5 rounded border border-zinc-800/80 text-[11px] leading-relaxed italic border-l-2 border-l-emerald-500/50 shadow-inner">
+                          "{log.preview}"
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              {generatingSwarm && (
+                <div className="text-zinc-500 animate-pulse ml-9 text-xs flex items-center gap-2 mt-4 font-semibold">
+                  <span className="inline-block animate-bounce">↓</span> Agent thinking...
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

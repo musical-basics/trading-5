@@ -32,7 +32,10 @@
       "data/**",
       "*.parquet",
       "frontend/tsconfig.tsbuildinfo",
-      "docs/**"
+      "docs/**",
+      "ui/**",
+      "frontend/components/ui/**",
+      "frontend/public/**"
     ]
   }
 }

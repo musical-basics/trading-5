@@ -27,6 +27,8 @@ __turbopack_context__.s([
     ()=>createTrader,
     "deleteAlphaExperiment",
     ()=>deleteAlphaExperiment,
+    "fetchAlignedProfile",
+    ()=>fetchAlignedProfile,
     "fetchAlphaExperiment",
     ()=>fetchAlphaExperiment,
     "fetchAlphaExperiments",
@@ -51,6 +53,8 @@ __turbopack_context__.s([
     ()=>getPipelineStatus,
     "getPortfolios",
     ()=>getPortfolios,
+    "getSwarmStreamUrl",
+    ()=>getSwarmStreamUrl,
     "getTraders",
     ()=>getTraders,
     "promoteAlphaExperiment",
@@ -67,6 +71,8 @@ __turbopack_context__.s([
     ()=>runTournament,
     "runTraderBacktest",
     ()=>runTraderBacktest,
+    "saveSwarmResult",
+    ()=>saveSwarmResult,
     "updateAlphaCode",
     ()=>updateAlphaCode,
     "updateConstraints",
@@ -223,6 +229,30 @@ async function generateAlphaStrategy(prompt, modelTier, strategyStyle = "academi
     });
     return await res.json();
 }
+function getSwarmStreamUrl(prompt, strategyStyle, agentTiers, agentNotes) {
+    const params = new URLSearchParams();
+    if (prompt) params.append("prompt", prompt);
+    params.append("strategy_style", strategyStyle);
+    params.append("agent_tiers", JSON.stringify(agentTiers));
+    params.append("agent_notes", JSON.stringify(agentNotes));
+    return `${API_BASE}/api/alpha-lab/generate-swarm-stream?${params.toString()}`;
+}
+async function saveSwarmResult(data) {
+    const params = new URLSearchParams({
+        name: data.name,
+        hypothesis: data.hypothesis,
+        rationale: data.rationale,
+        code: data.code,
+        model_tier: data.model_tier,
+        input_tokens: String(data.input_tokens),
+        output_tokens: String(data.output_tokens),
+        cost_usd: String(data.cost_usd)
+    });
+    const res = await fetch(`${API_BASE}/api/alpha-lab/generate-swarm-save?${params}`, {
+        method: "POST"
+    });
+    return await res.json();
+}
 async function runAlphaBacktest(experimentId) {
     const res = await fetch(`${API_BASE}/api/alpha-lab/${experimentId}/backtest`, {
         method: "POST"
@@ -293,6 +323,11 @@ async function getPipelineStatus() {
 }
 async function getPipelineLogs(since = 0) {
     const res = await fetch(`${API_BASE}/api/pipeline/logs?since=${since}`);
+    return await res.json();
+}
+async function fetchAlignedProfile() {
+    const res = await fetch(`${API_BASE}/api/alpha-lab/aligned-profile`);
+    if (!res.ok) throw new Error(`Failed to fetch profile: ${res.status}`);
     return await res.json();
 }
 if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
