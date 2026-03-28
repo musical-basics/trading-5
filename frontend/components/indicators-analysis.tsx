@@ -26,25 +26,23 @@ export function IndicatorsAnalysis() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    loadData(ticker, rfrSource)
-  }, [ticker, rfrSource])
-
-  const loadData = async (t: string, rfr: string) => {
+    let cancelled = false
     setLoading(true)
     setError(null)
-    try {
-      const result = await fetchIndicators(t, rfr)
-      if (!result) {
-        setError(`Could not load data for ${t}`)
-      } else {
-        setData(result)
-      }
-    } catch (e) {
-      setError("Failed to fetch indicators data")
-    } finally {
-      setLoading(false)
-    }
-  }
+    fetchIndicators(ticker, rfrSource)
+      .then((result) => {
+        if (cancelled) return
+        if (!result) setError(`Could not load data for ${ticker}`)
+        else setData(result)
+      })
+      .catch(() => {
+        if (!cancelled) setError("Failed to fetch indicators data")
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => { cancelled = true }
+  }, [ticker, rfrSource])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
