@@ -345,13 +345,6 @@ def generate_strategy_swarm(
       1. Quantitative Researcher (Idea Generation)
       2. Risk Manager (Constraint Enforcement)
       3. Quantitative Developer (Polars Implementation)
-
-    Args:
-        prompt: Optional user guidance for the strategy idea
-        model_tier: One of 'haiku', 'sonnet', 'opus'
-
-    Returns:
-        StrategyHypothesis with code, rationale, and cost info
     """
     if model_tier not in MODEL_TIERS:
         raise ValueError(f"Unknown model tier: {model_tier}. Use: {list(MODEL_TIERS.keys())}")
@@ -437,7 +430,6 @@ def generate_strategy_swarm(
     # Parse response
     name, dev_rationale, code = _parse_response(dev_text)
 
-    # Build a unified rationale explaining the swarm process
     combined_rationale = (
         f"**Researcher:** Proposed concept based on '{user_msg}'.\n"
         f"**Risk Manager:** Applied '{strategy_style}' heuristics.\n"
@@ -453,6 +445,157 @@ def generate_strategy_swarm(
         output_tokens=output_tokens,
         cost_usd=round(cost_usd, 6),
     )
+
+
+import json as _json
+
+def generate_strategy_swarm_stream(
+    prompt: str = "",
+    model_tier: str = "sonnet",
+    strategy_style: str = "academic",
+):
+    """Synchronous generator version of generate_strategy_swarm.
+
+    Yields SSE-formatted strings (data: <json>\\n\\n) after each agent step
+    so the caller can stream them to the frontend via StreamingResponse.
+
+    Event types emitted:
+      {"type": "start",    "agent": ..., "label": ...}
+      {"type": "done",     "agent": ..., "label": ..., "tokens": ..., "preview": ...}
+      {"type": "result",   "name": ..., "rationale": ..., "cost_usd": ...}
+      {"type": "error",    "message": ...}
+    """
+
+    def _sse(payload: dict) -> str:
+        return f"data: {_json.dumps(payload)}\n\n"
+
+    if model_tier not in MODEL_TIERS:
+        yield _sse({"type": "error", "message": f"Unknown model tier: {model_tier}"})
+        return
+    if strategy_style not in STYLE_ADDONS:
+        strategy_style = "academic"
+
+    tier = MODEL_TIERS[model_tier]
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        yield _sse({"type": "error", "message": "ANTHROPIC_API_KEY not set"})
+        return
+
+    client = anthropic.Anthropic(api_key=api_key)
+
+    user_msg = prompt if prompt else (
+        "Generate an innovative trading strategy that combines at least two different "
+        "signals (technical, fundamental, or statistical) in a novel way. "
+        "Focus on strategies with clear economic intuition."
+    )
+
+    try:
+        # ── AGENT 1: Researcher ──
+        yield _sse({"type": "start", "agent": "researcher", "label": "🔬 Researcher is formulating hypothesis…"})
+        researcher_sys = _RESEARCHER_SYS_PROMPT.format(
+            dynamic_schema=_build_dynamic_schema(),
+            ticker_summary=_build_ticker_summary()
+        ) + _build_data_profile_block()
+        resp_researcher = client.messages.create(
+            model=tier["model_id"], max_tokens=2000,
+            system=researcher_sys,
+            messages=[{"role": "user", "content": user_msg}],
+        )
+        researcher_text = resp_researcher.content[0].text
+        yield _sse({
+            "type": "done", "agent": "researcher",
+            "label": "✅ Researcher complete",
+            "tokens": resp_researcher.usage.output_tokens,
+            "preview": researcher_text[:300].strip(),
+        })
+
+        # ── AGENT 2: Risk Manager ──
+        yield _sse({"type": "start", "agent": "risk_manager", "label": "🛡️ Risk Manager reviewing & applying constraints…"})
+        risk_sys = _RISK_MANAGER_SYS_PROMPT.format(
+            style_addon=STYLE_ADDONS.get(strategy_style, STYLE_ADDONS["academic"])
+        )
+        resp_risk = client.messages.create(
+            model=tier["model_id"], max_tokens=2000,
+            system=risk_sys,
+            messages=[
+                {"role": "user", "content": f"Original prompt: {user_msg}"},
+                {"role": "assistant", "content": researcher_text},
+                {"role": "user", "content": "Please review this strategy and apply our risk management layers. Output the finalized logic."},
+            ],
+        )
+        risk_text = resp_risk.content[0].text
+        yield _sse({
+            "type": "done", "agent": "risk_manager",
+            "label": "✅ Risk Manager complete",
+            "tokens": resp_risk.usage.output_tokens,
+            "preview": risk_text[:300].strip(),
+        })
+
+        # ── AGENT 3: Developer ──
+        yield _sse({"type": "start", "agent": "developer", "label": "💻 Developer writing Polars implementation…"})
+        dev_sys = _DEVELOPER_SYS_PROMPT.format(
+            dynamic_schema=_build_dynamic_schema(),
+            ticker_summary=_build_ticker_summary()
+        )
+        resp_dev = client.messages.create(
+            model=tier["model_id"], max_tokens=4000,
+            system=dev_sys,
+            messages=[{"role": "user", "content": f"Please implement the following finalized strategy logic into Polars code:\n\n{risk_text}"}],
+        )
+        dev_text = resp_dev.content[0].text
+        yield _sse({
+            "type": "done", "agent": "developer",
+            "label": "✅ Developer complete",
+            "tokens": resp_dev.usage.output_tokens,
+            "preview": dev_text[:300].strip(),
+        })
+
+        # ── Parse & finalize ──
+        input_tokens = (
+            resp_researcher.usage.input_tokens +
+            resp_risk.usage.input_tokens +
+            resp_dev.usage.input_tokens
+        )
+        output_tokens = (
+            resp_researcher.usage.output_tokens +
+            resp_risk.usage.output_tokens +
+            resp_dev.usage.output_tokens
+        )
+        cost_usd = (
+            (input_tokens / 1_000_000) * tier["input_cost_per_mtok"]
+            + (output_tokens / 1_000_000) * tier["output_cost_per_mtok"]
+        )
+
+        name, dev_rationale, code = _parse_response(dev_text)
+        combined_rationale = (
+            f"**Researcher:** Proposed concept based on '{user_msg}'.\n"
+            f"**Risk Manager:** Applied '{strategy_style}' heuristics.\n"
+            f"**Final Rationale:** {dev_rationale}"
+        )
+
+        hypothesis = StrategyHypothesis(
+            name=name,
+            rationale=combined_rationale,
+            code=code,
+            model_tier=model_tier,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            cost_usd=round(cost_usd, 6),
+        )
+
+        yield _sse({
+            "type": "result",
+            "name": hypothesis.name,
+            "rationale": hypothesis.rationale,
+            "code": hypothesis.code,
+            "model_tier": hypothesis.model_tier,
+            "input_tokens": hypothesis.input_tokens,
+            "output_tokens": hypothesis.output_tokens,
+            "cost_usd": hypothesis.cost_usd,
+        })
+
+    except Exception as e:
+        yield _sse({"type": "error", "message": f"{type(e).__name__}: {e}"})
 
 
 def _parse_response(text: str) -> tuple[str, str, str]:

@@ -11,7 +11,7 @@ import math
 from datetime import date, datetime
 from pathlib import Path
 from fastapi import APIRouter
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
 from src.alpha_lab.strategy_generator import generate_strategy, get_tier_info, combine_strategies
 from src.alpha_lab.alpha_lab_store import (
@@ -168,6 +168,74 @@ async def generate_swarm_strategy(
         return _safe_response({"error": str(e)})
     except Exception as e:
         return _safe_response({"error": f"Swarm generation failed: {type(e).__name__}: {e}"})
+
+@router.get("/generate-swarm-stream")
+async def generate_swarm_strategy_stream(
+    prompt: str = "",
+    model_tier: str = "sonnet",
+    strategy_style: str = "academic",
+):
+    """SSE stream for the 3-agent swarm. Yields JSON events per agent step.
+
+    The frontend connects via EventSource or fetch+ReadableStream.
+    Closing the connection (Kill button) aborts the generator naturally.
+    """
+    import asyncio
+    import concurrent.futures
+    from src.alpha_lab.swarm_generator import generate_strategy_swarm_stream
+
+    gen = generate_strategy_swarm_stream(
+        prompt=prompt,
+        model_tier=model_tier,
+        strategy_style=strategy_style,
+    )
+
+    async def _async_stream():
+        loop = asyncio.get_event_loop()
+        executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        try:
+            while True:
+                try:
+                    chunk = await loop.run_in_executor(executor, next, gen)
+                    yield chunk
+                except StopIteration:
+                    break
+        finally:
+            executor.shutdown(wait=False)
+
+    return StreamingResponse(
+        _async_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+@router.post("/generate-swarm-save")
+async def save_swarm_result(
+    name: str,
+    hypothesis: str,
+    rationale: str,
+    code: str,
+    model_tier: str,
+    input_tokens: int,
+    output_tokens: int,
+    cost_usd: float,
+):
+    """Save a completed swarm result. Called by the frontend after result event."""
+    experiment_id = save_experiment(
+        hypothesis=hypothesis or "(swarm-generated)",
+        strategy_code=code,
+        strategy_name=name,
+        model_tier=f"swarm/{model_tier}",
+        rationale=rationale,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        cost_usd=cost_usd,
+    )
+    return _safe_response({"experiment_id": experiment_id, "strategy_name": name})
 
 
 @router.patch("/{experiment_id}/code")

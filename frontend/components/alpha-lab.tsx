@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import {
   fetchAlphaExperiments,
   fetchAlphaExperiment,
   generateAlphaStrategy,
-  generateSwarmStrategy,
+  getSwarmStreamUrl,
+  saveSwarmResult,
   runAlphaBacktest,
   deleteAlphaExperiment,
   updateAlphaCode,
@@ -112,6 +113,9 @@ export default function AlphaLab() {
   const [combining, setCombining] = useState(false)
   const [combineTier, setCombineTier] = useState<TierKey>("sonnet")
   const [generatingSwarm, setGeneratingSwarm] = useState(false)
+  const swarmAbortRef = useRef<AbortController | null>(null)
+  type SwarmLogEntry = { agent: string; label: string; status: "running" | "done" | "error"; preview?: string; tokens?: number }
+  const [swarmLogs, setSwarmLogs] = useState<SwarmLogEntry[]>([])
   // Swarm config state
   const [swarmAgentTiers, setSwarmAgentTiers] = useState<Record<string, TierKey>>({
     researcher: "haiku",
@@ -160,27 +164,73 @@ export default function AlphaLab() {
 
   const handleGenerateSwarm = async () => {
     setGeneratingSwarm(true)
+    setSwarmLogs([])
     setError(null)
+    const ctrl = new AbortController()
+    swarmAbortRef.current = ctrl
+
+    const url = getSwarmStreamUrl(prompt, selectedTier, strategyStyle)
     try {
-      const result = await generateSwarmStrategy(prompt, selectedTier, strategyStyle)
-      if (result.error) {
-        setError(result.error)
-      } else {
-        setPrompt("")
-        await loadExperiments()
-        if (result.experiment_id) {
-          const exp = await fetchAlphaExperiment(result.experiment_id)
-          if (exp) {
-            setSelectedExp(exp)
-            setActiveTab("results")
+      const res = await fetch(url, { signal: ctrl.signal })
+      if (!res.body) throw new Error("No stream body")
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ""
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split("\n")
+        buffer = lines.pop() ?? ""
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue
+          const evt = JSON.parse(line.slice(6))
+
+          if (evt.type === "start") {
+            setSwarmLogs(prev => [...prev, { agent: evt.agent, label: evt.label, status: "running" }])
+          } else if (evt.type === "done") {
+            setSwarmLogs(prev => prev.map(l =>
+              l.agent === evt.agent ? { ...l, label: evt.label, status: "done", tokens: evt.tokens, preview: evt.preview } : l
+            ))
+          } else if (evt.type === "result") {
+            // Save to backend
+            const saved = await saveSwarmResult({
+              name: evt.name,
+              hypothesis: prompt || "(swarm-generated)",
+              rationale: evt.rationale,
+              code: evt.code,
+              model_tier: evt.model_tier,
+              input_tokens: evt.input_tokens,
+              output_tokens: evt.output_tokens,
+              cost_usd: evt.cost_usd,
+            })
+            setPrompt("")
+            await loadExperiments()
+            if (saved.experiment_id) {
+              const exp = await fetchAlphaExperiment(saved.experiment_id)
+              if (exp) { setSelectedExp(exp); setActiveTab("results") }
+            }
+          } else if (evt.type === "error") {
+            setSwarmLogs(prev => [...prev, { agent: "system", label: `❌ ${evt.message}`, status: "error" }])
+            setError(evt.message)
           }
         }
       }
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Swarm generation failed")
+      if ((e as Error).name === "AbortError") {
+        setSwarmLogs(prev => [...prev, { agent: "system", label: "⛔ Swarm killed by user", status: "error" }])
+      } else {
+        setError(e instanceof Error ? e.message : "Swarm stream failed")
+      }
     } finally {
       setGeneratingSwarm(false)
+      swarmAbortRef.current = null
     }
+  }
+
+  const handleKillSwarm = () => {
+    swarmAbortRef.current?.abort()
   }
 
   const handleBacktest = async (experimentId: string) => {
@@ -487,20 +537,49 @@ export default function AlphaLab() {
                   "🚀 Generate Strategy"
                 )}
               </button>
-              <button
-                onClick={handleGenerateSwarm}
-                disabled={generating || generatingSwarm}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-cyan-700 to-blue-700 hover:from-cyan-600 hover:to-blue-600 disabled:from-zinc-700 disabled:to-zinc-700 disabled:text-zinc-500 text-white font-semibold rounded-lg transition-all text-sm border border-cyan-500/30"
-              >
-                {generatingSwarm ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <span className="animate-spin">🌀</span> Swarm thinking…
-                  </span>
-                ) : (
-                  "🤖 Generate via Swarm"
-                )}
-              </button>
+              {!generatingSwarm ? (
+                <button
+                  onClick={handleGenerateSwarm}
+                  disabled={generating}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-cyan-700 to-blue-700 hover:from-cyan-600 hover:to-blue-600 disabled:from-zinc-700 disabled:to-zinc-700 disabled:text-zinc-500 text-white font-semibold rounded-lg transition-all text-sm border border-cyan-500/30"
+                >
+                  🤖 Generate via Swarm
+                </button>
+              ) : (
+                <button
+                  onClick={handleKillSwarm}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-red-700 to-rose-700 hover:from-red-600 hover:to-rose-600 text-white font-semibold rounded-lg transition-all text-sm border border-red-500/40 animate-pulse"
+                >
+                  ⛔ Kill Swarm
+                </button>
+              )}
             </div>
+
+            {/* Live Swarm Log */}
+            {swarmLogs.length > 0 && (
+              <div className="mt-4 bg-black/40 border border-zinc-700 rounded-lg p-4 space-y-2 font-mono text-xs">
+                <div className="text-zinc-500 uppercase tracking-wider text-[10px] mb-2">Swarm Activity Log</div>
+                {swarmLogs.map((log, i) => (
+                  <div key={i} className={`flex items-start gap-2 ${
+                    log.status === "running" ? "text-cyan-300" :
+                    log.status === "done" ? "text-emerald-400" : "text-red-400"
+                  }`}>
+                    <span className={log.status === "running" ? "animate-spin inline-block" : "inline-block"}>
+                      {log.status === "running" ? "🌀" : log.status === "done" ? "✅" : "❌"}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div>{log.label}{log.tokens ? <span className="text-zinc-500 ml-2">[{log.tokens} tokens]</span> : null}</div>
+                      {log.preview && (
+                        <div className="text-zinc-500 mt-1 truncate max-w-full">{log.preview}</div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {generatingSwarm && (
+                  <div className="text-zinc-600 animate-pulse">…waiting for next agent…</div>
+                )}
+              </div>
+            )}
 
             {error && (
               <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-sm text-red-400">

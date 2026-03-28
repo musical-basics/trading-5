@@ -458,15 +458,31 @@ export async function generateAlphaStrategy(prompt: string, modelTier: string, s
   return await res.json()
 }
 
-export async function generateSwarmStrategy(
-  prompt: string,
-  modelTier: string,
-  strategyStyle: string = "academic",
-): Promise<AlphaGenerateResult> {
-  const res = await fetch(
-    `${API_BASE}/api/alpha-lab/generate-swarm?prompt=${encodeURIComponent(prompt)}&model_tier=${modelTier}&strategy_style=${strategyStyle}`,
-    { method: "POST" }
-  )
+export function getSwarmStreamUrl(prompt: string, modelTier: string, strategyStyle: string): string {
+  return `${API_BASE}/api/alpha-lab/generate-swarm-stream?prompt=${encodeURIComponent(prompt)}&model_tier=${modelTier}&strategy_style=${strategyStyle}`
+}
+
+export async function saveSwarmResult(data: {
+  name: string
+  hypothesis: string
+  rationale: string
+  code: string
+  model_tier: string
+  input_tokens: number
+  output_tokens: number
+  cost_usd: number
+}): Promise<AlphaGenerateResult> {
+  const params = new URLSearchParams({
+    name: data.name,
+    hypothesis: data.hypothesis,
+    rationale: data.rationale,
+    code: data.code,
+    model_tier: data.model_tier,
+    input_tokens: String(data.input_tokens),
+    output_tokens: String(data.output_tokens),
+    cost_usd: String(data.cost_usd),
+  })
+  const res = await fetch(`${API_BASE}/api/alpha-lab/generate-swarm-save?${params}`, { method: "POST" })
   return await res.json()
 }
 
