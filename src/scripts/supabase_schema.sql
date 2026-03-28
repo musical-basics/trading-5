@@ -60,9 +60,15 @@ CREATE TABLE IF NOT EXISTS alpha_lab_experiments (
     cost_output_tokens INTEGER DEFAULT 0,
     cost_usd FLOAT DEFAULT 0.0,
     promoted BOOLEAN DEFAULT FALSE,
+    audit_status VARCHAR(20),
+    audit_report_json TEXT,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
+
+-- ── Migration: Add audit columns if table already exists ─────
+ALTER TABLE alpha_lab_experiments ADD COLUMN IF NOT EXISTS audit_status VARCHAR(20);
+ALTER TABLE alpha_lab_experiments ADD COLUMN IF NOT EXISTS audit_report_json TEXT;
 
 -- ── Indexes ─────────────────────────────────────────────────
 CREATE INDEX IF NOT EXISTS idx_experiments_status ON alpha_lab_experiments(status);

@@ -1,0 +1,272 @@
+INFO:     Will watch for changes in these directories: ['/Users/lionelyu/Documents/New Version/trading-5']
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [33373] using WatchFiles
+INFO:     Started server process [33380]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+✓ DuckDB store initialized
+✓ Redis WebSocket listener started
+  ⚠ Redis listener not available: Error 61 connecting to localhost:6379. Connection refused.
+  ⚠ WebSocket push will be disabled (REST polling still works)
+INFO:     127.0.0.1:52074 - "GET /api/strategies/list HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52074 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52087 - "GET /api/strategies/list HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52091 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52087 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52093 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52093 - "GET /api/alpha-lab/generate-swarm-stream?strategy_style=hedge_fund&agent_tiers=%7B%22researcher%22%3A%22opus%22%2C%22risk_manager%22%3A%22sonnet%22%2C%22developer%22%3A%22haiku%22%7D&agent_notes=%7B%22researcher%22%3A%22%22%2C%22risk_manager%22%3A%22%22%2C%22developer%22%3A%22%22%7D HTTP/1.1" 200 OK
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.12/3.12.6/Frameworks/Python.framework/Versions/3.12/lib/python3.12/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+StopIteration
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/uvicorn/protocols/http/httptools_impl.py", line 416, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/fastapi/applications.py", line 1159, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/applications.py", line 90, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/middleware/cors.py", line 96, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/middleware/cors.py", line 154, in simple_response
+    await self.app(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 134, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 121, in app
+    await response(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/responses.py", line 273, in __call__
+    with collapse_excgroups():
+         ^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.6/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/_utils.py", line 87, in collapse_excgroups
+    raise exc
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/responses.py", line 277, in wrap
+    await func()
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/responses.py", line 250, in stream_response
+    async for chunk in self.body_iterator:
+  File "/Users/lionelyu/Documents/New Version/trading-5/src/api/routers/alpha_lab.py", line 206, in _async_stream
+    chunk = await loop.run_in_executor(executor, next, gen)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: StopIteration interacts badly with generators and cannot be raised into a Future
+INFO:     127.0.0.1:54416 - "OPTIONS /api/alpha-lab/generate-swarm-save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54416 - "POST /api/alpha-lab/generate-swarm-save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54416 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54416 - "GET /api/alpha-lab/73e2ebbf HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54986 - "POST /api/alpha-lab/73e2ebbf/backtest HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54986 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54986 - "GET /api/alpha-lab/73e2ebbf HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55242 - "GET /api/alpha-lab/8f284c0c HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55242 - "OPTIONS /api/alpha-lab/8f284c0c HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55242 - "DELETE /api/alpha-lab/8f284c0c HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55242 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55242 - "GET /api/alpha-lab/a5e0a354 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55242 - "OPTIONS /api/alpha-lab/a5e0a354 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55242 - "DELETE /api/alpha-lab/a5e0a354 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55242 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55242 - "GET /api/alpha-lab/4b9f435d HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55242 - "OPTIONS /api/alpha-lab/4b9f435d HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55242 - "DELETE /api/alpha-lab/4b9f435d HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55242 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55242 - "GET /api/alpha-lab/56bbd558 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55242 - "OPTIONS /api/alpha-lab/56bbd558 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55242 - "DELETE /api/alpha-lab/56bbd558 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55242 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55242 - "GET /api/alpha-lab/5537a25f HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55242 - "OPTIONS /api/alpha-lab/5537a25f HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55242 - "DELETE /api/alpha-lab/5537a25f HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55242 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55242 - "GET /api/alpha-lab/e6137050 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55242 - "OPTIONS /api/alpha-lab/e6137050 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55242 - "DELETE /api/alpha-lab/e6137050 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55242 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55919 - "GET /api/alpha-lab/generate-swarm-stream?prompt=make+me+money&strategy_style=hedge_fund&agent_tiers=%7B%22researcher%22%3A%22opus%22%2C%22risk_manager%22%3A%22sonnet%22%2C%22developer%22%3A%22haiku%22%7D&agent_notes=%7B%22researcher%22%3A%22%22%2C%22risk_manager%22%3A%22%22%2C%22developer%22%3A%22%22%7D HTTP/1.1" 200 OK
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.12/3.12.6/Frameworks/Python.framework/Versions/3.12/lib/python3.12/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+StopIteration
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/uvicorn/protocols/http/httptools_impl.py", line 416, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/fastapi/applications.py", line 1159, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/applications.py", line 90, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/middleware/cors.py", line 96, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/middleware/cors.py", line 154, in simple_response
+    await self.app(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 134, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 121, in app
+    await response(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/responses.py", line 273, in __call__
+    with collapse_excgroups():
+         ^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.6/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/_utils.py", line 87, in collapse_excgroups
+    raise exc
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/responses.py", line 277, in wrap
+    await func()
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/responses.py", line 250, in stream_response
+    async for chunk in self.body_iterator:
+  File "/Users/lionelyu/Documents/New Version/trading-5/src/api/routers/alpha_lab.py", line 206, in _async_stream
+    chunk = await loop.run_in_executor(executor, next, gen)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: StopIteration interacts badly with generators and cannot be raised into a Future
+INFO:     127.0.0.1:57943 - "OPTIONS /api/alpha-lab/generate-swarm-save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57943 - "POST /api/alpha-lab/generate-swarm-save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57943 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57943 - "GET /api/alpha-lab/c32ea324 HTTP/1.1" 200 OK
+  🔧 Self-healing attempt 1: Runtime error: TypeError: Expr.fill_null() got an unexpected keyword argument 'method'
+
+Traceback:
+T...
+  🔧 Self-healing attempt 2: Runtime error: ColumnNotFoundError: unable to find column "daily_return"; valid columns: ["entity_id...
+INFO:     127.0.0.1:58115 - "POST /api/alpha-lab/c32ea324/backtest HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58115 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58115 - "GET /api/alpha-lab/c32ea324 HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'src/alpha_lab/lab_backtester.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [33380]
+INFO:     Started server process [33649]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src/api/routers/alpha_lab.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [33649]
+INFO:     Started server process [33663]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+✓ DuckDB store initialized
+✓ Redis WebSocket listener started
+  ⚠ Redis listener not available: Error 61 connecting to localhost:6379. Connection refused.
+  ⚠ WebSocket push will be disabled (REST polling still works)
+INFO:     127.0.0.1:50208 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52531 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55782 - "GET /api/strategies/list HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55782 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55784 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55784 - "GET /api/alpha-lab/c32ea324 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56064 - "OPTIONS /api/alpha-lab/standalone-backtest HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56064 - "POST /api/alpha-lab/standalone-backtest HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'src/core/models.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [33663]
+INFO:     Started server process [39455]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src/alpha_lab/alpha_lab_store.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [39455]
+INFO:     Started server process [39487]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src/alpha_lab/lab_backtester.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [39487]
+INFO:     Started server process [39499]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src/alpha_lab/lab_backtester.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [39499]
+INFO:     Started server process [39516]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src/alpha_lab/forensic_auditor.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [39516]
+INFO:     Started server process [39530]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src/api/routers/alpha_lab.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [39530]
+INFO:     Started server process [39551]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+✓ DuckDB store initialized
+✓ Redis WebSocket listener started
+  ⚠ Redis listener not available: Error 61 connecting to localhost:6379. Connection refused.
+  ⚠ WebSocket push will be disabled (REST polling still works)
+INFO:     127.0.0.1:62133 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK

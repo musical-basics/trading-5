@@ -499,6 +499,20 @@ export async function saveSwarmResult(data: {
   return await res.json()
 }
 
+export async function runStandaloneBacktest(code: string): Promise<{
+  metrics?: AlphaMetrics;
+  equity_curve?: AlphaEquityPoint[];
+  final_code?: string;
+  error?: string;
+}> {
+  const res = await fetch(`${API_BASE}/api/alpha-lab/standalone-backtest`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code }),
+  })
+  return await res.json()
+}
+
 export async function runAlphaBacktest(experimentId: string): Promise<{ metrics?: AlphaMetrics; equity_curve?: AlphaEquityPoint[]; status?: string; error?: string }> {
   const res = await fetch(`${API_BASE}/api/alpha-lab/${experimentId}/backtest`, { method: "POST" })
   return await res.json()
@@ -638,3 +652,48 @@ export async function fetchAlignedProfile(): Promise<AlignedProfileResponse> {
   return await res.json()
 }
 
+// ── Level 5.5: Forensic AI Backtest Auditor ──────────────────
+
+export interface FlaggedTrade {
+  ticker: string
+  date: string
+  reason: string
+}
+
+export interface AuditReport {
+  status: "PASS" | "FAIL" | "WARNING"
+  error_category: "STRUCTURAL" | "BACKTEST" | "STRATEGY" | "NONE"
+  confidence: number
+  flagged_trades: FlaggedTrade[]
+  recommendation: string
+  error?: string
+}
+
+export interface TradeLedgerEntry {
+  date: string
+  entity_id: number
+  ticker?: string
+  action: "BUY" | "SELL"
+  weight_delta: number
+  norm_weight: number
+  adj_close?: number
+  volume?: number
+}
+
+export async function runForensicAudit(experimentId: string): Promise<AuditReport> {
+  const res = await fetch(
+    `${API_BASE}/api/alpha-lab/${experimentId}/audit`,
+    { method: "POST" }
+  )
+  return await res.json()
+}
+
+export async function fetchExperimentTrades(experimentId: string): Promise<{
+  trades: TradeLedgerEntry[]
+  message?: string
+  error?: string
+}> {
+  const res = await fetch(`${API_BASE}/api/alpha-lab/${experimentId}/trades`)
+  if (!res.ok) return { trades: [], error: `HTTP ${res.status}` }
+  return await res.json()
+}

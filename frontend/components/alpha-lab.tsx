@@ -12,9 +12,11 @@ import {
   updateAlphaCode,
   promoteAlphaExperiment,
   combineAlphaStrategies,
+  runStandaloneBacktest,
   type AlphaExperiment,
   type AlphaEquityPoint,
 } from "@/lib/api"
+import Editor from "@monaco-editor/react"
 import {
   LineChart,
   Line,
@@ -53,7 +55,21 @@ const TIER_CONFIG = {
 } as const
 
 type TierKey = keyof typeof TIER_CONFIG
-type Tab = "generate" | "swarm" | "results"
+type Tab = "generate" | "swarm" | "results" | "backtest"
+
+const DEFAULT_STANDALONE_CODE = `import polars as pl
+import numpy as np
+
+def execute(data: pl.DataFrame) -> pl.DataFrame:
+    """
+    Standalone Backtest Execution Sandbox.
+    Input: DataFrame with 'date', 'entity_id', 'adj_close' and features.
+    Output: DataFrame with 'raw_weight_X' column defining portfolio weights.
+    """
+    print("Running standalone logic...")
+    return data.with_columns(
+        pl.lit(1.0).alias("raw_weight_equal")
+    )`
 
 const SWARM_AGENT_ROLES = [
   {
@@ -130,6 +146,15 @@ export default function AlphaLab() {
     } catch { return { researcher: "", risk_manager: "", developer: "" } }
   })
   const [configSaved, setConfigSaved] = useState(false)
+
+  // Standalone Backtester state
+  const [standaloneCode, setStandaloneCode] = useState(DEFAULT_STANDALONE_CODE)
+  const [runningStandalone, setRunningStandalone] = useState(false)
+  const [standaloneResult, setStandaloneResult] = useState<{
+    metrics?: any;
+    equity_curve?: any[];
+    error?: string;
+  } | null>(null)
 
   const loadExperiments = useCallback(async () => {
     const data = await fetchAlphaExperiments()
@@ -382,6 +407,20 @@ export default function AlphaLab() {
     }
   }
 
+  const handleRunStandalone = async () => {
+    setRunningStandalone(true)
+    setStandaloneResult(null)
+    setError(null)
+    try {
+      const res = await runStandaloneBacktest(standaloneCode)
+      setStandaloneResult(res)
+    } catch (e: unknown) {
+      setStandaloneResult({ error: e instanceof Error ? e.message : "Run failed" })
+    } finally {
+      setRunningStandalone(false)
+    }
+  }
+
   const totalCost = experiments.reduce((sum, e) => sum + (e.cost_usd || 0), 0)
 
   return (
@@ -420,6 +459,16 @@ export default function AlphaLab() {
               }`}
             >
               🤖 Swarm
+            </button>
+            <button
+              onClick={() => setActiveTab("backtest")}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
+                activeTab === "backtest"
+                  ? "bg-amber-600 text-white shadow-lg shadow-amber-500/20"
+                  : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              💻 Backtest
             </button>
             <button
               onClick={() => setActiveTab("results")}
@@ -1129,6 +1178,140 @@ export default function AlphaLab() {
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ─── STANDALONE BACKTEST TAB ────────────────────────── */}
+      {activeTab === "backtest" && (
+        <div className="flex gap-5 flex-1 min-h-0">
+          <div className="flex-1 flex flex-col bg-zinc-900/50 border border-zinc-800 rounded-xl overflow-hidden shadow-xl">
+            {/* Toolbar */}
+            <div className="flex items-center justify-between p-3 bg-zinc-900 border-b border-zinc-800">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">💻</span>
+                <div className="text-sm font-semibold text-white">Standalone Editor</div>
+              </div>
+              <button
+                onClick={handleRunStandalone}
+                disabled={runningStandalone}
+                className="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 disabled:bg-zinc-700 text-white text-xs font-semibold rounded-md transition-all flex items-center gap-2"
+              >
+                {runningStandalone ? (
+                  <><span className="animate-spin text-sm">⏳</span> Running...</>
+                ) : (
+                  <><span className="text-sm">▶</span> Run Backtest</>
+                )}
+              </button>
+            </div>
+            
+            {/* Editor */}
+            <div className="flex-1 min-h-[400px]">
+              <Editor
+                height="100%"
+                defaultLanguage="python"
+                theme="vs-dark"
+                value={standaloneCode}
+                onChange={(val) => setStandaloneCode(val || "")}
+                options={{
+                  minimap: { enabled: false },
+                  fontSize: 13,
+                  fontFamily: "var(--font-mono)",
+                  lineHeight: 22,
+                  padding: { top: 16 },
+                  scrollBeyondLastLine: false,
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="w-[480px] flex-shrink-0 flex flex-col gap-4 overflow-y-auto pr-1">
+            {!standaloneResult ? (
+              <div className="flex-1 flex items-center justify-center text-zinc-500 text-sm border border-dashed border-zinc-800 rounded-xl">
+                Run backtest to view results
+              </div>
+            ) : standaloneResult.error ? (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-5 text-sm text-red-400 font-mono shadow-xl relative mt-0">
+                <div className="font-semibold mb-2 flex items-center gap-2">
+                  <span>❌</span> Execution Error
+                </div>
+                <div className="whitespace-pre-wrap">{standaloneResult.error}</div>
+              </div>
+            ) : (
+              // Results UI
+              <>
+                <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-5 shadow-xl">
+                  <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-4">
+                    Performance Metrics
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <div className="text-xs text-zinc-500 mb-1">Sharpe Ratio</div>
+                      <div className={`text-xl font-bold ${(standaloneResult.metrics?.sharpe || 0) > 0 ? "text-emerald-400" : "text-red-400"}`}>
+                        {standaloneResult.metrics?.sharpe?.toFixed(3) || "0.000"}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-zinc-500 mb-1">Total Return</div>
+                      <div className={`text-xl font-bold ${(standaloneResult.metrics?.total_return || 0) > 0 ? "text-emerald-400" : "text-red-400"}`}>
+                        {((standaloneResult.metrics?.total_return || 0) * 100).toFixed(2)}%
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-zinc-500 mb-1">Max Drawdown</div>
+                      <div className="text-xl font-bold text-orange-400">
+                        {((standaloneResult.metrics?.max_drawdown || 0) * 100).toFixed(2)}%
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-zinc-500 mb-1">Trading Days</div>
+                      <div className="text-xl font-bold text-white">
+                        {standaloneResult.metrics?.trading_days?.toLocaleString() || "0"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {standaloneResult.equity_curve && standaloneResult.equity_curve.length > 0 && (
+                  <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-5 flex-1 shadow-xl">
+                    <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-4">
+                      Equity Curve
+                    </h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <LineChart data={standaloneResult.equity_curve.map((p: any) => ({
+                        date: p.date?.split("T")[0],
+                        equity: Number(p.equity?.toFixed(2)),
+                      }))}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                        <XAxis
+                          dataKey="date"
+                          tick={{ fontSize: 10, fill: "#71717a" }}
+                          tickFormatter={(v: string) => v?.slice(5)}
+                          interval="preserveStartEnd"
+                        />
+                        <YAxis
+                          tick={{ fontSize: 10, fill: "#71717a" }}
+                          domain={['auto', 'auto']}
+                          tickFormatter={(v: number) => `$${(v / 1000).toFixed(1)}k`}
+                        />
+                        <Tooltip
+                          contentStyle={{ background: "#18181b", border: "1px solid #3f3f46", borderRadius: "8px", fontSize: 12 }}
+                          labelStyle={{ color: "#a1a1aa" }}
+                          formatter={(v: number) => [`$${v.toLocaleString()}`, "Equity"]}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="equity"
+                          stroke="#a78bfa"
+                          strokeWidth={2}
+                          dot={false}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
       )}
     </div>

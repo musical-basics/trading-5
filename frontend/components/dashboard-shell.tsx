@@ -5,6 +5,7 @@ import {
   FlaskConical, 
   Search, 
   ShieldCheck, 
+  ShieldAlert,
   FileText, 
   Terminal,
   Command,
@@ -33,8 +34,9 @@ import { DataPipeline } from "./data-pipeline"
 import { IndicatorsAnalysis } from "./indicators-analysis"
 import AlphaLab from "./alpha-lab"
 import { AlignedDataPipeline } from "./aligned-pipeline"
+import { ForensicAuditor } from "./forensic-auditor"
 
-type View = "data-pipeline" | "aligned-pipeline" | "indicators-analysis" | "alpha-lab" | "strategy-studio" | "xray-inspector" | "risk-war-room" | "execution-ledger" | "trader-manager"
+type View = "data-pipeline" | "aligned-pipeline" | "indicators-analysis" | "alpha-lab" | "forensic-auditor" | "strategy-studio" | "xray-inspector" | "risk-war-room" | "execution-ledger" | "trader-manager"
 
 const navItems = [
   {
@@ -64,6 +66,13 @@ const navItems = [
     icon: Sparkles,
     description: "Strategy Discovery",
     badge: "AI"
+  },
+  {
+    id: "forensic-auditor" as const,
+    label: "Forensic Auditor",
+    icon: ShieldAlert,
+    description: "AI Strategy Verification",
+    badge: "Audit"
   },
   { 
     id: "strategy-studio" as const, 
@@ -267,6 +276,7 @@ export function DashboardShell() {
           {currentView === "aligned-pipeline" && <AlignedDataPipeline />}
           {currentView === "indicators-analysis" && <IndicatorsAnalysis />}
           {currentView === "alpha-lab" && <AlphaLab />}
+          {currentView === "forensic-auditor" && <ForensicAuditor />}
           {currentView === "strategy-studio" && <StrategyStudio />}
           {currentView === "xray-inspector" && <XRayInspector />}
           {currentView === "risk-war-room" && <RiskWarRoom />}

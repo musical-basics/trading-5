@@ -23,7 +23,7 @@ from src.alpha_lab.alpha_lab_store import (
     get_equity_curve,
     update_experiment_code,
 )
-from src.alpha_lab.lab_backtester import run_lab_backtest
+from src.alpha_lab.lab_backtester import run_lab_backtest, run_raw_backtest
 
 router = APIRouter(prefix="/api/alpha-lab", tags=["alpha-lab"])
 
@@ -274,6 +274,26 @@ async def backtest_experiment(experiment_id: str):
     return _safe_response(result)
 
 
+class StandaloneBacktestRequest(BaseModel):
+    code: str
+
+
+@router.post("/standalone-backtest")
+async def standalone_backtest(request: StandaloneBacktestRequest):
+    """Run a backtest on raw strategy code without saving it to an experiment."""
+    result = run_raw_backtest(
+        strategy_code=request.code,
+        starting_capital=10000.0,
+        enable_self_healing=False,
+    )
+    
+    # Remove _portfolio_df from response as it's not JSON serializable and not needed by client
+    if "_portfolio_df" in result:
+        del result["_portfolio_df"]
+        
+    return _safe_response(result)
+
+
 @router.get("/experiments")
 async def list_all_experiments():
     """List all experiments, newest first."""
@@ -470,3 +490,36 @@ async def combine_experiments(
         return _safe_response({"error": str(e)})
     except Exception as e:
         return _safe_response({"error": f"Combine failed: {type(e).__name__}: {e}"})
+
+
+# ═══════════════════════════════════════════════════════════════
+# LEVEL 5.5: Forensic AI Backtest Auditor
+# ═══════════════════════════════════════════════════════════════
+
+@router.post("/{experiment_id}/audit")
+async def run_audit(experiment_id: str):
+    """Trigger the Forensic AI Auditor for a completed backtest experiment.
+
+    Samples top trades, compiles T-5 to T+5 evidence windows, calls Claude
+    to classify errors against 3 taxonomies, persists and returns the verdict.
+    """
+    from src.alpha_lab.forensic_auditor import run_forensic_audit
+    try:
+        verdict = run_forensic_audit(experiment_id)
+        return _safe_response(verdict)
+    except Exception as e:
+        return _safe_response({"error": f"Audit failed: {type(e).__name__}: {e}"})
+
+
+@router.get("/{experiment_id}/trades")
+async def get_experiment_trades(experiment_id: str):
+    """Return the raw trade ledger for a completed experiment.
+
+    Used by the Trade Inspector table in the Forensic Auditor UI.
+    Returns a list of trade records sorted by date descending.
+    """
+    from src.alpha_lab.alpha_lab_store import get_trade_ledger
+    ledger = get_trade_ledger(experiment_id)
+    if ledger is None:
+        return _safe_response({"trades": [], "message": "No trade ledger found — run backtest first"})
+    return _safe_response({"trades": ledger.sort("date", descending=True).to_dicts()})

@@ -15,7 +15,7 @@ import numpy as np
 from src.core.duckdb_store import get_parquet_path
 from src.alpha_lab.sandbox_executor import execute_strategy
 from src.alpha_lab.alpha_lab_store import (
-    save_equity_curve, update_experiment_status, update_experiment_code,
+    save_equity_curve, save_trade_ledger, update_experiment_status, update_experiment_code,
 )
 
 
@@ -127,28 +127,22 @@ def _compute_metrics(equity: pl.DataFrame) -> dict:
     }
 
 
-def run_lab_backtest(
-    experiment_id: str,
+def run_raw_backtest(
     strategy_code: str,
     starting_capital: float = 10000.0,
+    enable_self_healing: bool = False,
 ) -> dict:
-    """Run a full backtest for an Alpha Lab experiment.
+    """Run backtest on raw strategy code without saving to database.
 
-    This is the main entry point: loads data, executes strategy in sandbox,
-    computes equity curve, saves results to isolated storage.
-
-    Returns dict with 'metrics' and 'equity_curve' keys, or 'error'.
+    Returns dict with 'metrics', 'equity_curve', 'final_code', and '_portfolio_df',
+    or 'error'.
     """
-    update_experiment_status(experiment_id, "backtesting")
-
     try:
-        # 1. Load aligned data
         data = _load_aligned_data()
 
-        # 2. Execute strategy in sandbox (with self-healing retry)
         result_df = None
         error = None
-        max_retries = 2
+        max_retries = 2 if enable_self_healing else 0
         current_code = strategy_code
 
         for attempt in range(max_retries + 1):
@@ -157,7 +151,6 @@ def run_lab_backtest(
                 break
 
             if attempt < max_retries and "Runtime error" in error:
-                # Level 5 Self-Healing: feed the error back to the LLM
                 try:
                     from src.alpha_lab.strategy_generator import generate_strategy
                     print(f"  🔧 Self-healing attempt {attempt + 1}: {error[:100]}...")
@@ -169,37 +162,21 @@ def run_lab_backtest(
                     )
                     fixed = generate_strategy(prompt=fix_prompt, model_tier="haiku")
                     current_code = fixed.code
-                    update_experiment_code(experiment_id, current_code)
                 except Exception:
-                    break  # LLM not available, skip self-healing
+                    break
             else:
                 break
 
         if error:
-            update_experiment_status(experiment_id, "error", {"error": error})
-            return {"error": error}
+            return {"error": error, "final_code": current_code}
 
-        # 3. Find the weight column
         weight_col = [c for c in result_df.columns if c.startswith("raw_weight_")][0]
 
-        # 4. Normalize weights per date → dollar-neutral long-short portfolio
-        #    Longs sum to +1.0, shorts sum to -1.0 (no leverage)
         result_df = (
             result_df
             .with_columns([
-                # Sum of positive weights per date
-                pl.col(weight_col)
-                .filter(pl.col(weight_col) > 0)
-                .sum()
-                .over("date")
-                .alias("_long_sum"),
-                # Sum of abs(negative weights) per date
-                pl.col(weight_col)
-                .filter(pl.col(weight_col) < 0)
-                .abs()
-                .sum()
-                .over("date")
-                .alias("_short_sum"),
+                pl.col(weight_col).filter(pl.col(weight_col) > 0).sum().over("date").alias("_long_sum"),
+                pl.col(weight_col).filter(pl.col(weight_col) < 0).abs().sum().over("date").alias("_short_sum"),
             ])
             .with_columns(
                 pl.when(pl.col(weight_col) > 0)
@@ -212,45 +189,105 @@ def run_lab_backtest(
             .drop("_long_sum", "_short_sum")
         )
 
-        # 5. Compute portfolio returns
-        # For each date: portfolio return = sum(norm_weight_i * return_i)
         portfolio = (
             result_df
             .sort(["entity_id", "date"])
             .with_columns(
-                (pl.col("adj_close") / pl.col("adj_close").shift(1).over("entity_id") - 1)
-                .alias("_daily_ret")
+                (pl.col("adj_close") / pl.col("adj_close").shift(1).over("entity_id") - 1).alias("_daily_ret")
             )
             .with_columns(
-                (pl.col("_norm_weight").shift(1).over("entity_id") * pl.col("_daily_ret"))
-                .alias("_weighted_ret")
+                (pl.col("_norm_weight").shift(1).over("entity_id") * pl.col("_daily_ret")).alias("_weighted_ret")
             )
             .group_by("date")
             .agg(pl.col("_weighted_ret").sum().alias("daily_return"))
             .sort("date")
             .with_columns(
-                (starting_capital * (1 + pl.col("daily_return").fill_null(0)).cum_prod())
-                .alias("equity")
+                (starting_capital * (1 + pl.col("daily_return").fill_null(0)).cum_prod()).alias("equity")
             )
         )
 
-        # 5. Compute metrics
+        # ── Trade Ledger Extraction ─────────────────────────────────
+        # Compute weight_delta per entity (shifted by 1 day) BEFORE the
+        # group_by aggregation that collapses entities into a portfolio return.
+        result_with_delta = (
+            result_df
+            .sort(["entity_id", "date"])
+            .with_columns(
+                (
+                    pl.col("_norm_weight")
+                    - pl.col("_norm_weight").shift(1).over("entity_id")
+                ).alias("weight_delta")
+            )
+            .filter(pl.col("weight_delta").abs() > 0.001)
+        )
+
+        # Build trade ledger columns
+        ledger_cols = ["date", "entity_id", "weight_delta", "_norm_weight"]
+        if "ticker" in result_with_delta.columns:
+            ledger_cols.append("ticker")
+        if "adj_close" in result_with_delta.columns:
+            ledger_cols.append("adj_close")
+        if "volume" in result_with_delta.columns:
+            ledger_cols.append("volume")
+
+        trade_ledger = (
+            result_with_delta
+            .select([c for c in ledger_cols if c in result_with_delta.columns])
+            .rename({"_norm_weight": "norm_weight"})
+            .with_columns(
+                pl.when(pl.col("weight_delta") > 0)
+                .then(pl.lit("BUY"))
+                .otherwise(pl.lit("SELL"))
+                .alias("action")
+            )
+        )
+
         metrics = _compute_metrics(portfolio)
-
-        # 6. Determine pass/fail (basic threshold: Sharpe > 0)
-        status = "passed" if metrics["sharpe"] > 0 else "failed"
-
-        # 7. Save results
-        save_equity_curve(experiment_id, portfolio)
-        update_experiment_status(experiment_id, status, metrics)
 
         return {
             "metrics": metrics,
             "equity_curve": portfolio.select(["date", "daily_return", "equity"]).to_dicts(),
-            "status": status,
+            "_portfolio_df": portfolio,
+            "_trade_ledger": trade_ledger,
+            "final_code": current_code,
         }
 
     except Exception as e:
-        err_msg = f"{type(e).__name__}: {e}"
-        update_experiment_status(experiment_id, "error", {"error": err_msg})
-        return {"error": err_msg}
+        return {"error": f"{type(e).__name__}: {e}", "final_code": strategy_code}
+
+
+def run_lab_backtest(
+    experiment_id: str,
+    strategy_code: str,
+    starting_capital: float = 10000.0,
+) -> dict:
+    """Run a full backtest for an Alpha Lab experiment with self-healing and persistence."""
+    update_experiment_status(experiment_id, "backtesting")
+
+    res = run_raw_backtest(
+        strategy_code=strategy_code,
+        starting_capital=starting_capital,
+        enable_self_healing=True,
+    )
+
+    if res.get("final_code") != strategy_code:
+        update_experiment_code(experiment_id, res["final_code"])
+
+    if "error" in res:
+        update_experiment_status(experiment_id, "error", {"error": res["error"]})
+        return {"error": res["error"]}
+
+    status = "passed" if res["metrics"]["sharpe"] > 0 else "failed"
+    save_equity_curve(experiment_id, res["_portfolio_df"])
+    if "_trade_ledger" in res and res["_trade_ledger"] is not None:
+        try:
+            save_trade_ledger(experiment_id, res["_trade_ledger"])
+        except Exception as e:
+            print(f"  ⚠️  Trade ledger save failed (non-critical): {e}")
+    update_experiment_status(experiment_id, status, res["metrics"])
+
+    return {
+        "metrics": res["metrics"],
+        "equity_curve": res["equity_curve"],
+        "status": status,
+    }

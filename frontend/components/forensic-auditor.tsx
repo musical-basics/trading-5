@@ -1,0 +1,480 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import {
+  ShieldAlert,
+  ShieldCheck,
+  ShieldX,
+  AlertTriangle,
+  ChevronDown,
+  ChevronRight,
+  Loader2,
+  Search,
+  BarChart2,
+  Database,
+  Code2,
+  RefreshCw,
+  TrendingUp,
+} from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Separator } from "@/components/ui/separator"
+import { cn } from "@/lib/utils"
+import {
+  fetchAlphaExperiments,
+  runForensicAudit,
+  fetchExperimentTrades,
+  type AlphaExperiment,
+  type AuditReport,
+  type TradeLedgerEntry,
+} from "@/lib/api"
+
+// ── Helpers ───────────────────────────────────────────────────────────
+
+function statusColor(status?: string) {
+  switch (status) {
+    case "PASS": return "text-emerald-400 border-emerald-500/40 bg-emerald-500/10"
+    case "FAIL": return "text-red-400 border-red-500/40 bg-red-500/10"
+    case "WARNING": return "text-amber-400 border-amber-500/40 bg-amber-500/10"
+    default: return "text-muted-foreground border-border bg-muted/30"
+  }
+}
+
+function StatusIcon({ status }: { status?: string }) {
+  if (status === "PASS") return <ShieldCheck className="w-5 h-5 text-emerald-400" />
+  if (status === "FAIL") return <ShieldX className="w-5 h-5 text-red-400" />
+  if (status === "WARNING") return <AlertTriangle className="w-5 h-5 text-amber-400" />
+  return <ShieldAlert className="w-5 h-5 text-muted-foreground" />
+}
+
+const CATEGORY_META: Record<string, { label: string; icon: React.ElementType; color: string; description: string }> = {
+  STRUCTURAL: {
+    label: "Structural",
+    icon: Database,
+    color: "text-red-400",
+    description: "Data integrity or P/L math issues across the entire app",
+  },
+  BACKTEST: {
+    label: "Backtest Physics",
+    icon: BarChart2,
+    color: "text-amber-400",
+    description: "Survivorship bias, liquidity hallucination, or frictionless trades",
+  },
+  STRATEGY: {
+    label: "Strategy Code",
+    icon: Code2,
+    color: "text-purple-400",
+    description: "Lookahead bias, earnings leakage, or hallucinated data columns",
+  },
+  NONE: {
+    label: "All Clear",
+    icon: ShieldCheck,
+    color: "text-emerald-400",
+    description: "No issues detected — backtest appears physically and logically sound",
+  },
+}
+
+// ── Trade Row ─────────────────────────────────────────────────────────
+
+function TradeRow({
+  trade,
+  flaggedTrades,
+}: {
+  trade: TradeLedgerEntry
+  flaggedTrades: Array<{ ticker: string; date: string; reason: string }>
+}) {
+  const [expanded, setExpanded] = useState(false)
+  const flag = flaggedTrades.find(
+    (f) => f.ticker === trade.ticker && f.date === String(trade.date).slice(0, 10)
+  )
+  const isFlagged = !!flag
+
+  return (
+    <>
+      <tr
+        className={cn(
+          "border-b border-border/50 hover:bg-muted/20 cursor-pointer transition-colors",
+          isFlagged && "bg-red-500/5 hover:bg-red-500/10"
+        )}
+        onClick={() => isFlagged && setExpanded(!expanded)}
+      >
+        <td className="px-4 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
+          {String(trade.date).slice(0, 10)}
+        </td>
+        <td className="px-4 py-2.5 text-xs font-medium">
+          {trade.ticker ?? `entity_${trade.entity_id}`}
+        </td>
+        <td className="px-4 py-2.5">
+          <Badge
+            variant="outline"
+            className={cn(
+              "text-[10px] h-5",
+              trade.action === "BUY"
+                ? "border-emerald-500/40 text-emerald-400"
+                : "border-red-500/40 text-red-400"
+            )}
+          >
+            {trade.action}
+          </Badge>
+        </td>
+        <td className="px-4 py-2.5 text-xs font-mono">
+          {trade.weight_delta > 0 ? "+" : ""}
+          {(trade.weight_delta * 100).toFixed(2)}%
+        </td>
+        <td className="px-4 py-2.5 text-xs font-mono">
+          {trade.adj_close != null ? `$${trade.adj_close.toFixed(2)}` : "—"}
+        </td>
+        <td className="px-4 py-2.5 text-xs font-mono text-muted-foreground">
+          {trade.volume != null ? trade.volume.toLocaleString() : "—"}
+        </td>
+        <td className="px-4 py-2.5">
+          {isFlagged ? (
+            <div className="flex items-center gap-1.5">
+              <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0" />
+              <span className="text-[10px] text-red-400 font-medium">Flagged</span>
+              {expanded ? (
+                <ChevronDown className="w-3 h-3 text-red-400 ml-auto" />
+              ) : (
+                <ChevronRight className="w-3 h-3 text-red-400 ml-auto" />
+              )}
+            </div>
+          ) : (
+            <span className="text-[10px] text-emerald-400">Clean</span>
+          )}
+        </td>
+      </tr>
+      {isFlagged && expanded && (
+        <tr className="bg-red-500/5">
+          <td colSpan={7} className="px-6 py-3">
+            <div className="flex items-start gap-2 text-xs text-red-300">
+              <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0 text-red-400" />
+              <span>{flag?.reason}</span>
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
+  )
+}
+
+// ── Main Component ────────────────────────────────────────────────────
+
+export function ForensicAuditor() {
+  const [experiments, setExperiments] = useState<AlphaExperiment[]>([])
+  const [selectedId, setSelectedId] = useState<string>("")
+  const [auditResult, setAuditResult] = useState<AuditReport | null>(null)
+  const [trades, setTrades] = useState<TradeLedgerEntry[]>([])
+  const [isRunning, setIsRunning] = useState(false)
+  const [isLoadingTrades, setIsLoadingTrades] = useState(false)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+
+  // Load passed experiments
+  useEffect(() => {
+    fetchAlphaExperiments()
+      .then((exps) => setExperiments(exps.filter((e) => e.status === "passed")))
+      .catch(() => setExperiments([]))
+  }, [])
+
+  // When experiment changes, load trades and any cached audit
+  useEffect(() => {
+    if (!selectedId) return
+    setAuditResult(null)
+    setErrorMsg(null)
+
+    // Load existing audit verdict from experiment metadata
+    const exp = experiments.find((e) => e.experiment_id === selectedId)
+    if (exp && (exp as any).audit_report_json) {
+      try {
+        setAuditResult(JSON.parse((exp as any).audit_report_json))
+      } catch { /* ignore */ }
+    }
+
+    // Load trade ledger
+    setIsLoadingTrades(true)
+    fetchExperimentTrades(selectedId)
+      .then((r) => setTrades(r.trades ?? []))
+      .catch(() => setTrades([]))
+      .finally(() => setIsLoadingTrades(false))
+  }, [selectedId, experiments])
+
+  const handleRunAudit = async () => {
+    if (!selectedId) return
+    setIsRunning(true)
+    setErrorMsg(null)
+    setAuditResult(null)
+    try {
+      const result = await runForensicAudit(selectedId)
+      if (result.error) {
+        setErrorMsg(result.error)
+      } else {
+        setAuditResult(result)
+      }
+    } catch (e: any) {
+      setErrorMsg(e.message ?? "Audit failed")
+    } finally {
+      setIsRunning(false)
+    }
+  }
+
+  const selectedExp = experiments.find((e) => e.experiment_id === selectedId)
+  const categoryMeta = auditResult ? CATEGORY_META[auditResult.error_category] ?? CATEGORY_META["NONE"] : null
+  const CategoryIcon = categoryMeta?.icon ?? ShieldAlert
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <ShieldAlert className="w-5 h-5 text-primary" />
+            Forensic AI Backtest Auditor
+          </h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Glass-box AI verification of trade physics, data integrity, and strategy logic
+          </p>
+        </div>
+        {auditResult && (
+          <Badge
+            variant="outline"
+            className={cn("text-sm px-3 py-1 gap-1.5", statusColor(auditResult.status))}
+          >
+            <StatusIcon status={auditResult.status} />
+            {auditResult.status} · {(auditResult.confidence * 100).toFixed(0)}% confidence
+          </Badge>
+        )}
+      </div>
+
+      {/* Experiment Selector + Audit Trigger */}
+      <Card className="border-border/50 bg-card/50">
+        <CardContent className="pt-4 pb-4">
+          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
+            <div className="flex-1 space-y-1.5">
+              <label className="text-xs text-muted-foreground font-medium">
+                Select Passed Experiment
+              </label>
+              <Select value={selectedId} onValueChange={setSelectedId}>
+                <SelectTrigger id="forensic-experiment-select" className="bg-background">
+                  <SelectValue placeholder="— choose a strategy —" />
+                </SelectTrigger>
+                <SelectContent>
+                  {experiments.length === 0 && (
+                    <SelectItem value="__none__" disabled>
+                      No passed experiments yet
+                    </SelectItem>
+                  )}
+                  {experiments.map((exp) => (
+                    <SelectItem key={exp.experiment_id} value={exp.experiment_id}>
+                      <span className="mr-2 font-medium">{exp.strategy_name}</span>
+                      <span className="text-muted-foreground text-xs">
+                        #{exp.experiment_id} · Sharpe {exp.metrics?.sharpe?.toFixed(2) ?? "—"}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              id="run-forensic-audit-btn"
+              onClick={handleRunAudit}
+              disabled={!selectedId || isRunning}
+              className="gap-2 min-w-[180px]"
+              size="default"
+            >
+              {isRunning ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Auditing…
+                </>
+              ) : (
+                <>
+                  <Search className="w-4 h-4" />
+                  Run Forensic Audit 🔎
+                </>
+              )}
+            </Button>
+          </div>
+
+          {errorMsg && (
+            <div className="mt-3 flex items-start gap-2 text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2">
+              <ShieldX className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+              {errorMsg}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Verdict Dashboard */}
+      {auditResult && (
+        <div className="space-y-4">
+          {/* Three Taxonomy Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {(["STRUCTURAL", "BACKTEST", "STRATEGY"] as const).map((cat) => {
+              const meta = CATEGORY_META[cat]
+              const Icon = meta.icon
+              const isViolated = auditResult.error_category === cat
+              return (
+                <Card
+                  key={cat}
+                  className={cn(
+                    "border transition-all",
+                    isViolated
+                      ? "border-red-500/50 bg-red-500/5 shadow-[0_0_20px_rgba(239,68,68,0.1)]"
+                      : "border-border/50 bg-card/50"
+                  )}
+                >
+                  <CardHeader className="pb-2 pt-4 px-4">
+                    <div className="flex items-center justify-between">
+                      <div className={cn("flex items-center gap-2", meta.color)}>
+                        <Icon className="w-4 h-4" />
+                        <CardTitle className="text-sm font-medium">{meta.label}</CardTitle>
+                      </div>
+                      {isViolated ? (
+                        <Badge variant="outline" className="text-[10px] border-red-500/40 text-red-400">
+                          VIOLATED
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-[10px] border-emerald-500/40 text-emerald-400">
+                          CLEAN
+                        </Badge>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="px-4 pb-4">
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      {meta.description}
+                    </p>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+
+          {/* Recommendation Alert */}
+          {(auditResult.status === "FAIL" || auditResult.status === "WARNING") && auditResult.recommendation && (
+            <Card className={cn(
+              "border",
+              auditResult.status === "FAIL"
+                ? "border-red-500/40 bg-red-500/5"
+                : "border-amber-500/40 bg-amber-500/5"
+            )}>
+              <CardContent className="pt-4 pb-4">
+                <div className="flex items-start gap-3">
+                  <div className={cn(
+                    "p-2 rounded-md",
+                    auditResult.status === "FAIL" ? "bg-red-500/20" : "bg-amber-500/20"
+                  )}>
+                    <AlertTriangle className={cn(
+                      "w-4 h-4",
+                      auditResult.status === "FAIL" ? "text-red-400" : "text-amber-400"
+                    )} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold mb-1">
+                      AI Recommendation — Fix at{" "}
+                      <span className={categoryMeta?.color}>{categoryMeta?.label}</span>{" "}
+                      layer
+                    </p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {auditResult.recommendation}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {auditResult.status === "PASS" && (
+            <Card className="border-emerald-500/30 bg-emerald-500/5">
+              <CardContent className="pt-4 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-md bg-emerald-500/20">
+                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-emerald-400 mb-0.5">Backtest Passes Forensic Audit</p>
+                    <p className="text-xs text-muted-foreground">{auditResult.recommendation}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* Trade Inspector: The Receipts */}
+      {selectedId && (
+        <Card className="border-border/50 bg-card/50">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-primary" />
+                  Trade Inspector — The Receipts
+                </CardTitle>
+                <CardDescription className="text-[11px] mt-0.5">
+                  {trades.length > 0
+                    ? `${trades.length} position changes extracted · click flagged rows to see AI reason`
+                    : isLoadingTrades
+                    ? "Loading trade ledger…"
+                    : "No trade ledger found — run a full backtest first"}
+                </CardDescription>
+              </div>
+              {isLoadingTrades && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+            </div>
+          </CardHeader>
+          {trades.length > 0 && (
+            <CardContent className="p-0">
+              <ScrollArea className="max-h-[420px]">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border/50 bg-muted/30">
+                      <th className="px-4 py-2 text-left text-[11px] font-medium text-muted-foreground">Date</th>
+                      <th className="px-4 py-2 text-left text-[11px] font-medium text-muted-foreground">Ticker</th>
+                      <th className="px-4 py-2 text-left text-[11px] font-medium text-muted-foreground">Action</th>
+                      <th className="px-4 py-2 text-left text-[11px] font-medium text-muted-foreground">Δ Weight</th>
+                      <th className="px-4 py-2 text-left text-[11px] font-medium text-muted-foreground">Price</th>
+                      <th className="px-4 py-2 text-left text-[11px] font-medium text-muted-foreground">Volume</th>
+                      <th className="px-4 py-2 text-left text-[11px] font-medium text-muted-foreground">AI Flag</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {trades.map((trade, i) => (
+                      <TradeRow
+                        key={`${trade.entity_id}-${trade.date}-${i}`}
+                        trade={trade}
+                        flaggedTrades={auditResult?.flagged_trades ?? []}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </ScrollArea>
+            </CardContent>
+          )}
+        </Card>
+      )}
+
+      {/* Empty state */}
+      {!selectedId && (
+        <div className="flex flex-col items-center justify-center py-24 text-center gap-3">
+          <div className="w-16 h-16 rounded-2xl bg-muted/30 flex items-center justify-center">
+            <ShieldAlert className="w-8 h-8 text-muted-foreground/40" />
+          </div>
+          <p className="text-sm font-medium text-muted-foreground">Select a passed experiment to audit</p>
+          <p className="text-xs text-muted-foreground/60 max-w-xs">
+            The Forensic Auditor will cross-reference discrete trade logs against raw point-in-time data
+            to detect structural errors, backtest physics violations, and strategy-level lookahead bias.
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}

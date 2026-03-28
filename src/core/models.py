@@ -111,5 +111,7 @@ class AlphaLabExperiment(Base):
     cost_output_tokens = Column(Integer, default=0)
     cost_usd = Column(Float, default=0.0)
     promoted = Column(Boolean, default=False)
+    audit_status = Column(String(20), nullable=True)          # PASS / FAIL / WARNING / None
+    audit_report_json = Column(Text, nullable=True)            # JSON string from forensic auditor
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

@@ -15,7 +15,7 @@ echo ""
 (
   source .venv/bin/activate
   python3 -m uvicorn src.api.server:app --reload --port 8000 2>&1 | \
-    sed 's/^/[API] /'
+    tee api.log | sed 's/^/[API] /'
 ) &
 
 # Frontend (prefixed)

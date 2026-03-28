@@ -9,6 +9,7 @@ __turbopack_context__.s([
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/next@16.2.0_react-dom@19.2.4_react@19.2.4__react@19.2.4/node_modules/next/dist/compiled/react/jsx-dev-runtime.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/next@16.2.0_react-dom@19.2.4_react@19.2.4__react@19.2.4/node_modules/next/dist/compiled/react/index.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$api$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/lib/api.ts [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$monaco$2d$editor$2b$react$40$4$2e$7$2e$0_monaco$2d$editor$40$0$2e$55$2e$1_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f40$monaco$2d$editor$2f$react$2f$dist$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/@monaco-editor+react@4.7.0_monaco-editor@0.55.1_react-dom@19.2.4_react@19.2.4__react@19.2.4/node_modules/@monaco-editor/react/dist/index.mjs [app-client] (ecmascript) <locals>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$recharts$2f$es6$2f$chart$2f$LineChart$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/recharts@2.15.0_react-dom@19.2.4_react@19.2.4__react@19.2.4/node_modules/recharts/es6/chart/LineChart.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$Line$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/recharts@2.15.0_react-dom@19.2.4_react@19.2.4__react@19.2.4/node_modules/recharts/es6/cartesian/Line.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$XAxis$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/recharts@2.15.0_react-dom@19.2.4_react@19.2.4__react@19.2.4/node_modules/recharts/es6/cartesian/XAxis.js [app-client] (ecmascript)");
@@ -19,6 +20,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$re
 ;
 var _s = __turbopack_context__.k.signature();
 "use client";
+;
 ;
 ;
 ;
@@ -48,6 +50,19 @@ const TIER_CONFIG = {
         icon: "👑"
     }
 };
+const DEFAULT_STANDALONE_CODE = `import polars as pl
+import numpy as np
+
+def execute(data: pl.DataFrame) -> pl.DataFrame:
+    """
+    Standalone Backtest Execution Sandbox.
+    Input: DataFrame with 'date', 'entity_id', 'adj_close' and features.
+    Output: DataFrame with 'raw_weight_X' column defining portfolio weights.
+    """
+    print("Running standalone logic...")
+    return data.with_columns(
+        pl.lit(1.0).alias("raw_weight_equal")
+    )`;
 const SWARM_AGENT_ROLES = [
     {
         id: "researcher",
@@ -169,6 +184,10 @@ function AlphaLab() {
         }
     }["AlphaLab.useState"]);
     const [configSaved, setConfigSaved] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
+    // Standalone Backtester state
+    const [standaloneCode, setStandaloneCode] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(DEFAULT_STANDALONE_CODE);
+    const [runningStandalone, setRunningStandalone] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
+    const [standaloneResult, setStandaloneResult] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
     const loadExperiments = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCallback"])({
         "AlphaLab.useCallback[loadExperiments]": async ()=>{
             const data = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$api$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["fetchAlphaExperiments"])();
@@ -438,6 +457,21 @@ function AlphaLab() {
             setBacktesting(null);
         }
     };
+    const handleRunStandalone = async ()=>{
+        setRunningStandalone(true);
+        setStandaloneResult(null);
+        setError(null);
+        try {
+            const res = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$api$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["runStandaloneBacktest"])(standaloneCode);
+            setStandaloneResult(res);
+        } catch (e) {
+            setStandaloneResult({
+                error: e instanceof Error ? e.message : "Run failed"
+            });
+        } finally{
+            setRunningStandalone(false);
+        }
+    };
     const totalCost = experiments.reduce((sum, e)=>sum + (e.cost_usd || 0), 0);
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
         className: "flex flex-col h-full gap-4 p-1",
@@ -458,14 +492,14 @@ function AlphaLab() {
                                                 children: "🧪"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/alpha-lab.tsx",
-                                                lineNumber: 394,
+                                                lineNumber: 433,
                                                 columnNumber: 15
                                             }, this),
                                             "Alpha Lab"
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/alpha-lab.tsx",
-                                        lineNumber: 393,
+                                        lineNumber: 432,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -473,13 +507,13 @@ function AlphaLab() {
                                         children: "Autonomous strategy discovery — generate, backtest, evaluate"
                                     }, void 0, false, {
                                         fileName: "[project]/components/alpha-lab.tsx",
-                                        lineNumber: 397,
+                                        lineNumber: 436,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/alpha-lab.tsx",
-                                lineNumber: 392,
+                                lineNumber: 431,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -491,7 +525,7 @@ function AlphaLab() {
                                         children: "🚀 Generate"
                                     }, void 0, false, {
                                         fileName: "[project]/components/alpha-lab.tsx",
-                                        lineNumber: 404,
+                                        lineNumber: 443,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -500,7 +534,16 @@ function AlphaLab() {
                                         children: "🤖 Swarm"
                                     }, void 0, false, {
                                         fileName: "[project]/components/alpha-lab.tsx",
-                                        lineNumber: 414,
+                                        lineNumber: 453,
+                                        columnNumber: 13
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
+                                        onClick: ()=>setActiveTab("backtest"),
+                                        className: `px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${activeTab === "backtest" ? "bg-amber-600 text-white shadow-lg shadow-amber-500/20" : "text-zinc-400 hover:text-white"}`,
+                                        children: "💻 Backtest"
+                                    }, void 0, false, {
+                                        fileName: "[project]/components/alpha-lab.tsx",
+                                        lineNumber: 463,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -513,25 +556,25 @@ function AlphaLab() {
                                                 children: experiments.length
                                             }, void 0, false, {
                                                 fileName: "[project]/components/alpha-lab.tsx",
-                                                lineNumber: 434,
+                                                lineNumber: 483,
                                                 columnNumber: 17
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/alpha-lab.tsx",
-                                        lineNumber: 424,
+                                        lineNumber: 473,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/alpha-lab.tsx",
-                                lineNumber: 403,
+                                lineNumber: 442,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/alpha-lab.tsx",
-                        lineNumber: 391,
+                        lineNumber: 430,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -545,7 +588,7 @@ function AlphaLab() {
                                         children: "Experiments"
                                     }, void 0, false, {
                                         fileName: "[project]/components/alpha-lab.tsx",
-                                        lineNumber: 446,
+                                        lineNumber: 495,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -553,13 +596,13 @@ function AlphaLab() {
                                         children: experiments.length
                                     }, void 0, false, {
                                         fileName: "[project]/components/alpha-lab.tsx",
-                                        lineNumber: 447,
+                                        lineNumber: 496,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/alpha-lab.tsx",
-                                lineNumber: 445,
+                                lineNumber: 494,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -570,7 +613,7 @@ function AlphaLab() {
                                         children: "API Cost"
                                     }, void 0, false, {
                                         fileName: "[project]/components/alpha-lab.tsx",
-                                        lineNumber: 450,
+                                        lineNumber: 499,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -581,25 +624,25 @@ function AlphaLab() {
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/alpha-lab.tsx",
-                                        lineNumber: 451,
+                                        lineNumber: 500,
                                         columnNumber: 13
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/alpha-lab.tsx",
-                                lineNumber: 449,
+                                lineNumber: 498,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/alpha-lab.tsx",
-                        lineNumber: 444,
+                        lineNumber: 493,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/alpha-lab.tsx",
-                lineNumber: 390,
+                lineNumber: 429,
                 columnNumber: 7
             }, this),
             activeTab === "generate" && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -613,7 +656,7 @@ function AlphaLab() {
                                 children: "Strategy Hypothesis"
                             }, void 0, false, {
                                 fileName: "[project]/components/alpha-lab.tsx",
-                                lineNumber: 460,
+                                lineNumber: 509,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("textarea", {
@@ -624,7 +667,7 @@ function AlphaLab() {
                                 rows: 4
                             }, void 0, false, {
                                 fileName: "[project]/components/alpha-lab.tsx",
-                                lineNumber: 464,
+                                lineNumber: 513,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
@@ -632,7 +675,7 @@ function AlphaLab() {
                                 children: "Strategy Style"
                             }, void 0, false, {
                                 fileName: "[project]/components/alpha-lab.tsx",
-                                lineNumber: 472,
+                                lineNumber: 521,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -649,7 +692,7 @@ function AlphaLab() {
                                                     children: "🎓"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/alpha-lab.tsx",
-                                                    lineNumber: 485,
+                                                    lineNumber: 534,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -660,7 +703,7 @@ function AlphaLab() {
                                                             children: "Academic"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/alpha-lab.tsx",
-                                                            lineNumber: 487,
+                                                            lineNumber: 536,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -668,24 +711,24 @@ function AlphaLab() {
                                                             children: "Market-neutral, diversified"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/alpha-lab.tsx",
-                                                            lineNumber: 488,
+                                                            lineNumber: 537,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/alpha-lab.tsx",
-                                                    lineNumber: 486,
+                                                    lineNumber: 535,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/alpha-lab.tsx",
-                                            lineNumber: 484,
+                                            lineNumber: 533,
                                             columnNumber: 17
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/components/alpha-lab.tsx",
-                                        lineNumber: 476,
+                                        lineNumber: 525,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -699,7 +742,7 @@ function AlphaLab() {
                                                     children: "🏦"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/alpha-lab.tsx",
-                                                    lineNumber: 501,
+                                                    lineNumber: 550,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -710,7 +753,7 @@ function AlphaLab() {
                                                             children: "Hedge Fund"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/alpha-lab.tsx",
-                                                            lineNumber: 503,
+                                                            lineNumber: 552,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -718,30 +761,30 @@ function AlphaLab() {
                                                             children: "Concentrated, alpha-seeking"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/alpha-lab.tsx",
-                                                            lineNumber: 504,
+                                                            lineNumber: 553,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/alpha-lab.tsx",
-                                                    lineNumber: 502,
+                                                    lineNumber: 551,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/alpha-lab.tsx",
-                                            lineNumber: 500,
+                                            lineNumber: 549,
                                             columnNumber: 17
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/components/alpha-lab.tsx",
-                                        lineNumber: 492,
+                                        lineNumber: 541,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/alpha-lab.tsx",
-                                lineNumber: 475,
+                                lineNumber: 524,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
@@ -749,7 +792,7 @@ function AlphaLab() {
                                 children: "Model Tier"
                             }, void 0, false, {
                                 fileName: "[project]/components/alpha-lab.tsx",
-                                lineNumber: 510,
+                                lineNumber: 559,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -766,7 +809,7 @@ function AlphaLab() {
                                                         children: tier.icon
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/alpha-lab.tsx",
-                                                        lineNumber: 525,
+                                                        lineNumber: 574,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -777,7 +820,7 @@ function AlphaLab() {
                                                                 children: tier.label
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/alpha-lab.tsx",
-                                                                lineNumber: 527,
+                                                                lineNumber: 576,
                                                                 columnNumber: 23
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -785,19 +828,19 @@ function AlphaLab() {
                                                                 children: tier.sublabel
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/alpha-lab.tsx",
-                                                                lineNumber: 528,
+                                                                lineNumber: 577,
                                                                 columnNumber: 23
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/components/alpha-lab.tsx",
-                                                        lineNumber: 526,
+                                                        lineNumber: 575,
                                                         columnNumber: 21
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/alpha-lab.tsx",
-                                                lineNumber: 524,
+                                                lineNumber: 573,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -810,18 +853,18 @@ function AlphaLab() {
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/alpha-lab.tsx",
-                                                lineNumber: 531,
+                                                lineNumber: 580,
                                                 columnNumber: 19
                                             }, this)
                                         ]
                                     }, key, true, {
                                         fileName: "[project]/components/alpha-lab.tsx",
-                                        lineNumber: 515,
+                                        lineNumber: 564,
                                         columnNumber: 17
                                     }, this))
                             }, void 0, false, {
                                 fileName: "[project]/components/alpha-lab.tsx",
-                                lineNumber: 513,
+                                lineNumber: 562,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -838,24 +881,24 @@ function AlphaLab() {
                                                 children: "⏳"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/alpha-lab.tsx",
-                                                lineNumber: 546,
+                                                lineNumber: 595,
                                                 columnNumber: 21
                                             }, this),
                                             " Generating (1-shot)…"
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/alpha-lab.tsx",
-                                        lineNumber: 545,
+                                        lineNumber: 594,
                                         columnNumber: 19
                                     }, this) : "🚀 Generate Strategy"
                                 }, void 0, false, {
                                     fileName: "[project]/components/alpha-lab.tsx",
-                                    lineNumber: 539,
+                                    lineNumber: 588,
                                     columnNumber: 15
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/components/alpha-lab.tsx",
-                                lineNumber: 538,
+                                lineNumber: 587,
                                 columnNumber: 13
                             }, this),
                             error && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -863,13 +906,13 @@ function AlphaLab() {
                                 children: error
                             }, void 0, false, {
                                 fileName: "[project]/components/alpha-lab.tsx",
-                                lineNumber: 555,
+                                lineNumber: 604,
                                 columnNumber: 15
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/alpha-lab.tsx",
-                        lineNumber: 459,
+                        lineNumber: 508,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -877,13 +920,13 @@ function AlphaLab() {
                         children: "💡 Leave the prompt empty for the AI to generate a novel strategy from scratch, or describe specific signals/factors you want explored. After generation, you'll be switched to the Results tab to review and backtest."
                     }, void 0, false, {
                         fileName: "[project]/components/alpha-lab.tsx",
-                        lineNumber: 562,
+                        lineNumber: 611,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/alpha-lab.tsx",
-                lineNumber: 458,
+                lineNumber: 507,
                 columnNumber: 9
             }, this),
             activeTab === "results" && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -904,7 +947,7 @@ function AlphaLab() {
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/alpha-lab.tsx",
-                                        lineNumber: 575,
+                                        lineNumber: 624,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -916,13 +959,13 @@ function AlphaLab() {
                                         children: combineMode ? "✕ Cancel" : "🧬 Combine"
                                     }, void 0, false, {
                                         fileName: "[project]/components/alpha-lab.tsx",
-                                        lineNumber: 578,
+                                        lineNumber: 627,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/alpha-lab.tsx",
-                                lineNumber: 574,
+                                lineNumber: 623,
                                 columnNumber: 13
                             }, this),
                             combineMode && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -933,7 +976,7 @@ function AlphaLab() {
                                         children: "Select 2-5 passed strategies to combine via AI"
                                     }, void 0, false, {
                                         fileName: "[project]/components/alpha-lab.tsx",
-                                        lineNumber: 593,
+                                        lineNumber: 642,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -952,12 +995,12 @@ function AlphaLab() {
                                                         ]
                                                     }, key, true, {
                                                         fileName: "[project]/components/alpha-lab.tsx",
-                                                        lineNumber: 601,
+                                                        lineNumber: 650,
                                                         columnNumber: 23
                                                     }, this))
                                             }, void 0, false, {
                                                 fileName: "[project]/components/alpha-lab.tsx",
-                                                lineNumber: 595,
+                                                lineNumber: 644,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -967,19 +1010,19 @@ function AlphaLab() {
                                                 children: combining ? "⏳ Combining…" : `🧬 Combine (${selectedForCombine.size})`
                                             }, void 0, false, {
                                                 fileName: "[project]/components/alpha-lab.tsx",
-                                                lineNumber: 604,
+                                                lineNumber: 653,
                                                 columnNumber: 19
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/alpha-lab.tsx",
-                                        lineNumber: 594,
+                                        lineNumber: 643,
                                         columnNumber: 17
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/alpha-lab.tsx",
-                                lineNumber: 592,
+                                lineNumber: 641,
                                 columnNumber: 15
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -995,13 +1038,13 @@ function AlphaLab() {
                                                 children: "Generate one →"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/alpha-lab.tsx",
-                                                lineNumber: 619,
+                                                lineNumber: 668,
                                                 columnNumber: 19
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/alpha-lab.tsx",
-                                        lineNumber: 617,
+                                        lineNumber: 666,
                                         columnNumber: 17
                                     }, this),
                                     experiments.map((exp)=>{
@@ -1028,7 +1071,7 @@ function AlphaLab() {
                                                             children: isCombineSelected && "✓"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/alpha-lab.tsx",
-                                                            lineNumber: 655,
+                                                            lineNumber: 704,
                                                             columnNumber: 25
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1039,7 +1082,7 @@ function AlphaLab() {
                                                                     children: exp.strategy_name || "Unnamed"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/alpha-lab.tsx",
-                                                                    lineNumber: 664,
+                                                                    lineNumber: 713,
                                                                     columnNumber: 25
                                                                 }, this),
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1047,13 +1090,13 @@ function AlphaLab() {
                                                                     children: exp.hypothesis
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/components/alpha-lab.tsx",
-                                                                    lineNumber: 667,
+                                                                    lineNumber: 716,
                                                                     columnNumber: 25
                                                                 }, this)
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/alpha-lab.tsx",
-                                                            lineNumber: 663,
+                                                            lineNumber: 712,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1061,13 +1104,13 @@ function AlphaLab() {
                                                             children: badge.label
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/alpha-lab.tsx",
-                                                            lineNumber: 671,
+                                                            lineNumber: 720,
                                                             columnNumber: 23
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/alpha-lab.tsx",
-                                                    lineNumber: 653,
+                                                    lineNumber: 702,
                                                     columnNumber: 21
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1081,14 +1124,14 @@ function AlphaLab() {
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/alpha-lab.tsx",
-                                                            lineNumber: 677,
+                                                            lineNumber: 726,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                             children: "·"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/alpha-lab.tsx",
-                                                            lineNumber: 678,
+                                                            lineNumber: 727,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1099,27 +1142,27 @@ function AlphaLab() {
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/alpha-lab.tsx",
-                                                            lineNumber: 679,
+                                                            lineNumber: 728,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                             children: "·"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/alpha-lab.tsx",
-                                                            lineNumber: 680,
+                                                            lineNumber: 729,
                                                             columnNumber: 23
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                             children: exp.experiment_id
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/alpha-lab.tsx",
-                                                            lineNumber: 681,
+                                                            lineNumber: 730,
                                                             columnNumber: 23
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/alpha-lab.tsx",
-                                                    lineNumber: 676,
+                                                    lineNumber: 725,
                                                     columnNumber: 21
                                                 }, this),
                                                 exp.metrics && !exp.metrics.error && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1133,7 +1176,7 @@ function AlphaLab() {
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/alpha-lab.tsx",
-                                                            lineNumber: 686,
+                                                            lineNumber: 735,
                                                             columnNumber: 25
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1145,7 +1188,7 @@ function AlphaLab() {
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/alpha-lab.tsx",
-                                                            lineNumber: 689,
+                                                            lineNumber: 738,
                                                             columnNumber: 25
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1156,32 +1199,32 @@ function AlphaLab() {
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/alpha-lab.tsx",
-                                                            lineNumber: 692,
+                                                            lineNumber: 741,
                                                             columnNumber: 25
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/alpha-lab.tsx",
-                                                    lineNumber: 685,
+                                                    lineNumber: 734,
                                                     columnNumber: 23
                                                 }, this)
                                             ]
                                         }, exp.experiment_id, true, {
                                             fileName: "[project]/components/alpha-lab.tsx",
-                                            lineNumber: 636,
+                                            lineNumber: 685,
                                             columnNumber: 19
                                         }, this);
                                     })
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/alpha-lab.tsx",
-                                lineNumber: 615,
+                                lineNumber: 664,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/alpha-lab.tsx",
-                        lineNumber: 573,
+                        lineNumber: 622,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1191,7 +1234,7 @@ function AlphaLab() {
                             children: "Select an experiment to view details"
                         }, void 0, false, {
                             fileName: "[project]/components/alpha-lab.tsx",
-                            lineNumber: 706,
+                            lineNumber: 755,
                             columnNumber: 15
                         }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                             className: "flex-1 overflow-y-auto space-y-4 pr-1",
@@ -1206,7 +1249,7 @@ function AlphaLab() {
                                                     children: selectedExp.strategy_name
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/alpha-lab.tsx",
-                                                    lineNumber: 714,
+                                                    lineNumber: 763,
                                                     columnNumber: 21
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1214,13 +1257,13 @@ function AlphaLab() {
                                                     children: selectedExp.rationale
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/alpha-lab.tsx",
-                                                    lineNumber: 717,
+                                                    lineNumber: 766,
                                                     columnNumber: 21
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/alpha-lab.tsx",
-                                            lineNumber: 713,
+                                            lineNumber: 762,
                                             columnNumber: 19
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1233,7 +1276,7 @@ function AlphaLab() {
                                                     children: backtesting === selectedExp.experiment_id ? "⏳ Running…" : selectedExp.status === "generated" ? "▶ Backtest" : "🔄 Re-run Backtest"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/alpha-lab.tsx",
-                                                    lineNumber: 722,
+                                                    lineNumber: 771,
                                                     columnNumber: 21
                                                 }, this),
                                                 selectedExp.status === "passed" && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1243,7 +1286,7 @@ function AlphaLab() {
                                                     children: promoting ? "⏳ Promoting…" : "🚀 Promote to Live"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/alpha-lab.tsx",
-                                                    lineNumber: 734,
+                                                    lineNumber: 783,
                                                     columnNumber: 23
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1252,19 +1295,19 @@ function AlphaLab() {
                                                     children: "🗑 Delete"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/alpha-lab.tsx",
-                                                    lineNumber: 742,
+                                                    lineNumber: 791,
                                                     columnNumber: 21
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/alpha-lab.tsx",
-                                            lineNumber: 721,
+                                            lineNumber: 770,
                                             columnNumber: 19
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/alpha-lab.tsx",
-                                    lineNumber: 712,
+                                    lineNumber: 761,
                                     columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1279,7 +1322,7 @@ function AlphaLab() {
                                                         children: "Model"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/alpha-lab.tsx",
-                                                        lineNumber: 755,
+                                                        lineNumber: 804,
                                                         columnNumber: 23
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1291,13 +1334,13 @@ function AlphaLab() {
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/components/alpha-lab.tsx",
-                                                        lineNumber: 756,
+                                                        lineNumber: 805,
                                                         columnNumber: 23
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/alpha-lab.tsx",
-                                                lineNumber: 754,
+                                                lineNumber: 803,
                                                 columnNumber: 21
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1307,7 +1350,7 @@ function AlphaLab() {
                                                         children: "Input Tokens"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/alpha-lab.tsx",
-                                                        lineNumber: 762,
+                                                        lineNumber: 811,
                                                         columnNumber: 23
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1315,13 +1358,13 @@ function AlphaLab() {
                                                         children: selectedExp.cost_input_tokens?.toLocaleString()
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/alpha-lab.tsx",
-                                                        lineNumber: 763,
+                                                        lineNumber: 812,
                                                         columnNumber: 23
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/alpha-lab.tsx",
-                                                lineNumber: 761,
+                                                lineNumber: 810,
                                                 columnNumber: 21
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1331,7 +1374,7 @@ function AlphaLab() {
                                                         children: "Output Tokens"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/alpha-lab.tsx",
-                                                        lineNumber: 766,
+                                                        lineNumber: 815,
                                                         columnNumber: 23
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1339,13 +1382,13 @@ function AlphaLab() {
                                                         children: selectedExp.cost_output_tokens?.toLocaleString()
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/alpha-lab.tsx",
-                                                        lineNumber: 767,
+                                                        lineNumber: 816,
                                                         columnNumber: 23
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/alpha-lab.tsx",
-                                                lineNumber: 765,
+                                                lineNumber: 814,
                                                 columnNumber: 21
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1355,7 +1398,7 @@ function AlphaLab() {
                                                         children: "API Cost"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/alpha-lab.tsx",
-                                                        lineNumber: 770,
+                                                        lineNumber: 819,
                                                         columnNumber: 23
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1366,24 +1409,24 @@ function AlphaLab() {
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/components/alpha-lab.tsx",
-                                                        lineNumber: 771,
+                                                        lineNumber: 820,
                                                         columnNumber: 23
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/alpha-lab.tsx",
-                                                lineNumber: 769,
+                                                lineNumber: 818,
                                                 columnNumber: 21
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/alpha-lab.tsx",
-                                        lineNumber: 753,
+                                        lineNumber: 802,
                                         columnNumber: 19
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/components/alpha-lab.tsx",
-                                    lineNumber: 752,
+                                    lineNumber: 801,
                                     columnNumber: 17
                                 }, this),
                                 selectedExp.metrics && !selectedExp.metrics.error && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1394,7 +1437,7 @@ function AlphaLab() {
                                             children: "Backtest Results"
                                         }, void 0, false, {
                                             fileName: "[project]/components/alpha-lab.tsx",
-                                            lineNumber: 779,
+                                            lineNumber: 828,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1407,7 +1450,7 @@ function AlphaLab() {
                                                             children: "Sharpe Ratio"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/alpha-lab.tsx",
-                                                            lineNumber: 784,
+                                                            lineNumber: 833,
                                                             columnNumber: 25
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1415,13 +1458,13 @@ function AlphaLab() {
                                                             children: selectedExp.metrics.sharpe.toFixed(3)
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/alpha-lab.tsx",
-                                                            lineNumber: 785,
+                                                            lineNumber: 834,
                                                             columnNumber: 25
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/alpha-lab.tsx",
-                                                    lineNumber: 783,
+                                                    lineNumber: 832,
                                                     columnNumber: 23
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1431,7 +1474,7 @@ function AlphaLab() {
                                                             children: "CAGR"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/alpha-lab.tsx",
-                                                            lineNumber: 790,
+                                                            lineNumber: 839,
                                                             columnNumber: 25
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1442,13 +1485,13 @@ function AlphaLab() {
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/alpha-lab.tsx",
-                                                            lineNumber: 791,
+                                                            lineNumber: 840,
                                                             columnNumber: 25
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/alpha-lab.tsx",
-                                                    lineNumber: 789,
+                                                    lineNumber: 838,
                                                     columnNumber: 23
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1458,7 +1501,7 @@ function AlphaLab() {
                                                             children: "Total Return"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/alpha-lab.tsx",
-                                                            lineNumber: 796,
+                                                            lineNumber: 845,
                                                             columnNumber: 25
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1469,13 +1512,13 @@ function AlphaLab() {
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/alpha-lab.tsx",
-                                                            lineNumber: 797,
+                                                            lineNumber: 846,
                                                             columnNumber: 25
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/alpha-lab.tsx",
-                                                    lineNumber: 795,
+                                                    lineNumber: 844,
                                                     columnNumber: 23
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1485,7 +1528,7 @@ function AlphaLab() {
                                                             children: "Max Drawdown"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/alpha-lab.tsx",
-                                                            lineNumber: 802,
+                                                            lineNumber: 851,
                                                             columnNumber: 25
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1496,13 +1539,13 @@ function AlphaLab() {
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/alpha-lab.tsx",
-                                                            lineNumber: 803,
+                                                            lineNumber: 852,
                                                             columnNumber: 25
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/alpha-lab.tsx",
-                                                    lineNumber: 801,
+                                                    lineNumber: 850,
                                                     columnNumber: 23
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1512,7 +1555,7 @@ function AlphaLab() {
                                                             children: "Trading Days"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/alpha-lab.tsx",
-                                                            lineNumber: 808,
+                                                            lineNumber: 857,
                                                             columnNumber: 25
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1520,25 +1563,25 @@ function AlphaLab() {
                                                             children: selectedExp.metrics.trading_days?.toLocaleString()
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/alpha-lab.tsx",
-                                                            lineNumber: 809,
+                                                            lineNumber: 858,
                                                             columnNumber: 25
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/alpha-lab.tsx",
-                                                    lineNumber: 807,
+                                                    lineNumber: 856,
                                                     columnNumber: 23
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/alpha-lab.tsx",
-                                            lineNumber: 782,
+                                            lineNumber: 831,
                                             columnNumber: 21
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/alpha-lab.tsx",
-                                    lineNumber: 778,
+                                    lineNumber: 827,
                                     columnNumber: 19
                                 }, this),
                                 selectedExp.equity_curve && selectedExp.equity_curve.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1549,7 +1592,7 @@ function AlphaLab() {
                                             children: "Equity Curve"
                                         }, void 0, false, {
                                             fileName: "[project]/components/alpha-lab.tsx",
-                                            lineNumber: 820,
+                                            lineNumber: 869,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$ResponsiveContainer$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ResponsiveContainer"], {
@@ -1566,7 +1609,7 @@ function AlphaLab() {
                                                         stroke: "#27272a"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/alpha-lab.tsx",
-                                                        lineNumber: 828,
+                                                        lineNumber: 877,
                                                         columnNumber: 25
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$XAxis$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["XAxis"], {
@@ -1579,7 +1622,7 @@ function AlphaLab() {
                                                         interval: "preserveStartEnd"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/alpha-lab.tsx",
-                                                        lineNumber: 829,
+                                                        lineNumber: 878,
                                                         columnNumber: 25
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$YAxis$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["YAxis"], {
@@ -1590,7 +1633,7 @@ function AlphaLab() {
                                                         tickFormatter: (v)=>`$${(v / 1000).toFixed(1)}k`
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/alpha-lab.tsx",
-                                                        lineNumber: 835,
+                                                        lineNumber: 884,
                                                         columnNumber: 25
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$Tooltip$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
@@ -1609,7 +1652,7 @@ function AlphaLab() {
                                                             ]
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/alpha-lab.tsx",
-                                                        lineNumber: 839,
+                                                        lineNumber: 888,
                                                         columnNumber: 25
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$Line$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Line"], {
@@ -1620,24 +1663,24 @@ function AlphaLab() {
                                                         dot: false
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/alpha-lab.tsx",
-                                                        lineNumber: 844,
+                                                        lineNumber: 893,
                                                         columnNumber: 25
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/alpha-lab.tsx",
-                                                lineNumber: 824,
+                                                lineNumber: 873,
                                                 columnNumber: 23
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/components/alpha-lab.tsx",
-                                            lineNumber: 823,
+                                            lineNumber: 872,
                                             columnNumber: 21
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/alpha-lab.tsx",
-                                    lineNumber: 819,
+                                    lineNumber: 868,
                                     columnNumber: 19
                                 }, this),
                                 selectedExp.metrics?.error && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1648,14 +1691,14 @@ function AlphaLab() {
                                             children: "Backtest Error"
                                         }, void 0, false, {
                                             fileName: "[project]/components/alpha-lab.tsx",
-                                            lineNumber: 859,
+                                            lineNumber: 908,
                                             columnNumber: 21
                                         }, this),
                                         selectedExp.metrics.error
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/alpha-lab.tsx",
-                                    lineNumber: 858,
+                                    lineNumber: 907,
                                     columnNumber: 19
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1669,7 +1712,7 @@ function AlphaLab() {
                                                     children: "Strategy Code"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/alpha-lab.tsx",
-                                                    lineNumber: 867,
+                                                    lineNumber: 916,
                                                     columnNumber: 21
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1683,7 +1726,7 @@ function AlphaLab() {
                                                         children: "✏️ Edit Code"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/alpha-lab.tsx",
-                                                        lineNumber: 872,
+                                                        lineNumber: 921,
                                                         columnNumber: 25
                                                     }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
                                                         children: [
@@ -1693,7 +1736,7 @@ function AlphaLab() {
                                                                 children: "Cancel"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/alpha-lab.tsx",
-                                                                lineNumber: 880,
+                                                                lineNumber: 929,
                                                                 columnNumber: 27
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1703,7 +1746,7 @@ function AlphaLab() {
                                                                 children: saving ? "Saving…" : "💾 Save Code"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/alpha-lab.tsx",
-                                                                lineNumber: 886,
+                                                                lineNumber: 935,
                                                                 columnNumber: 27
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1713,20 +1756,20 @@ function AlphaLab() {
                                                                 children: backtesting ? "⏳ Running…" : "💾 Save & Backtest"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/alpha-lab.tsx",
-                                                                lineNumber: 893,
+                                                                lineNumber: 942,
                                                                 columnNumber: 27
                                                             }, this)
                                                         ]
                                                     }, void 0, true)
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/alpha-lab.tsx",
-                                                    lineNumber: 870,
+                                                    lineNumber: 919,
                                                     columnNumber: 21
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/alpha-lab.tsx",
-                                            lineNumber: 866,
+                                            lineNumber: 915,
                                             columnNumber: 19
                                         }, this),
                                         isEditing ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("textarea", {
@@ -1737,37 +1780,37 @@ function AlphaLab() {
                                             spellCheck: false
                                         }, void 0, false, {
                                             fileName: "[project]/components/alpha-lab.tsx",
-                                            lineNumber: 905,
+                                            lineNumber: 954,
                                             columnNumber: 21
                                         }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("pre", {
                                             className: "bg-black/50 rounded-lg p-4 overflow-x-auto text-xs text-emerald-300 font-mono leading-relaxed",
                                             children: selectedExp.strategy_code
                                         }, void 0, false, {
                                             fileName: "[project]/components/alpha-lab.tsx",
-                                            lineNumber: 913,
+                                            lineNumber: 962,
                                             columnNumber: 21
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/alpha-lab.tsx",
-                                    lineNumber: 865,
+                                    lineNumber: 914,
                                     columnNumber: 17
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/alpha-lab.tsx",
-                            lineNumber: 710,
+                            lineNumber: 759,
                             columnNumber: 15
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/components/alpha-lab.tsx",
-                        lineNumber: 704,
+                        lineNumber: 753,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/alpha-lab.tsx",
-                lineNumber: 571,
+                lineNumber: 620,
                 columnNumber: 9
             }, this),
             activeTab === "swarm" && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1784,7 +1827,7 @@ function AlphaLab() {
                                         children: "🤖"
                                     }, void 0, false, {
                                         fileName: "[project]/components/alpha-lab.tsx",
-                                        lineNumber: 927,
+                                        lineNumber: 976,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1794,7 +1837,7 @@ function AlphaLab() {
                                                 children: "Agent Swarm Generation"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/alpha-lab.tsx",
-                                                lineNumber: 929,
+                                                lineNumber: 978,
                                                 columnNumber: 17
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -1802,19 +1845,19 @@ function AlphaLab() {
                                                 children: "Configure your hedge fund pod. Changes persist automatically."
                                             }, void 0, false, {
                                                 fileName: "[project]/components/alpha-lab.tsx",
-                                                lineNumber: 930,
+                                                lineNumber: 979,
                                                 columnNumber: 17
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/alpha-lab.tsx",
-                                        lineNumber: 928,
+                                        lineNumber: 977,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/alpha-lab.tsx",
-                                lineNumber: 926,
+                                lineNumber: 975,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
@@ -1822,7 +1865,7 @@ function AlphaLab() {
                                 children: "Strategy Hypothesis"
                             }, void 0, false, {
                                 fileName: "[project]/components/alpha-lab.tsx",
-                                lineNumber: 935,
+                                lineNumber: 984,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("textarea", {
@@ -1833,7 +1876,7 @@ function AlphaLab() {
                                 rows: 4
                             }, void 0, false, {
                                 fileName: "[project]/components/alpha-lab.tsx",
-                                lineNumber: 938,
+                                lineNumber: 987,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
@@ -1841,7 +1884,7 @@ function AlphaLab() {
                                 children: "Strategy Style"
                             }, void 0, false, {
                                 fileName: "[project]/components/alpha-lab.tsx",
-                                lineNumber: 947,
+                                lineNumber: 996,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1858,7 +1901,7 @@ function AlphaLab() {
                                                     children: "🎓"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/alpha-lab.tsx",
-                                                    lineNumber: 960,
+                                                    lineNumber: 1009,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1869,7 +1912,7 @@ function AlphaLab() {
                                                             children: "Academic"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/alpha-lab.tsx",
-                                                            lineNumber: 962,
+                                                            lineNumber: 1011,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1877,24 +1920,24 @@ function AlphaLab() {
                                                             children: "Market-neutral, diversified"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/alpha-lab.tsx",
-                                                            lineNumber: 963,
+                                                            lineNumber: 1012,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/alpha-lab.tsx",
-                                                    lineNumber: 961,
+                                                    lineNumber: 1010,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/alpha-lab.tsx",
-                                            lineNumber: 959,
+                                            lineNumber: 1008,
                                             columnNumber: 17
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/components/alpha-lab.tsx",
-                                        lineNumber: 951,
+                                        lineNumber: 1000,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1908,7 +1951,7 @@ function AlphaLab() {
                                                     children: "🏦"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/alpha-lab.tsx",
-                                                    lineNumber: 976,
+                                                    lineNumber: 1025,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1919,7 +1962,7 @@ function AlphaLab() {
                                                             children: "Hedge Fund"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/alpha-lab.tsx",
-                                                            lineNumber: 978,
+                                                            lineNumber: 1027,
                                                             columnNumber: 21
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1927,37 +1970,37 @@ function AlphaLab() {
                                                             children: "Concentrated, alpha-seeking"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/alpha-lab.tsx",
-                                                            lineNumber: 979,
+                                                            lineNumber: 1028,
                                                             columnNumber: 21
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/alpha-lab.tsx",
-                                                    lineNumber: 977,
+                                                    lineNumber: 1026,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/alpha-lab.tsx",
-                                            lineNumber: 975,
+                                            lineNumber: 1024,
                                             columnNumber: 17
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/components/alpha-lab.tsx",
-                                        lineNumber: 967,
+                                        lineNumber: 1016,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/alpha-lab.tsx",
-                                lineNumber: 950,
+                                lineNumber: 999,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                 className: "w-full h-px bg-zinc-800 my-8"
                             }, void 0, false, {
                                 fileName: "[project]/components/alpha-lab.tsx",
-                                lineNumber: 985,
+                                lineNumber: 1034,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
@@ -1967,7 +2010,7 @@ function AlphaLab() {
                                         children: "Swarm Configuration"
                                     }, void 0, false, {
                                         fileName: "[project]/components/alpha-lab.tsx",
-                                        lineNumber: 988,
+                                        lineNumber: 1037,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -1976,13 +2019,13 @@ function AlphaLab() {
                                         children: configSaved ? "✅ Saved" : "💾 Save"
                                     }, void 0, false, {
                                         fileName: "[project]/components/alpha-lab.tsx",
-                                        lineNumber: 989,
+                                        lineNumber: 1038,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/alpha-lab.tsx",
-                                lineNumber: 987,
+                                lineNumber: 1036,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2001,7 +2044,7 @@ function AlphaLab() {
                                                                 children: agent.icon
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/alpha-lab.tsx",
-                                                                lineNumber: 1006,
+                                                                lineNumber: 1055,
                                                                 columnNumber: 23
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2011,7 +2054,7 @@ function AlphaLab() {
                                                                         children: agent.label
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/components/alpha-lab.tsx",
-                                                                        lineNumber: 1008,
+                                                                        lineNumber: 1057,
                                                                         columnNumber: 25
                                                                     }, this),
                                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2019,19 +2062,19 @@ function AlphaLab() {
                                                                         children: agent.description
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/components/alpha-lab.tsx",
-                                                                        lineNumber: 1009,
+                                                                        lineNumber: 1058,
                                                                         columnNumber: 25
                                                                     }, this)
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/components/alpha-lab.tsx",
-                                                                lineNumber: 1007,
+                                                                lineNumber: 1056,
                                                                 columnNumber: 23
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/components/alpha-lab.tsx",
-                                                        lineNumber: 1005,
+                                                        lineNumber: 1054,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2042,7 +2085,7 @@ function AlphaLab() {
                                                                 children: "Model:"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/alpha-lab.tsx",
-                                                                lineNumber: 1013,
+                                                                lineNumber: 1062,
                                                                 columnNumber: 23
                                                             }, this),
                                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2060,24 +2103,24 @@ function AlphaLab() {
                                                                         ]
                                                                     }, key, true, {
                                                                         fileName: "[project]/components/alpha-lab.tsx",
-                                                                        lineNumber: 1016,
+                                                                        lineNumber: 1065,
                                                                         columnNumber: 27
                                                                     }, this))
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/alpha-lab.tsx",
-                                                                lineNumber: 1014,
+                                                                lineNumber: 1063,
                                                                 columnNumber: 23
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/components/alpha-lab.tsx",
-                                                        lineNumber: 1012,
+                                                        lineNumber: 1061,
                                                         columnNumber: 21
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/alpha-lab.tsx",
-                                                lineNumber: 1004,
+                                                lineNumber: 1053,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2087,7 +2130,7 @@ function AlphaLab() {
                                                         children: "Additional instructions (optional)"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/alpha-lab.tsx",
-                                                        lineNumber: 1032,
+                                                        lineNumber: 1081,
                                                         columnNumber: 21
                                                     }, this),
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("textarea", {
@@ -2101,24 +2144,24 @@ function AlphaLab() {
                                                         rows: 2
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/alpha-lab.tsx",
-                                                        lineNumber: 1033,
+                                                        lineNumber: 1082,
                                                         columnNumber: 21
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/alpha-lab.tsx",
-                                                lineNumber: 1031,
+                                                lineNumber: 1080,
                                                 columnNumber: 19
                                             }, this)
                                         ]
                                     }, agent.id, true, {
                                         fileName: "[project]/components/alpha-lab.tsx",
-                                        lineNumber: 1003,
+                                        lineNumber: 1052,
                                         columnNumber: 17
                                     }, this))
                             }, void 0, false, {
                                 fileName: "[project]/components/alpha-lab.tsx",
-                                lineNumber: 1001,
+                                lineNumber: 1050,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2129,7 +2172,7 @@ function AlphaLab() {
                                         children: "Pipeline Flow"
                                     }, void 0, false, {
                                         fileName: "[project]/components/alpha-lab.tsx",
-                                        lineNumber: 1046,
+                                        lineNumber: 1095,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2152,13 +2195,13 @@ function AlphaLab() {
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/components/alpha-lab.tsx",
-                                                                lineNumber: 1052,
+                                                                lineNumber: 1101,
                                                                 columnNumber: 23
                                                             }, this)
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/components/alpha-lab.tsx",
-                                                        lineNumber: 1050,
+                                                        lineNumber: 1099,
                                                         columnNumber: 21
                                                     }, this),
                                                     i < SWARM_AGENT_ROLES.length - 1 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2166,24 +2209,24 @@ function AlphaLab() {
                                                         children: "→"
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/alpha-lab.tsx",
-                                                        lineNumber: 1054,
+                                                        lineNumber: 1103,
                                                         columnNumber: 58
                                                     }, this)
                                                 ]
                                             }, agent.id, true, {
                                                 fileName: "[project]/components/alpha-lab.tsx",
-                                                lineNumber: 1049,
+                                                lineNumber: 1098,
                                                 columnNumber: 19
                                             }, this))
                                     }, void 0, false, {
                                         fileName: "[project]/components/alpha-lab.tsx",
-                                        lineNumber: 1047,
+                                        lineNumber: 1096,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/alpha-lab.tsx",
-                                lineNumber: 1045,
+                                lineNumber: 1094,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2191,13 +2234,13 @@ function AlphaLab() {
                                 children: "🧠 The Swarm runs 3 sequential LLM calls. Total cost ≈ 3× the cost of a single generation at the configured model tiers."
                             }, void 0, false, {
                                 fileName: "[project]/components/alpha-lab.tsx",
-                                lineNumber: 1060,
+                                lineNumber: 1109,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/alpha-lab.tsx",
-                        lineNumber: 925,
+                        lineNumber: 974,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2212,14 +2255,14 @@ function AlphaLab() {
                                     children: "🚀"
                                 }, void 0, false, {
                                     fileName: "[project]/components/alpha-lab.tsx",
-                                    lineNumber: 1073,
+                                    lineNumber: 1122,
                                     columnNumber: 17
                                 }, this),
                                 " Deploy Swarm"
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/alpha-lab.tsx",
-                            lineNumber: 1068,
+                            lineNumber: 1117,
                             columnNumber: 15
                         }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
                             onClick: handleKillSwarm,
@@ -2230,19 +2273,19 @@ function AlphaLab() {
                                     children: "⛔"
                                 }, void 0, false, {
                                     fileName: "[project]/components/alpha-lab.tsx",
-                                    lineNumber: 1080,
+                                    lineNumber: 1129,
                                     columnNumber: 17
                                 }, this),
                                 " Abort Protocol"
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/alpha-lab.tsx",
-                            lineNumber: 1076,
+                            lineNumber: 1125,
                             columnNumber: 15
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/components/alpha-lab.tsx",
-                        lineNumber: 1066,
+                        lineNumber: 1115,
                         columnNumber: 11
                     }, this),
                     error && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2250,7 +2293,7 @@ function AlphaLab() {
                         children: error
                     }, void 0, false, {
                         fileName: "[project]/components/alpha-lab.tsx",
-                        lineNumber: 1086,
+                        lineNumber: 1135,
                         columnNumber: 13
                     }, this),
                     swarmLogs.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2266,27 +2309,27 @@ function AlphaLab() {
                                                 className: "animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/alpha-lab.tsx",
-                                                lineNumber: 1096,
+                                                lineNumber: 1145,
                                                 columnNumber: 19
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                 className: "relative inline-flex rounded-full h-2 w-2 bg-cyan-500"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/alpha-lab.tsx",
-                                                lineNumber: 1097,
+                                                lineNumber: 1146,
                                                 columnNumber: 19
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/alpha-lab.tsx",
-                                        lineNumber: 1095,
+                                        lineNumber: 1144,
                                         columnNumber: 17
                                     }, this),
                                     "LIVE SWARM TELEMETRY"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/alpha-lab.tsx",
-                                lineNumber: 1094,
+                                lineNumber: 1143,
                                 columnNumber: 15
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2299,7 +2342,7 @@ function AlphaLab() {
                                                 children: log.status === "running" ? "🌀" : log.status === "done" ? "✅" : "❌"
                                             }, void 0, false, {
                                                 fileName: "[project]/components/alpha-lab.tsx",
-                                                lineNumber: 1108,
+                                                lineNumber: 1157,
                                                 columnNumber: 21
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2318,13 +2361,13 @@ function AlphaLab() {
                                                                 ]
                                                             }, void 0, true, {
                                                                 fileName: "[project]/components/alpha-lab.tsx",
-                                                                lineNumber: 1113,
+                                                                lineNumber: 1162,
                                                                 columnNumber: 39
                                                             }, this) : null
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/components/alpha-lab.tsx",
-                                                        lineNumber: 1112,
+                                                        lineNumber: 1161,
                                                         columnNumber: 23
                                                     }, this),
                                                     log.preview && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2336,24 +2379,24 @@ function AlphaLab() {
                                                         ]
                                                     }, void 0, true, {
                                                         fileName: "[project]/components/alpha-lab.tsx",
-                                                        lineNumber: 1116,
+                                                        lineNumber: 1165,
                                                         columnNumber: 25
                                                     }, this)
                                                 ]
                                             }, void 0, true, {
                                                 fileName: "[project]/components/alpha-lab.tsx",
-                                                lineNumber: 1111,
+                                                lineNumber: 1160,
                                                 columnNumber: 21
                                             }, this)
                                         ]
                                     }, i, true, {
                                         fileName: "[project]/components/alpha-lab.tsx",
-                                        lineNumber: 1104,
+                                        lineNumber: 1153,
                                         columnNumber: 19
                                     }, this))
                             }, void 0, false, {
                                 fileName: "[project]/components/alpha-lab.tsx",
-                                lineNumber: 1102,
+                                lineNumber: 1151,
                                 columnNumber: 15
                             }, this),
                             generatingSwarm && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2364,36 +2407,435 @@ function AlphaLab() {
                                         children: "↓"
                                     }, void 0, false, {
                                         fileName: "[project]/components/alpha-lab.tsx",
-                                        lineNumber: 1127,
+                                        lineNumber: 1176,
                                         columnNumber: 19
                                     }, this),
                                     " Agent thinking..."
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/alpha-lab.tsx",
-                                lineNumber: 1126,
+                                lineNumber: 1175,
                                 columnNumber: 17
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/alpha-lab.tsx",
-                        lineNumber: 1093,
+                        lineNumber: 1142,
                         columnNumber: 13
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/alpha-lab.tsx",
-                lineNumber: 924,
+                lineNumber: 973,
+                columnNumber: 9
+            }, this),
+            activeTab === "backtest" && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                className: "flex gap-5 flex-1 min-h-0",
+                children: [
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        className: "flex-1 flex flex-col bg-zinc-900/50 border border-zinc-800 rounded-xl overflow-hidden shadow-xl",
+                        children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                className: "flex items-center justify-between p-3 bg-zinc-900 border-b border-zinc-800",
+                                children: [
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                        className: "flex items-center gap-2",
+                                        children: [
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                className: "text-xl",
+                                                children: "💻"
+                                            }, void 0, false, {
+                                                fileName: "[project]/components/alpha-lab.tsx",
+                                                lineNumber: 1191,
+                                                columnNumber: 17
+                                            }, this),
+                                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                className: "text-sm font-semibold text-white",
+                                                children: "Standalone Editor"
+                                            }, void 0, false, {
+                                                fileName: "[project]/components/alpha-lab.tsx",
+                                                lineNumber: 1192,
+                                                columnNumber: 17
+                                            }, this)
+                                        ]
+                                    }, void 0, true, {
+                                        fileName: "[project]/components/alpha-lab.tsx",
+                                        lineNumber: 1190,
+                                        columnNumber: 15
+                                    }, this),
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
+                                        onClick: handleRunStandalone,
+                                        disabled: runningStandalone,
+                                        className: "px-4 py-1.5 bg-amber-600 hover:bg-amber-500 disabled:bg-zinc-700 text-white text-xs font-semibold rounded-md transition-all flex items-center gap-2",
+                                        children: runningStandalone ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
+                                            children: [
+                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                    className: "animate-spin text-sm",
+                                                    children: "⏳"
+                                                }, void 0, false, {
+                                                    fileName: "[project]/components/alpha-lab.tsx",
+                                                    lineNumber: 1200,
+                                                    columnNumber: 21
+                                                }, this),
+                                                " Running..."
+                                            ]
+                                        }, void 0, true) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
+                                            children: [
+                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                    className: "text-sm",
+                                                    children: "▶"
+                                                }, void 0, false, {
+                                                    fileName: "[project]/components/alpha-lab.tsx",
+                                                    lineNumber: 1202,
+                                                    columnNumber: 21
+                                                }, this),
+                                                " Run Backtest"
+                                            ]
+                                        }, void 0, true)
+                                    }, void 0, false, {
+                                        fileName: "[project]/components/alpha-lab.tsx",
+                                        lineNumber: 1194,
+                                        columnNumber: 15
+                                    }, this)
+                                ]
+                            }, void 0, true, {
+                                fileName: "[project]/components/alpha-lab.tsx",
+                                lineNumber: 1189,
+                                columnNumber: 13
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                className: "flex-1 min-h-[400px]",
+                                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$monaco$2d$editor$2b$react$40$4$2e$7$2e$0_monaco$2d$editor$40$0$2e$55$2e$1_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f40$monaco$2d$editor$2f$react$2f$dist$2f$index$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$locals$3e$__["default"], {
+                                    height: "100%",
+                                    defaultLanguage: "python",
+                                    theme: "vs-dark",
+                                    value: standaloneCode,
+                                    onChange: (val)=>setStandaloneCode(val || ""),
+                                    options: {
+                                        minimap: {
+                                            enabled: false
+                                        },
+                                        fontSize: 13,
+                                        fontFamily: "var(--font-mono)",
+                                        lineHeight: 22,
+                                        padding: {
+                                            top: 16
+                                        },
+                                        scrollBeyondLastLine: false
+                                    }
+                                }, void 0, false, {
+                                    fileName: "[project]/components/alpha-lab.tsx",
+                                    lineNumber: 1209,
+                                    columnNumber: 15
+                                }, this)
+                            }, void 0, false, {
+                                fileName: "[project]/components/alpha-lab.tsx",
+                                lineNumber: 1208,
+                                columnNumber: 13
+                            }, this)
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/components/alpha-lab.tsx",
+                        lineNumber: 1187,
+                        columnNumber: 11
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        className: "w-[480px] flex-shrink-0 flex flex-col gap-4 overflow-y-auto pr-1",
+                        children: !standaloneResult ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                            className: "flex-1 flex items-center justify-center text-zinc-500 text-sm border border-dashed border-zinc-800 rounded-xl",
+                            children: "Run backtest to view results"
+                        }, void 0, false, {
+                            fileName: "[project]/components/alpha-lab.tsx",
+                            lineNumber: 1229,
+                            columnNumber: 15
+                        }, this) : standaloneResult.error ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                            className: "bg-red-500/10 border border-red-500/30 rounded-xl p-5 text-sm text-red-400 font-mono shadow-xl relative mt-0",
+                            children: [
+                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                    className: "font-semibold mb-2 flex items-center gap-2",
+                                    children: [
+                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                            children: "❌"
+                                        }, void 0, false, {
+                                            fileName: "[project]/components/alpha-lab.tsx",
+                                            lineNumber: 1235,
+                                            columnNumber: 19
+                                        }, this),
+                                        " Execution Error"
+                                    ]
+                                }, void 0, true, {
+                                    fileName: "[project]/components/alpha-lab.tsx",
+                                    lineNumber: 1234,
+                                    columnNumber: 17
+                                }, this),
+                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                    className: "whitespace-pre-wrap",
+                                    children: standaloneResult.error
+                                }, void 0, false, {
+                                    fileName: "[project]/components/alpha-lab.tsx",
+                                    lineNumber: 1237,
+                                    columnNumber: 17
+                                }, this)
+                            ]
+                        }, void 0, true, {
+                            fileName: "[project]/components/alpha-lab.tsx",
+                            lineNumber: 1233,
+                            columnNumber: 15
+                        }, this) : // Results UI
+                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
+                            children: [
+                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                    className: "bg-zinc-900/50 border border-zinc-800 rounded-xl p-5 shadow-xl",
+                                    children: [
+                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
+                                            className: "text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-4",
+                                            children: "Performance Metrics"
+                                        }, void 0, false, {
+                                            fileName: "[project]/components/alpha-lab.tsx",
+                                            lineNumber: 1243,
+                                            columnNumber: 19
+                                        }, this),
+                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                            className: "grid grid-cols-2 gap-4 text-sm",
+                                            children: [
+                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                    children: [
+                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                            className: "text-xs text-zinc-500 mb-1",
+                                                            children: "Sharpe Ratio"
+                                                        }, void 0, false, {
+                                                            fileName: "[project]/components/alpha-lab.tsx",
+                                                            lineNumber: 1248,
+                                                            columnNumber: 23
+                                                        }, this),
+                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                            className: `text-xl font-bold ${(standaloneResult.metrics?.sharpe || 0) > 0 ? "text-emerald-400" : "text-red-400"}`,
+                                                            children: standaloneResult.metrics?.sharpe?.toFixed(3) || "0.000"
+                                                        }, void 0, false, {
+                                                            fileName: "[project]/components/alpha-lab.tsx",
+                                                            lineNumber: 1249,
+                                                            columnNumber: 23
+                                                        }, this)
+                                                    ]
+                                                }, void 0, true, {
+                                                    fileName: "[project]/components/alpha-lab.tsx",
+                                                    lineNumber: 1247,
+                                                    columnNumber: 21
+                                                }, this),
+                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                    children: [
+                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                            className: "text-xs text-zinc-500 mb-1",
+                                                            children: "Total Return"
+                                                        }, void 0, false, {
+                                                            fileName: "[project]/components/alpha-lab.tsx",
+                                                            lineNumber: 1254,
+                                                            columnNumber: 23
+                                                        }, this),
+                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                            className: `text-xl font-bold ${(standaloneResult.metrics?.total_return || 0) > 0 ? "text-emerald-400" : "text-red-400"}`,
+                                                            children: [
+                                                                ((standaloneResult.metrics?.total_return || 0) * 100).toFixed(2),
+                                                                "%"
+                                                            ]
+                                                        }, void 0, true, {
+                                                            fileName: "[project]/components/alpha-lab.tsx",
+                                                            lineNumber: 1255,
+                                                            columnNumber: 23
+                                                        }, this)
+                                                    ]
+                                                }, void 0, true, {
+                                                    fileName: "[project]/components/alpha-lab.tsx",
+                                                    lineNumber: 1253,
+                                                    columnNumber: 21
+                                                }, this),
+                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                    children: [
+                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                            className: "text-xs text-zinc-500 mb-1",
+                                                            children: "Max Drawdown"
+                                                        }, void 0, false, {
+                                                            fileName: "[project]/components/alpha-lab.tsx",
+                                                            lineNumber: 1260,
+                                                            columnNumber: 23
+                                                        }, this),
+                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                            className: "text-xl font-bold text-orange-400",
+                                                            children: [
+                                                                ((standaloneResult.metrics?.max_drawdown || 0) * 100).toFixed(2),
+                                                                "%"
+                                                            ]
+                                                        }, void 0, true, {
+                                                            fileName: "[project]/components/alpha-lab.tsx",
+                                                            lineNumber: 1261,
+                                                            columnNumber: 23
+                                                        }, this)
+                                                    ]
+                                                }, void 0, true, {
+                                                    fileName: "[project]/components/alpha-lab.tsx",
+                                                    lineNumber: 1259,
+                                                    columnNumber: 21
+                                                }, this),
+                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                    children: [
+                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                            className: "text-xs text-zinc-500 mb-1",
+                                                            children: "Trading Days"
+                                                        }, void 0, false, {
+                                                            fileName: "[project]/components/alpha-lab.tsx",
+                                                            lineNumber: 1266,
+                                                            columnNumber: 23
+                                                        }, this),
+                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                            className: "text-xl font-bold text-white",
+                                                            children: standaloneResult.metrics?.trading_days?.toLocaleString() || "0"
+                                                        }, void 0, false, {
+                                                            fileName: "[project]/components/alpha-lab.tsx",
+                                                            lineNumber: 1267,
+                                                            columnNumber: 23
+                                                        }, this)
+                                                    ]
+                                                }, void 0, true, {
+                                                    fileName: "[project]/components/alpha-lab.tsx",
+                                                    lineNumber: 1265,
+                                                    columnNumber: 21
+                                                }, this)
+                                            ]
+                                        }, void 0, true, {
+                                            fileName: "[project]/components/alpha-lab.tsx",
+                                            lineNumber: 1246,
+                                            columnNumber: 19
+                                        }, this)
+                                    ]
+                                }, void 0, true, {
+                                    fileName: "[project]/components/alpha-lab.tsx",
+                                    lineNumber: 1242,
+                                    columnNumber: 17
+                                }, this),
+                                standaloneResult.equity_curve && standaloneResult.equity_curve.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                    className: "bg-zinc-900/50 border border-zinc-800 rounded-xl p-5 flex-1 shadow-xl",
+                                    children: [
+                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
+                                            className: "text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-4",
+                                            children: "Equity Curve"
+                                        }, void 0, false, {
+                                            fileName: "[project]/components/alpha-lab.tsx",
+                                            lineNumber: 1276,
+                                            columnNumber: 21
+                                        }, this),
+                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$ResponsiveContainer$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ResponsiveContainer"], {
+                                            width: "100%",
+                                            height: 300,
+                                            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$recharts$2f$es6$2f$chart$2f$LineChart$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["LineChart"], {
+                                                data: standaloneResult.equity_curve.map((p)=>({
+                                                        date: p.date?.split("T")[0],
+                                                        equity: Number(p.equity?.toFixed(2))
+                                                    })),
+                                                children: [
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$CartesianGrid$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CartesianGrid"], {
+                                                        strokeDasharray: "3 3",
+                                                        stroke: "#27272a"
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/components/alpha-lab.tsx",
+                                                        lineNumber: 1284,
+                                                        columnNumber: 25
+                                                    }, this),
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$XAxis$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["XAxis"], {
+                                                        dataKey: "date",
+                                                        tick: {
+                                                            fontSize: 10,
+                                                            fill: "#71717a"
+                                                        },
+                                                        tickFormatter: (v)=>v?.slice(5),
+                                                        interval: "preserveStartEnd"
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/components/alpha-lab.tsx",
+                                                        lineNumber: 1285,
+                                                        columnNumber: 25
+                                                    }, this),
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$YAxis$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["YAxis"], {
+                                                        tick: {
+                                                            fontSize: 10,
+                                                            fill: "#71717a"
+                                                        },
+                                                        domain: [
+                                                            'auto',
+                                                            'auto'
+                                                        ],
+                                                        tickFormatter: (v)=>`$${(v / 1000).toFixed(1)}k`
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/components/alpha-lab.tsx",
+                                                        lineNumber: 1291,
+                                                        columnNumber: 25
+                                                    }, this),
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$recharts$2f$es6$2f$component$2f$Tooltip$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
+                                                        contentStyle: {
+                                                            background: "#18181b",
+                                                            border: "1px solid #3f3f46",
+                                                            borderRadius: "8px",
+                                                            fontSize: 12
+                                                        },
+                                                        labelStyle: {
+                                                            color: "#a1a1aa"
+                                                        },
+                                                        formatter: (v)=>[
+                                                                `$${v.toLocaleString()}`,
+                                                                "Equity"
+                                                            ]
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/components/alpha-lab.tsx",
+                                                        lineNumber: 1296,
+                                                        columnNumber: 25
+                                                    }, this),
+                                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$recharts$40$2$2e$15$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$recharts$2f$es6$2f$cartesian$2f$Line$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Line"], {
+                                                        type: "monotone",
+                                                        dataKey: "equity",
+                                                        stroke: "#a78bfa",
+                                                        strokeWidth: 2,
+                                                        dot: false
+                                                    }, void 0, false, {
+                                                        fileName: "[project]/components/alpha-lab.tsx",
+                                                        lineNumber: 1301,
+                                                        columnNumber: 25
+                                                    }, this)
+                                                ]
+                                            }, void 0, true, {
+                                                fileName: "[project]/components/alpha-lab.tsx",
+                                                lineNumber: 1280,
+                                                columnNumber: 23
+                                            }, this)
+                                        }, void 0, false, {
+                                            fileName: "[project]/components/alpha-lab.tsx",
+                                            lineNumber: 1279,
+                                            columnNumber: 21
+                                        }, this)
+                                    ]
+                                }, void 0, true, {
+                                    fileName: "[project]/components/alpha-lab.tsx",
+                                    lineNumber: 1275,
+                                    columnNumber: 19
+                                }, this)
+                            ]
+                        }, void 0, true)
+                    }, void 0, false, {
+                        fileName: "[project]/components/alpha-lab.tsx",
+                        lineNumber: 1227,
+                        columnNumber: 11
+                    }, this)
+                ]
+            }, void 0, true, {
+                fileName: "[project]/components/alpha-lab.tsx",
+                lineNumber: 1186,
                 columnNumber: 9
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/components/alpha-lab.tsx",
-        lineNumber: 388,
+        lineNumber: 427,
         columnNumber: 5
     }, this);
 }
-_s(AlphaLab, "IEbw5e6baRKzUQGrI3UgKU5KDi0=");
+_s(AlphaLab, "WR8U8AaFVQfgGXwmo7MBTNYIh5k=");
 _c = AlphaLab;
 var _c;
 __turbopack_context__.k.register(_c, "AlphaLab");

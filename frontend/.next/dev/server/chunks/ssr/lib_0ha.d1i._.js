@@ -32,6 +32,8 @@ __turbopack_context__.s([
     ()=>fetchAlphaExperiments,
     "fetchAlphaModelTiers",
     ()=>fetchAlphaModelTiers,
+    "fetchExperimentTrades",
+    ()=>fetchExperimentTrades,
     "fetchIndicators",
     ()=>fetchIndicators,
     "fetchPipelineCoverage",
@@ -58,12 +60,16 @@ __turbopack_context__.s([
     ()=>promoteAlphaExperiment,
     "runAlphaBacktest",
     ()=>runAlphaBacktest,
+    "runForensicAudit",
+    ()=>runForensicAudit,
     "runPipelineFull",
     ()=>runPipelineFull,
     "runPipelineIngest",
     ()=>runPipelineIngest,
     "runPipelineScoring",
     ()=>runPipelineScoring,
+    "runStandaloneBacktest",
+    ()=>runStandaloneBacktest,
     "runTournament",
     ()=>runTournament,
     "runTraderBacktest",
@@ -252,6 +258,18 @@ async function saveSwarmResult(data) {
     });
     return await res.json();
 }
+async function runStandaloneBacktest(code) {
+    const res = await fetch(`${API_BASE}/api/alpha-lab/standalone-backtest`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            code
+        })
+    });
+    return await res.json();
+}
 async function runAlphaBacktest(experimentId) {
     const res = await fetch(`${API_BASE}/api/alpha-lab/${experimentId}/backtest`, {
         method: "POST"
@@ -333,6 +351,20 @@ async function getPipelineLogs(since = 0) {
 async function fetchAlignedProfile() {
     const res = await fetch(`${API_BASE}/api/alpha-lab/aligned-profile`);
     if (!res.ok) throw new Error(`Failed to fetch profile: ${res.status}`);
+    return await res.json();
+}
+async function runForensicAudit(experimentId) {
+    const res = await fetch(`${API_BASE}/api/alpha-lab/${experimentId}/audit`, {
+        method: "POST"
+    });
+    return await res.json();
+}
+async function fetchExperimentTrades(experimentId) {
+    const res = await fetch(`${API_BASE}/api/alpha-lab/${experimentId}/trades`);
+    if (!res.ok) return {
+        trades: [],
+        error: `HTTP ${res.status}`
+    };
     return await res.json();
 }
 }),
