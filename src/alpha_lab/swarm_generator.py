@@ -602,7 +602,7 @@ def generate_strategy_swarm_stream(
             name=name,
             rationale=combined_rationale,
             code=code,
-            model_tier=f"{r_tier_key}-{rm_tier_key}-{d_tier_key}",
+            model_tier=f"{r_tier_key[:3]}-{rm_tier_key[:3]}-{d_tier_key[:3]}",
             input_tokens=input_tokens,
             output_tokens=output_tokens,
             cost_usd=round(cost_usd, 6),
