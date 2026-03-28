@@ -251,12 +251,100 @@ You MUST follow these hedge fund heuristics:
 }
 
 
+# ── Agent Swarm Prompts ───────────────────────────────────────
+
+_RESEARCHER_SYS_PROMPT = """You are a Lead Quantitative Researcher at a top algorithmic trading firm.
+Your job is to read the user's prompt and formulate a mathematical trading hypothesis based on the available data dictionary.
+
+RULES:
+1. Do NOT write any Python code. Write a clear, structured thesis in plain English.
+2. Define clear entry conditions (e.g., "Buy when EV/Sales Z-score < -1.0").
+3. Define signal combinations (e.g., Fundamental Value + Technical Momentum).
+4. Outline the economic intuition behind the strategy.
+
+AVAILABLE DATA DICTIONARY:
+{dynamic_schema}
+
+Universe: {ticker_summary}
+
+Use these variables to propose a strategy idea.
+"""
+
+_RISK_MANAGER_SYS_PROMPT = """You are the Chief Risk Officer at a quantitative hedge fund.
+Your job is to review the Quantitative Researcher's strategy hypothesis and enforce strict risk heuristics.
+
+RULES:
+1. Review the Researcher's logic.
+2. Enforce these specific Hedge Fund / Academic Return constraints:
+{style_addon}
+
+3. Identify potential flaws like infinite hold periods, no stop losses, or excessive volatility exposure.
+4. Output the FINALIZED strategy logic in plain English, incorporating the Researcher's alpha signals but strictly clamping it with your risk constraints. Make it explicitly sequential and clear.
+5. Do NOT write any Python code.
+"""
+
+_DEVELOPER_SYS_PROMPT = """You are the Lead Quantitative Developer.
+Your job is to translate the Risk Manager's finalized strategy rules into perfect Python Polars code.
+
+You must generate a Python function that follows this EXACT signature:
+
+```python
+def strategy_name(df: pl.DataFrame) -> pl.DataFrame:
+    # Your logic here
+    return df.with_columns(...)
+```
+
+RULES:
+1. The function takes a Polars DataFrame with these columns (auto-discovered from live data):
+   - entity_id (int): unique stock identifier
+   - ticker (str): stock ticker symbol
+   - date (date): trading date
+{dynamic_schema}
+
+   Universe: {ticker_summary}
+
+2. The function MUST add exactly ONE new column named `raw_weight_{{strategy_id}}` where strategy_id is a snake_case name
+3. Weights should be float values. Positive = long, negative = short, 0 = no position
+4. Only use `polars` (imported as `pl`) and `numpy` (imported as `np`) — no other imports
+5. The function name must match the strategy_id in the column name
+6. The function MUST return the FULL original DataFrame with the weight column ADDED (do NOT select a subset of columns)
+
+CRITICAL POLARS API RULES (you MUST follow these exactly):
+- `.fill_null(0)` or `.fill_null(value)` — use literal values, NOT pl.FillNullStrategy
+- `.fill_null(strategy="forward")` — use string, NOT pl.FillNullStrategy.FORWARD
+- For rolling operations per entity: `pl.col("x").rolling_mean(window_size=60).over("entity_id")` — rolling FIRST, then .over()
+- For cross-sectional ranking: `pl.col("x").rank("ordinal").over("date").cast(pl.Float64)` — ALWAYS .cast(pl.Float64) after .rank()
+- `.rank()` returns u32 (unsigned int) which CANNOT be negated or subtracted. You MUST cast to Float64 immediately after rank()
+- `.count()` also returns u32. Cast to Float64 if using in arithmetic.
+- Do NOT use `.over()` BEFORE rolling operations — always chain rolling FIRST, then .over()
+- Use `pl.when(...).then(...).otherwise(...)` for conditionals
+- Do NOT use `pl.FillNullStrategy` — it does not exist
+- `.clip(lower, upper)` uses POSITIONAL args, NOT min_value/max_value kwargs. Example: `.clip(-3.0, 3.0)`
+- Avoid `.select()` at the end — return the full df with the weight column added via `.with_columns()`
+- NEVER divide by a value that could be zero or near-zero. Always clip the divisor: `/ pl.col("x").clip(0.01, None)` instead of `/ (pl.col("x") + 1e-6)`
+- Use `.fill_null(0.0)` BEFORE arithmetic operations on columns that may have nulls
+
+RESPOND in this exact format:
+STRATEGY_NAME: snake_case_name
+RATIONALE: 1-2 sentence explanation of the final strategy
+CODE:
+```python
+def snake_case_name(df: pl.DataFrame) -> pl.DataFrame:
+    ...
+```
+"""
+
 def generate_strategy(
     prompt: str = "",
     model_tier: str = "sonnet",
     strategy_style: str = "academic",
 ) -> StrategyHypothesis:
-    """Generate a strategy hypothesis using Anthropic Claude.
+    """Generate a strategy hypothesis using Anthropic Claude via an Agent Swarm.
+
+    Follows a 3-agent pipeline:
+      1. Quantitative Researcher (Idea Generation)
+      2. Risk Manager (Constraint Enforcement)
+      3. Quantitative Developer (Polars Implementation)
 
     Args:
         prompt: Optional user guidance for the strategy idea
@@ -283,37 +371,82 @@ def generate_strategy(
         "Focus on strategies with clear economic intuition."
     )
 
-    # Compose system prompt with style addon
-    full_system_prompt = (
-        _build_system_prompt()
-        + STYLE_ADDONS.get(strategy_style, STYLE_ADDONS["academic"])
-        + _build_data_profile_block()
-    )
+    # ── AGENT 1: Quantitative Researcher ──
+    researcher_sys = _RESEARCHER_SYS_PROMPT.format(
+        dynamic_schema=_build_dynamic_schema(),
+        ticker_summary=_build_ticker_summary()
+    ) + _build_data_profile_block()
 
-    response = client.messages.create(
+    resp_researcher = client.messages.create(
         model=tier["model_id"],
-        max_tokens=4000,
-        system=full_system_prompt,
+        max_tokens=2000,
+        system=researcher_sys,
         messages=[{"role": "user", "content": user_msg}],
     )
+    researcher_text = resp_researcher.content[0].text
 
-    # Extract response text
-    text = response.content[0].text
+    # ── AGENT 2: Risk Manager ──
+    risk_sys = _RISK_MANAGER_SYS_PROMPT.format(
+        style_addon=STYLE_ADDONS.get(strategy_style, STYLE_ADDONS["academic"])
+    )
 
-    # Calculate cost
-    input_tokens = response.usage.input_tokens
-    output_tokens = response.usage.output_tokens
+    resp_risk = client.messages.create(
+        model=tier["model_id"],
+        max_tokens=2000,
+        system=risk_sys,
+        messages=[
+            {"role": "user", "content": f"Original prompt: {user_msg}"},
+            {"role": "assistant", "content": researcher_text},
+            {"role": "user", "content": "Please review this strategy and apply our risk management layers. Output the finalized logic."}
+        ],
+    )
+    risk_text = resp_risk.content[0].text
+
+    # ── AGENT 3: Quantitative Developer ──
+    dev_sys = _DEVELOPER_SYS_PROMPT.format(
+        dynamic_schema=_build_dynamic_schema(),
+        ticker_summary=_build_ticker_summary()
+    )
+
+    resp_dev = client.messages.create(
+        model=tier["model_id"],
+        max_tokens=4000,
+        system=dev_sys,
+        messages=[
+            {"role": "user", "content": f"Please implement the following finalized strategy logic into Polars code:\n\n{risk_text}"}
+        ],
+    )
+    dev_text = resp_dev.content[0].text
+
+    # Calculate total cost across the swarm
+    input_tokens = (
+        resp_researcher.usage.input_tokens +
+        resp_risk.usage.input_tokens +
+        resp_dev.usage.input_tokens
+    )
+    output_tokens = (
+        resp_researcher.usage.output_tokens +
+        resp_risk.usage.output_tokens +
+        resp_dev.usage.output_tokens
+    )
     cost_usd = (
         (input_tokens / 1_000_000) * tier["input_cost_per_mtok"]
         + (output_tokens / 1_000_000) * tier["output_cost_per_mtok"]
     )
 
     # Parse response
-    name, rationale, code = _parse_response(text)
+    name, dev_rationale, code = _parse_response(dev_text)
+
+    # Build a unified rationale explaining the swarm process
+    combined_rationale = (
+        f"**Researcher:** Proposed concept based on '{user_msg}'.\n"
+        f"**Risk Manager:** Applied '{strategy_style}' heuristics.\n"
+        f"**Final Rationale:** {dev_rationale}"
+    )
 
     return StrategyHypothesis(
         name=name,
-        rationale=rationale,
+        rationale=combined_rationale,
         code=code,
         model_tier=model_tier,
         input_tokens=input_tokens,
