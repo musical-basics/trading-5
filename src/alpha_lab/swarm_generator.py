@@ -667,7 +667,122 @@ def _parse_response(text: str) -> tuple[str, str, str]:
             f"LLM did not return valid strategy code. Raw response:\n{text[:500]}"
         )
 
+    # Apply strict AST-level guardrails to catch lookahead bias
+    _enforce_ast_guardrails(code)
+
     return name, rationale, code
+
+
+def _enforce_ast_guardrails(code: str) -> None:
+    """Parse the generated code and look for illegal patterns such as lookahead bias.
+
+    Guardrails enforced:
+      G1. fill_null(strategy='backward')  — future lookahead via backward fill
+      G2. .shift(-N) with negative N      — peeking at future rows
+      G3. .pct_change(-N) with negative N — future return calculation
+      G4. Fundamental columns used without filing_date staleness guard
+          (filing_date must appear in code when any fundamental col is referenced)
+    """
+    try:
+        tree = ast.parse(code)
+    except Exception as e:
+        # If it doesn't parse, let the execution fail naturally later,
+        # or we could reject it here. We'll reject invalid syntax.
+        raise ValueError(f"LLM generated invalid Python syntax: {e}")
+
+    # ── Catalogue of fundamental columns that require staleness guards ──────
+    FUNDAMENTAL_COLS = {
+        "dcf_npv_gap", "ev_sales_zscore", "pe_ratio", "pb_ratio", "ps_ratio",
+        "ebit", "ebitda", "net_income", "free_cash_flow", "total_debt",
+        "total_equity", "revenue", "gross_margin", "operating_margin",
+        "net_margin", "roe", "roa", "roic", "current_ratio", "quick_ratio",
+        "debt_to_equity", "earnings_yield", "book_value", "enterprise_value",
+        "ev_ebitda", "peg_ratio", "dividend_yield", "payout_ratio",
+        "revenue_growth", "earnings_growth", "asset_turnover",
+        "filing_date",  # itself — must be referenced alongside the guard
+    }
+
+    class GuardrailVisitor(ast.NodeVisitor):
+        def __init__(self):
+            self.referenced_fundamentals: set[str] = set()
+            self.has_staleness_guard: bool = False  # filing_date check present
+
+        def visit_Call(self, node):
+            # ── G1: fill_null(strategy='backward') ─────────────────────────
+            if isinstance(node.func, ast.Attribute) and node.func.attr == "fill_null":
+                for kw in node.keywords:
+                    if kw.arg == "strategy":
+                        val = None
+                        if isinstance(kw.value, ast.Constant):
+                            val = kw.value.value
+                        elif isinstance(kw.value, ast.Str):
+                            val = kw.value.s
+                        if val == "backward":
+                            raise ValueError(
+                                "AST Guardrail Violation [G1]: fill_null(strategy='backward') "
+                                "is strictly prohibited — introduces future lookahead bias."
+                            )
+
+            # ── G2: .shift(-N) lookahead ────────────────────────────────────
+            if isinstance(node.func, ast.Attribute) and node.func.attr == "shift":
+                if node.args:
+                    arg = node.args[0]
+                    # shift(-N) as direct negative literal
+                    if isinstance(arg, ast.UnaryOp) and isinstance(arg.op, ast.USub):
+                        if isinstance(arg.operand, ast.Constant) and isinstance(arg.operand.value, (int, float)):
+                            raise ValueError(
+                                f"AST Guardrail Violation [G2]: .shift({-arg.operand.value}) "
+                                "uses a negative offset — this peeks at future rows (lookahead bias). "
+                                "Use .shift(1) or positive offsets only."
+                            )
+                for kw in node.keywords:
+                    if kw.arg in ("n", "periods"):
+                        if isinstance(kw.value, ast.UnaryOp) and isinstance(kw.value.op, ast.USub):
+                            raise ValueError(
+                                "AST Guardrail Violation [G2]: .shift(n=negative) "
+                                "peeks at future rows (lookahead bias). Use positive offsets only."
+                            )
+
+            # ── G3: .pct_change(-N) lookahead ──────────────────────────────
+            if isinstance(node.func, ast.Attribute) and node.func.attr == "pct_change":
+                if node.args:
+                    arg = node.args[0]
+                    if isinstance(arg, ast.UnaryOp) and isinstance(arg.op, ast.USub):
+                        if isinstance(arg.operand, ast.Constant) and isinstance(arg.operand.value, (int, float)):
+                            raise ValueError(
+                                f"AST Guardrail Violation [G3]: .pct_change({-arg.operand.value}) "
+                                "computes future returns (lookahead bias). "
+                                "Use positive period arguments only."
+                            )
+                for kw in node.keywords:
+                    if kw.arg == "n":
+                        if isinstance(kw.value, ast.UnaryOp) and isinstance(kw.value.op, ast.USub):
+                            raise ValueError(
+                                "AST Guardrail Violation [G3]: .pct_change(n=negative) "
+                                "computes future returns (lookahead bias). Use positive n only."
+                            )
+
+            self.generic_visit(node)
+
+        def visit_Constant(self, node):
+            # ── G4: Track fundamental column string references ───────────────
+            if isinstance(node.value, str) and node.value in FUNDAMENTAL_COLS:
+                if node.value != "filing_date":
+                    self.referenced_fundamentals.add(node.value)
+                else:
+                    self.has_staleness_guard = True
+            self.generic_visit(node)
+
+    visitor = GuardrailVisitor()
+    visitor.visit(tree)
+
+    # ── G4 post-visit: fundamental usage without staleness guard ────────────
+    if visitor.referenced_fundamentals and not visitor.has_staleness_guard:
+        cols = ", ".join(sorted(visitor.referenced_fundamentals))
+        raise ValueError(
+            f"AST Guardrail Violation [G4]: Strategy references fundamental column(s) "
+            f"[{cols}] without a filing_date staleness guard."
+        )
 
 
 def get_tier_info() -> dict:

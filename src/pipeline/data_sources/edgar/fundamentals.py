@@ -212,11 +212,17 @@ def ingest_fundamentals_edgar(tickers=None):
                             or cash_q.get(end_date, {}).get("filed")
                             or shares_q.get(end_date, {}).get("filed")
                         )
+
+                    # Enforce a strict minimum 45-day lag to prevent any ABBV-style leakage
+                    # (where period_end_date accidentally masquerades as filing_date)
+                    min_lag_date = period_end_date + pd.Timedelta(days=45)
+                    
                     if filed_str:
-                        filing_date = pd.Timestamp(filed_str)
+                        actual_sec_date = pd.Timestamp(filed_str)
+                        filing_date = max(actual_sec_date, min_lag_date)
                     else:
                         # Last resort: use period_end + 45 days
-                        filing_date = period_end_date + pd.Timedelta(days=45)
+                        filing_date = min_lag_date
 
                     revenue = rev_entry.get("val")
                     debt = debt_q.get(end_date, {}).get("val")
