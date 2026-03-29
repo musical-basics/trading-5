@@ -84,11 +84,19 @@ def execute_strategy(
     if not is_valid:
         return None, f"Validation failed: {error}"
 
+    def safe_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if name == "polars":
+            return pl
+        if name == "numpy":
+            return np
+        raise ImportError(f"Import of {name} is prohibited in sandbox")
+
     # Build restricted execution scope
     sandbox_globals = {
         "pl": pl,
         "np": np,
         "__builtins__": {
+            "__import__": safe_import,
             "range": range,
             "len": len,
             "max": max,

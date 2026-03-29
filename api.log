@@ -227,3 +227,38 @@ INFO:     127.0.0.1:50026 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
 INFO:     127.0.0.1:51092 - "GET /api/alpha-lab/settings/swarm_agent_tiers HTTP/1.1" 200 OK
 INFO:     127.0.0.1:51094 - "GET /api/alpha-lab/settings/swarm_agent_notes HTTP/1.1" 200 OK
 INFO:     127.0.0.1:51097 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57173 - "GET /api/strategies/list HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57173 - "GET /api/alpha-lab/settings/swarm_agent_tiers HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57176 - "GET /api/alpha-lab/settings/swarm_agent_notes HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57173 - "GET /api/alpha-lab/settings/swarm_agent_tiers HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57177 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57186 - "GET /api/alpha-lab/settings/swarm_agent_notes HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57176 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59549 - "OPTIONS /api/alpha-lab/standalone-backtest HTTP/1.1" 200 OK
+/Users/lionelyu/Documents/New Version/trading-5/src/alpha_lab/lab_backtester.py:81: UserWarning: Sortedness of columns cannot be checked when 'by' groups provided
+  market = market.join_asof(
+INFO:     127.0.0.1:59549 - "POST /api/alpha-lab/standalone-backtest HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'src/alpha_lab/sandbox_executor.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [66289]
+INFO:     Started server process [70291]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'test_sandbox.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [70291]
+INFO:     Started server process [71133]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'test_sandbox.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [71133]
+INFO:     Started server process [71146]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
