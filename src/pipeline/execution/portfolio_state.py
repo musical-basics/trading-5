@@ -158,7 +158,7 @@ def get_portfolio_state_by_id(portfolio_id: int):
         starting_equity = capital_row[0] if capital_row else 1000.0
 
         executions = pd.read_sql_query("""
-            SELECT ticker, action, quantity, simulated_price
+            SELECT ticker, action, quantity, simulated_price, strategy_id
             FROM paper_executions
             WHERE portfolio_id = ?
             ORDER BY timestamp
@@ -172,9 +172,13 @@ def get_portfolio_state_by_id(portfolio_id: int):
                 ticker = row["ticker"]
                 qty = int(row["quantity"])
                 price = float(row["simulated_price"])
+                strat_id = row.get("strategy_id")
 
                 if ticker not in holdings:
-                    holdings[ticker] = {"shares": 0, "avg_price": 0.0}
+                    holdings[ticker] = {"shares": 0, "avg_price": 0.0, "strategies": set()}
+
+                if strat_id and isinstance(strat_id, str):
+                    holdings[ticker]["strategies"].add(strat_id)
 
                 if row["action"] == "BUY":
                     current = holdings[ticker]
@@ -190,6 +194,8 @@ def get_portfolio_state_by_id(portfolio_id: int):
                     cash_spent -= qty * price
 
             holdings = {t: h for t, h in holdings.items() if h["shares"] > 0}
+            for t in holdings:
+                holdings[t]["strategies"] = list(holdings[t]["strategies"])
 
         # Estimate current equity
         holdings_value = 0.0
@@ -237,6 +243,11 @@ def get_trader_state(trader_id: int):
         for ticker, info in holdings.items():
             if ticker in all_holdings:
                 all_holdings[ticker]["shares"] += info["shares"]
+                # Average price recalculation is omitted for trader state (not used downstream), 
+                # but we need to merge strategies
+                all_holdings[ticker]["strategies"] = list(set(
+                    all_holdings[ticker].get("strategies", []) + info.get("strategies", [])
+                ))
             else:
                 all_holdings[ticker] = info.copy()
 

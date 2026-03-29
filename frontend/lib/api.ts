@@ -782,6 +782,7 @@ export interface LivePosition {
   cost_basis: number
   unrealized_pnl_usd: number
   unrealized_pnl_pct: number
+  strategies?: string[]
 }
 
 export interface LivePositionsResponse {

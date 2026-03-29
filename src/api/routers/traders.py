@@ -156,6 +156,7 @@ async def api_trader_positions(trader_id: int):
                     "cost_basis": round(cost_basis, 2),
                     "unrealized_pnl_usd": round(unrealized_pnl_usd, 2),
                     "unrealized_pnl_pct": round(unrealized_pnl_pct, 4),
+                    "strategies": info.get("strategies", []),
                 })
                 total_invested += market_value
         finally:

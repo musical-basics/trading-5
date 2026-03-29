@@ -468,9 +468,16 @@ export function LivePositions() {
                           >
                             {/* Ticker */}
                             <TableCell className="py-3 pl-6">
-                              <span className="font-mono font-semibold text-sm text-foreground">
-                                {pos.ticker}
-                              </span>
+                              <div className="flex flex-col">
+                                <span className="font-mono font-semibold text-sm text-foreground">
+                                  {pos.ticker}
+                                </span>
+                                {pos.strategies && pos.strategies.length > 0 && (
+                                  <span className="text-[10px] text-muted-foreground/80 mt-0.5 truncate max-w-[120px]" title={pos.strategies.join(", ")}>
+                                    {pos.strategies.join(", ")}
+                                  </span>
+                                )}
+                              </div>
                             </TableCell>
 
                             {/* Shares */}
