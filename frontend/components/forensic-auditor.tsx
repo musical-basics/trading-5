@@ -16,6 +16,7 @@ import {
   RefreshCw,
   TrendingUp,
   BrainCircuit,
+  Filter,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -182,6 +183,7 @@ export function ForensicAuditor() {
   const [isRunning, setIsRunning] = useState(false)
   const [isLoadingTrades, setIsLoadingTrades] = useState(false)
   const [isRerunning, setIsRerunning] = useState(false)
+  const [flagFilter, setFlagFilter] = useState<"all" | "flagged" | "clean">("all")
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   // Load passed experiments and models
@@ -261,6 +263,17 @@ export function ForensicAuditor() {
   const selectedExp = experiments.find((e) => e.experiment_id === selectedId)
   const categoryMeta = auditResult ? CATEGORY_META[auditResult.error_category] ?? CATEGORY_META["NONE"] : null
   const CategoryIcon = categoryMeta?.icon ?? ShieldAlert
+
+  const flaggedTrades = auditResult?.flagged_trades ?? []
+  const filteredTrades = trades.filter((trade) => {
+    if (flagFilter === "all") return true
+    const isFlagged = !!flaggedTrades.find(
+      (f) => f.ticker === trade.ticker && f.date === String(trade.date).slice(0, 10)
+    )
+    if (flagFilter === "flagged") return isFlagged
+    if (flagFilter === "clean") return !isFlagged
+    return true
+  })
 
   return (
     <div className="space-y-6">
@@ -489,7 +502,7 @@ export function ForensicAuditor() {
                 </CardTitle>
                 <CardDescription className="text-[11px] mt-0.5">
                   {trades.length > 0
-                    ? `${trades.length} position changes extracted · click flagged rows to see AI reason`
+                    ? `${filteredTrades.length} of ${trades.length} positions shown · click flagged rows to see AI reason`
                     : isLoadingTrades
                     ? "Loading trade ledger…"
                     : "No trade ledger found — run a full backtest first"}
@@ -510,11 +523,27 @@ export function ForensicAuditor() {
                       <th className="px-4 py-2 text-left text-[11px] font-medium text-muted-foreground">Δ Weight</th>
                       <th className="px-4 py-2 text-left text-[11px] font-medium text-muted-foreground">Price</th>
                       <th className="px-4 py-2 text-left text-[11px] font-medium text-muted-foreground">Volume</th>
-                      <th className="px-4 py-2 text-left text-[11px] font-medium text-muted-foreground">AI Flag</th>
+                      <th 
+                        className="px-4 py-2 text-left text-[11px] font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors group select-none"
+                        onClick={() => setFlagFilter(f => f === "all" ? "flagged" : f === "flagged" ? "clean" : "all")}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          AI Flag
+                          <div className={cn(
+                            "flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold tracking-wider uppercase transition-colors",
+                            flagFilter === "all" ? "bg-muted/50 text-muted-foreground" : 
+                            flagFilter === "flagged" ? "bg-red-500/20 text-red-500" : 
+                            "bg-emerald-500/20 text-emerald-500"
+                          )}>
+                            <Filter className="w-2.5 h-2.5" />
+                            {flagFilter}
+                          </div>
+                        </div>
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {trades.map((trade, i) => (
+                    {filteredTrades.map((trade, i) => (
                       <TradeRow
                         key={`${trade.entity_id}-${trade.date}-${i}`}
                         trade={trade}

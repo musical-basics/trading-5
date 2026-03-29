@@ -3486,6 +3486,10 @@
     color: var(--color-emerald-400);
   }
 
+  .text-emerald-500 {
+    color: var(--color-emerald-500);
+  }
+
   .text-foreground {
     color: var(--foreground);
   }
@@ -3594,6 +3598,10 @@
     .text-red-400\/50 {
       color: color-mix(in oklab, var(--color-red-400) 50%, transparent);
     }
+  }
+
+  .text-red-500 {
+    color: var(--color-red-500);
   }
 
   .text-secondary-foreground {
