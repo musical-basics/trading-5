@@ -262,3 +262,87 @@ INFO:     Finished server process [71133]
 INFO:     Started server process [71146]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
+✓ DuckDB store initialized
+✓ Redis WebSocket listener started
+  ⚠ Redis listener not available: Error 61 connecting to localhost:6379. Connection refused.
+  ⚠ WebSocket push will be disabled (REST polling still works)
+INFO:     127.0.0.1:64011 - "GET /api/strategies/list HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64011 - "GET /api/alpha-lab/settings/swarm_agent_tiers HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64014 - "GET /api/alpha-lab/settings/swarm_agent_notes HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64011 - "GET /api/alpha-lab/settings/swarm_agent_tiers HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64015 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64037 - "GET /api/alpha-lab/settings/swarm_agent_notes HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64014 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+/Users/lionelyu/Documents/New Version/trading-5/src/alpha_lab/lab_backtester.py:81: UserWarning: Sortedness of columns cannot be checked when 'by' groups provided
+  market = market.join_asof(
+INFO:     127.0.0.1:64014 - "POST /api/alpha-lab/standalone-backtest HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64014 - "OPTIONS /api/alpha-lab/save-standalone HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64014 - "POST /api/alpha-lab/save-standalone HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64014 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64014 - "GET /api/alpha-lab/ae875eff HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64014 - "POST /api/alpha-lab/ae875eff/backtest HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64014 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64014 - "GET /api/alpha-lab/ae875eff HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64014 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64247 - "GET /api/alpha-lab/audit/models HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64255 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64014 - "GET /api/alpha-lab/audit/models HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64014 - "GET /api/alpha-lab/ae875eff/trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64014 - "GET /api/alpha-lab/settings/swarm_agent_tiers HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64255 - "GET /api/alpha-lab/settings/swarm_agent_notes HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64247 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64360 - "GET /api/alpha-lab/settings/swarm_agent_tiers HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64255 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64361 - "GET /api/alpha-lab/settings/swarm_agent_notes HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64739 - "GET /api/alpha-lab/ae875eff HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'src/alpha_lab/alpha_lab_store.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [71146]
+INFO:     Started server process [72631]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src/api/routers/alpha_lab.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [72631]
+INFO:     Started server process [72642]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+✓ DuckDB store initialized
+✓ Redis WebSocket listener started
+  ⚠ Redis listener not available: Error 61 connecting to localhost:6379. Connection refused.
+  ⚠ WebSocket push will be disabled (REST polling still works)
+INFO:     127.0.0.1:50174 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50196 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51799 - "GET /api/strategies/list HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51799 - "GET /api/alpha-lab/settings/swarm_agent_tiers HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51804 - "GET /api/alpha-lab/settings/swarm_agent_notes HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51799 - "GET /api/alpha-lab/settings/swarm_agent_tiers HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51805 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51808 - "GET /api/strategies/list HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51816 - "GET /api/alpha-lab/settings/swarm_agent_notes HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51804 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51799 - "GET /api/alpha-lab/settings/swarm_agent_tiers HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51805 - "GET /api/alpha-lab/settings/swarm_agent_notes HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51816 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51804 - "GET /api/alpha-lab/settings/swarm_agent_tiers HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51799 - "GET /api/alpha-lab/settings/swarm_agent_notes HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51808 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51808 - "GET /api/diagnostics/tickers HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51799 - "GET /api/diagnostics/tickers HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51799 - "GET /api/diagnostics/xray/AAPL/2024-03-15 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51799 - "GET /api/strategies/list HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51808 - "GET /api/strategies/list HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51808 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51799 - "GET /api/alpha-lab/audit/models HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51804 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51808 - "GET /api/alpha-lab/audit/models HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51804 - "GET /api/alpha-lab/settings/swarm_agent_tiers HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51799 - "GET /api/alpha-lab/settings/swarm_agent_notes HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51816 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51808 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51805 - "GET /api/alpha-lab/settings/swarm_agent_notes HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51832 - "GET /api/alpha-lab/settings/swarm_agent_tiers HTTP/1.1" 200 OK

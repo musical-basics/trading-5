@@ -10,6 +10,7 @@ import {
   runAlphaBacktest,
   deleteAlphaExperiment,
   updateAlphaCode,
+  updateAlphaName,
   promoteAlphaExperiment,
   combineAlphaStrategies,
   runStandaloneBacktest,
@@ -125,6 +126,8 @@ export default function AlphaLab() {
   const [error, setError] = useState<string | null>(null)
   const [editedCode, setEditedCode] = useState<string>("")
   const [isEditing, setIsEditing] = useState(false)
+  const [isRenaming, setIsRenaming] = useState(false)
+  const [newName, setNewName] = useState("")
   const [saving, setSaving] = useState(false)
   const [promoting, setPromoting] = useState(false)
   const [combineMode, setCombineMode] = useState(false)
@@ -409,6 +412,19 @@ export default function AlphaLab() {
     } finally {
       setSaving(false)
       setBacktesting(null)
+    }
+  }
+
+  const handleRename = async () => {
+    if (!selectedExp || !newName.trim()) return
+    setError(null)
+    try {
+      await updateAlphaName(selectedExp.experiment_id, newName.trim())
+      setSelectedExp({ ...selectedExp, strategy_name: newName.trim() })
+      setIsRenaming(false)
+      await loadExperiments()
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Rename failed")
     }
   }
 
@@ -794,11 +810,53 @@ export default function AlphaLab() {
               <div className="flex-1 overflow-y-auto space-y-4 pr-1">
                 {/* Detail Header */}
                 <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-xl font-bold text-white">
-                      {selectedExp.strategy_name}
-                    </h2>
-                    <p className="text-sm text-zinc-400 mt-0.5">
+                  <div className="flex-1 mr-4">
+                    {isRenaming ? (
+                      <div className="flex items-center gap-2 mb-1">
+                        <input
+                          type="text"
+                          value={newName}
+                          onChange={(e) => setNewName(e.target.value)}
+                          className="bg-zinc-800 text-white rounded px-2 py-1 text-xl font-bold border border-zinc-600 focus:outline-none focus:border-violet-500 w-full max-w-sm"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleRename()
+                            if (e.key === "Escape") setIsRenaming(false)
+                          }}
+                        />
+                        <button
+                          onClick={handleRename}
+                          className="p-1 px-2 bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/40 rounded transition-colors text-sm font-bold"
+                          title="Save Name"
+                        >
+                          ✓
+                        </button>
+                        <button
+                          onClick={() => setIsRenaming(false)}
+                          className="p-1 px-2 bg-zinc-800 text-zinc-400 hover:text-white rounded transition-colors text-sm font-bold"
+                          title="Cancel"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 group mb-1 min-w-0">
+                        <h2 className="text-xl font-bold text-white truncate shrink-0 max-w-[80%]">
+                          {selectedExp.strategy_name}
+                        </h2>
+                        <button
+                          onClick={() => {
+                            setNewName(selectedExp.strategy_name || "")
+                            setIsRenaming(true)
+                          }}
+                          className="text-zinc-500 hover:text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                          title="Rename Strategy"
+                        >
+                          ✏️
+                        </button>
+                      </div>
+                    )}
+                    <p className="text-sm text-zinc-400 mt-0.5 max-w-2xl">
                       {selectedExp.rationale}
                     </p>
                   </div>

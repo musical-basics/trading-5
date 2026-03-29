@@ -146,6 +146,19 @@ def update_experiment_code(experiment_id: str, strategy_code: str):
     else:
         _parquet_update(experiment_id, updates)
 
+def update_experiment_name(experiment_id: str, strategy_name: str):
+    """Rename an experiment."""
+    updates = {
+        "strategy_name": strategy_name,
+        "updated_at": datetime.utcnow().isoformat(),
+    }
+
+    sb = _use_supabase()
+    if sb:
+        sb.table(TABLE).update(updates).eq("experiment_id", experiment_id).execute()
+    else:
+        _parquet_update(experiment_id, updates)
+
 
 # ═══════════════════════════════════════════════════════════════
 # EQUITY CURVES (always local Parquet — too large for REST rows)

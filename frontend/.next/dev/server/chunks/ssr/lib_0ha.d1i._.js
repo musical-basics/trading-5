@@ -86,6 +86,8 @@ __turbopack_context__.s([
     ()=>saveSwarmResult,
     "updateAlphaCode",
     ()=>updateAlphaCode,
+    "updateAlphaName",
+    ()=>updateAlphaName,
     "updateConstraints",
     ()=>updateConstraints,
     "updatePortfolioSchedule",
@@ -321,6 +323,18 @@ async function updateAlphaCode(experimentId, code) {
         },
         body: JSON.stringify({
             code
+        })
+    });
+    return await res.json();
+}
+async function updateAlphaName(experimentId, name) {
+    const res = await fetch(`${API_BASE}/api/alpha-lab/${experimentId}/name`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            name
         })
     });
     return await res.json();

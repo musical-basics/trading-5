@@ -557,6 +557,18 @@ export async function updateAlphaCode(experimentId: string, code: string): Promi
   return await res.json()
 }
 
+export async function updateAlphaName(experimentId: string, name: string): Promise<{ ok?: boolean; error?: string }> {
+  const res = await fetch(
+    `${API_BASE}/api/alpha-lab/${experimentId}/name`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    }
+  )
+  return await res.json()
+}
+
 // ── Level 5: Promotion API ─────────────────────────────────
 
 export async function promoteAlphaExperiment(experimentId: string): Promise<{

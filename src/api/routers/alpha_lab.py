@@ -24,6 +24,7 @@ from src.alpha_lab.alpha_lab_store import (
     delete_experiment,
     get_equity_curve,
     update_experiment_code,
+    update_experiment_name,
     save_editor_setting,
     get_editor_setting,
 )
@@ -300,6 +301,18 @@ async def update_code(experiment_id: str, request: UpdateCodeRequest):
     if not exp:
         return _safe_response({"error": f"Experiment {experiment_id} not found"})
     update_experiment_code(experiment_id, request.code)
+    return _safe_response({"ok": True, "experiment_id": experiment_id})
+
+class UpdateNameRequest(BaseModel):
+    name: str
+
+@router.patch("/{experiment_id}/name")
+async def update_name(experiment_id: str, request: UpdateNameRequest):
+    """Rename a strategy for an experiment."""
+    exp = get_experiment(experiment_id)
+    if not exp:
+        return _safe_response({"error": f"Experiment {experiment_id} not found"})
+    update_experiment_name(experiment_id, request.name)
     return _safe_response({"ok": True, "experiment_id": experiment_id})
 
 
