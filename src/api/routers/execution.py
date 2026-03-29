@@ -107,3 +107,83 @@ async def route_paper_trades():
         }
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+from fastapi import Request
+
+@router.post("/alpaca-webhook")
+async def alpaca_webhook(request: Request):
+    """
+    Webhook receiver for Alpaca Trade Updates.
+    Listens for 'fill' or 'partial_fill' events, retrieves pending 
+    intents from Redis, and distributes fills to the portfolio ledgers.
+    """
+    try:
+        payload = await request.json()
+        event = payload.get("event")
+        
+        if event not in ("fill", "partial_fill"):
+            return {"status": "ignored", "reason": f"Event '{event}' not actionable"}
+            
+        order_data = payload.get("order", {})
+        order_id = order_data.get("id")
+        if not order_id:
+            return {"status": "error", "message": "Missing order ID in payload"}
+            
+        # Retrieve pending intents from Redis
+        import redis.asyncio as aioredis
+        import json
+        from src.config import REDIS_URL
+        r = aioredis.from_url(REDIS_URL, decode_responses=True)
+        
+        pending_json = await r.get(f"alpaca_order:{order_id}")
+        if not pending_json:
+            return {"status": "ignored", "reason": "Order ID not found in pending cache"}
+            
+        pending_data = json.loads(pending_json)
+        ticker = pending_data["ticker"]
+        intents = pending_data["intents"]
+        
+        filled_qty = float(payload.get("qty", order_data.get("filled_qty", 0)))
+        price = float(payload.get("price", order_data.get("filled_avg_price", 0)))
+        
+        if filled_qty <= 0:
+            return {"status": "ignored", "reason": "Filled qty is zero"}
+            
+        net_fills = {
+            ticker: {
+                "filled_qty": filled_qty,
+                "avg_price": price,
+                "order_id": order_id,
+            }
+        }
+        
+        # Distribute fills internally
+        from src.pipeline.execution.net_delta import distribute_fills
+        from src.pipeline.execution.order_router import _log_execution_orm, _publish_execution_event
+        
+        executions = distribute_fills(intents, net_fills)
+        for exec_record in executions:
+            _log_execution_orm(exec_record)
+            
+            if "price" not in exec_record and "simulated_price" in exec_record:
+                exec_record["price"] = exec_record["simulated_price"]
+                
+            _publish_execution_event({
+                "ticker": exec_record["ticker"],
+                "action": exec_record["side"],
+                "quantity": exec_record["quantity"],
+                "price": exec_record["price"],
+                "timestamp": payload.get("timestamp", datetime.now().isoformat()),
+                "trader_id": exec_record.get("trader_id"),
+                "portfolio_id": exec_record.get("portfolio_id"),
+                "strategy_id": exec_record.get("strategy_id", "default_ml"),
+            })
+            
+        if event == "fill":
+            await r.delete(f"alpaca_order:{order_id}")
+            
+        return {"status": "success", "distributed_executions": len(executions)}
+        
+    except Exception as e:
+        print(f"  ⚠ Error in Alpaca webhook: {e}")
+        return {"status": "error", "message": str(e)}

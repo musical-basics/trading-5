@@ -250,11 +250,23 @@ def route_orders(intents: list[dict]):
                     order = alpaca.submit_order(order_data=req)
                     print(f"  ✓ ROUTED Net {side} {sl_qty} x {ticker} → Alpaca (ID: {order.id})")
                     
-                    # For a market order, filled_qty might be 0 immediately, but we track it.
-                    # In a real async system, we'd wait for fill webhooks. 
-                    # For sync pipeline, we assume it fills immediately at the last close price for ledgering.
-                    total_filled_qty += sl_qty
-                    total_fill_cost += sl_qty * fallback_price # Fallback until webhook
+                    # Store pending intents in Redis for the async Webhook/WebSocket to fulfill later 
+                    try:
+                        import redis
+                        import json
+                        from src.config import REDIS_URL
+                        r = redis.from_url(REDIS_URL)
+                        
+                        pending_payload = {
+                            "ticker": ticker,
+                            "intents": [i for i in intents if i["ticker"] == ticker]
+                        }
+                        # Store with 24h expiry
+                        r.setex(f"alpaca_order:{order.id}", 86400, json.dumps(pending_payload))
+                        print(f"    (Pending Intents registered to Webhook via Redis)")
+                    except Exception as redis_e:
+                        print(f"    ⚠ Could not cache pending intents in Redis: {redis_e}")
+
                 else:
                     print(f"  ✓ DRY-RUN Net {side} {sl_qty} x {ticker} @ ~${fallback_price:.2f}")
                     total_filled_qty += sl_qty
@@ -265,8 +277,8 @@ def route_orders(intents: list[dict]):
             except Exception as e:
                 print(f"  ✗ FAILED to route {side} {sl_qty} x {ticker}: {e}")
 
-        # Record the net fill for this ticker
-        if total_filled_qty > 0:
+        # Record the net fill for this ticker ONLY in DRY-RUN mode
+        if not is_live and total_filled_qty > 0:
             avg_price = total_fill_cost / total_filled_qty if total_filled_qty > 0 else fallback_price
             net_fills[ticker] = {
                 "filled_qty": total_filled_qty, 
@@ -274,28 +286,34 @@ def route_orders(intents: list[dict]):
             }
 
     # ── 3. Internal Ledger (Distribute Fills) ────────────────
-    print("\n  Distributing fractional fills back to sub-portfolios...")
-    executions = distribute_fills(intents, net_fills)
-    
-    for exec_record in executions:
-        _log_execution_orm(exec_record)
+    # Only run synchronously for DRY-RUN. Live/Paper fills handles asynchronously via Webhook/WebSocket
+    if not is_live:
+        print("\n  Distributing fractional fills back to sub-portfolios...")
+        executions = distribute_fills(intents, net_fills)
         
-        # Ensure price is carried over for the event payload
-        if "price" not in exec_record and "simulated_price" in exec_record:
-            exec_record["price"] = exec_record["simulated_price"]
+        for exec_record in executions:
+            _log_execution_orm(exec_record)
             
-        _publish_execution_event({
-            "ticker": exec_record["ticker"],
-            "action": exec_record["side"],
-            "quantity": exec_record["quantity"],
-            "price": exec_record["price"],
-            "timestamp": datetime.now().isoformat(),
-            "trader_id": exec_record.get("trader_id"),
-            "portfolio_id": exec_record.get("portfolio_id"),
-            "strategy_id": exec_record.get("strategy_id", "default_ml"),
-        })
+            # Ensure price is carried over for the event payload
+            if "price" not in exec_record and "simulated_price" in exec_record:
+                exec_record["price"] = exec_record["simulated_price"]
+                
+            _publish_execution_event({
+                "ticker": exec_record["ticker"],
+                "action": exec_record["side"],
+                "quantity": exec_record["quantity"],
+                "price": exec_record["price"],
+                "timestamp": datetime.now().isoformat(),
+                "trader_id": exec_record.get("trader_id"),
+                "portfolio_id": exec_record.get("portfolio_id"),
+                "strategy_id": exec_record.get("strategy_id", "default_ml"),
+            })
 
-    print(f"  ✓ Distributed and logged {len(executions)} fractional executions.\n")
+        print(f"  ✓ Distributed and logged {len(executions)} fractional executions.\n")
+    else:
+        print("\n  ✓ Asynchronous execution mode enabled. Master orders routed successfully.")
+        print("  ✓ PaperExecution models will naturally update via TradeUpdate Webhook/WebSocket.")
+        
     return net_fills
 
 
