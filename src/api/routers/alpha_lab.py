@@ -586,10 +586,36 @@ async def get_experiment_trades(experiment_id: str):
     """Return the raw trade ledger for a completed experiment.
 
     Used by the Trade Inspector table in the Forensic Auditor UI.
-    Returns a list of trade records sorted by date descending.
+    Returns a list of trade records sorted by date descending, with
+    per-trade P/L computed via round-trip BUY->SELL price matching.
     """
     from src.alpha_lab.alpha_lab_store import get_trade_ledger
     ledger = get_trade_ledger(experiment_id)
     if ledger is None:
         return _safe_response({"trades": [], "message": "No trade ledger found — run backtest first"})
-    return _safe_response({"trades": ledger.sort("date", descending=True).to_dicts()})
+
+    # Sort chronologically ascending for P/L matching
+    trades_asc = ledger.sort("date", descending=False).to_dicts()
+
+    # Round-trip P/L: track last BUY price per ticker
+    entry_prices: dict = {}
+    for trade in trades_asc:
+        ticker = trade.get("ticker") or f"entity_{trade.get('entity_id')}"
+        price = trade.get("adj_close")
+        action = trade.get("action", "")
+
+        if action == "BUY" and price is not None:
+            entry_prices[ticker] = float(price)
+            trade["pnl_pct"] = None  # Open position — no realized P/L yet
+        elif action == "SELL" and price is not None:
+            entry = entry_prices.get(ticker)
+            if entry is not None and entry > 0:
+                trade["pnl_pct"] = (float(price) - entry) / entry  # realized return
+            else:
+                trade["pnl_pct"] = None
+        else:
+            trade["pnl_pct"] = None
+
+    # Return sorted descending (newest first) for display
+    trades_asc.sort(key=lambda t: str(t.get("date", "")), reverse=True)
+    return _safe_response({"trades": trades_asc})

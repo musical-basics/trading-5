@@ -731,6 +731,7 @@ export interface TradeLedgerEntry {
   norm_weight: number
   adj_close?: number
   volume?: number
+  pnl_pct?: number | null  // realized P/L for SELL trades (BUY = null = open position)
 }
 
 export async function fetchAuditModels(): Promise<{ models: AuditModel[] }> {

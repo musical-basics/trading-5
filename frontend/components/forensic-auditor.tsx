@@ -141,6 +141,24 @@ function TradeRow({
         <td className="px-4 py-2.5 text-xs font-mono text-muted-foreground">
           {trade.volume != null ? trade.volume.toLocaleString() : "—"}
         </td>
+        {/* P/L column */}
+        <td className="px-4 py-2.5 text-xs font-mono">
+          {trade.action === "SELL" && trade.pnl_pct != null ? (
+            <span
+              className={cn(
+                "font-semibold",
+                trade.pnl_pct >= 0 ? "text-emerald-400" : "text-red-400"
+              )}
+            >
+              {trade.pnl_pct >= 0 ? "+" : ""}
+              {(trade.pnl_pct * 100).toFixed(2)}%
+            </span>
+          ) : trade.action === "BUY" ? (
+            <span className="text-[10px] text-muted-foreground/50 italic">open</span>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          )}
+        </td>
         <td className="px-4 py-2.5">
           {isFlagged ? (
             <div className="flex items-center gap-1.5">
@@ -159,7 +177,7 @@ function TradeRow({
       </tr>
       {isFlagged && expanded && (
         <tr className="bg-red-500/5">
-          <td colSpan={7} className="px-6 py-3">
+          <td colSpan={8} className="px-6 py-3">
             <div className="flex items-start gap-2 text-xs text-red-300">
               <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0 text-red-400" />
               <span>{flag?.reason}</span>
@@ -523,6 +541,7 @@ export function ForensicAuditor() {
                       <th className="px-4 py-2 text-left text-[11px] font-medium text-muted-foreground">Δ Weight</th>
                       <th className="px-4 py-2 text-left text-[11px] font-medium text-muted-foreground">Price</th>
                       <th className="px-4 py-2 text-left text-[11px] font-medium text-muted-foreground">Volume</th>
+                      <th className="px-4 py-2 text-left text-[11px] font-medium text-muted-foreground">P/L</th>
                       <th 
                         className="px-4 py-2 text-left text-[11px] font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors group select-none"
                         onClick={() => setFlagFilter(f => f === "all" ? "flagged" : f === "flagged" ? "clean" : "all")}
