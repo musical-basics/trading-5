@@ -37,6 +37,14 @@ def run_ecs_pipeline(self):
         apply_risk_constraints()
         logger.info("  ✓ System 4 (Risk APT) complete")
 
+        # System 5 triggers Execution Routing (Portfolio Rebalancer -> Net-Delta -> Alpaca)
+        from src.pipeline.execution.portfolio_rebalancer import extract_portfolio_intents
+        from src.pipeline.execution.order_router import route_orders
+        
+        intents = extract_portfolio_intents()
+        route_orders(intents)
+        logger.info("  ✓ System 5 (Execution Routing) complete")
+
         logger.info("✅ [Master Clock] ECS pipeline complete.")
         return {"status": "success"}
 

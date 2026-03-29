@@ -36,39 +36,36 @@ def extract_portfolio_intents():
     conn = sqlite3.connect(DB_PATH)
     session = SessionLocal()
 
-    # ── Step 1: Load today's target weights ──────────────────
-    print("  Loading global target weights...", end=" ")
-    targets = pd.read_sql_query("""
-        SELECT ticker, target_weight
-        FROM target_portfolio
-        WHERE date = (SELECT MAX(date) FROM target_portfolio)
-          AND target_weight > 0
-    """, conn)
+    # ── Step 1: Load mapping and full feature history ────────
+    import os
+    import math
+    import polars as pl
+    from src.config import PROJECT_ROOT
+    from src.core.duckdb_store import get_parquet_path
 
-    if targets.empty:
-        print("⚠ No target portfolio found. Run Phase 3b first.")
+    em_path = os.path.join(PROJECT_ROOT, "data", "components", "entity_map.parquet")
+    if not os.path.exists(em_path):
+        print("⚠ No entity map found. Run Phase 2 first.")
         conn.close()
         session.close()
         return []
 
-    latest_date = pd.read_sql_query(
-        "SELECT MAX(date) as d FROM target_portfolio", conn
-    )["d"].iloc[0]
-    print(f"✓ {len(targets)} tickers (date: {latest_date})")
+    em_df = pl.read_parquet(em_path)
+    entity_to_ticker = dict(zip(em_df["entity_id"], em_df["ticker"]))
 
-    # ── Step 2: Apply global concentration limits ────────────
-    print("  Applying concentration limits...", end=" ")
-    targets["target_weight"] = targets["target_weight"].clip(upper=MAX_SINGLE_WEIGHT)
+    print("  Loading combined ECS data for strategy evaluation...", end=" ")
+    from src.ecs.tournament_system import _prepare_data
+    df_full = _prepare_data()
+    if df_full.is_empty():
+        print("⚠ ECS Data empty. Run pipeline first.")
+        conn.close()
+        session.close()
+        return []
 
-    total_weight = targets["target_weight"].sum()
-    max_total = 1.0 - CASH_BUFFER
-    if total_weight > max_total:
-        scale = max_total / total_weight
-        targets["target_weight"] *= scale
-        print(f"scaled by {scale:.3f} ", end="")
-    print(f"✓ Total weight: {targets['target_weight'].sum():.3f}")
+    latest_date_expr = df_full.select(pl.max("date")).item()
+    print(f"✓ {len(df_full):,} rows (latest date: {latest_date_expr})")
 
-    # ── Step 3: Get current prices ───────────────────────────
+    # ── Step 2: Get current prices ───────────────────────────
     prices = pd.read_sql_query("""
         SELECT ticker, adj_close as price
         FROM daily_bars
@@ -76,7 +73,7 @@ def extract_portfolio_intents():
     """, conn)
     price_map = dict(zip(prices["ticker"], prices["price"]))
 
-    # ── Step 4: Extract intents per Portfolio ────────────────
+    # ── Step 3: Extract intents per Portfolio ────────────────
     print("  Calculating sub-portfolio intents...")
     intents = []
     
@@ -84,24 +81,78 @@ def extract_portfolio_intents():
     if not portfolios:
         print("  ⚠ No active portfolios found in database.")
     
+    from src.ecs.strategy_registry import evaluate_strategies, STRATEGY_REGISTRY
+    from src.ecs.risk_system import apply_risk_constraints
+
+    # Find unique valid strategy IDs across all portfolios
+    active_sids = set()
+    for port in portfolios:
+        sid = port.strategy_id or "xgboost"
+        if sid in STRATEGY_REGISTRY:
+            active_sids.add(sid)
+            
+    # Evaluate all needed strategies simultaneously on full history
+    if active_sids:
+        for sid in active_sids:
+            try:
+                fn = STRATEGY_REGISTRY[sid]
+                df_full = fn(df_full)
+            except Exception as e:
+                print(f"      ⚠ Global evaluation failed for strategy {sid}: {e}")
+
+    df_latest = df_full.filter(pl.col("date") == latest_date_expr)
+
     for port in portfolios:
         print(f"\n    Portfolio: {port.name} (ID: {port.id})")
-        # For now, default to the ML pipeline global targets
-        # In the future, this can be filtered by port.strategy_id
         
-        total_equity, holdings = get_portfolio_state_by_id(port.id)
-        print(f"      Equity=${total_equity:,.2f}, {len(holdings)} positions")
+        strategy_id = port.strategy_id or "xgboost"
+        if strategy_id not in STRATEGY_REGISTRY:
+            print(f"      ⚠ Strategy {strategy_id} not found in registry. Skipping.")
+            continue
+            
+        weight_col = f"raw_weight_{strategy_id}"
+        if weight_col not in df_latest.columns:
+            print(f"      ⚠ Strategy {strategy_id} result missing.")
+            continue
+            
+        print(f"      Evaluating strategy: {strategy_id}...")
         
-        port_intents = []
-        for _, row in targets.iterrows():
-            ticker = row["ticker"]
-            target_weight = row["target_weight"]
-            price = price_map.get(ticker)
+        # Prepare strategy output for risk constraints
+        strat_out = df_latest.select(["entity_id", "date", weight_col]).rename({weight_col: "raw_weight"})
+        
+        try:
+            # Apply APT risk constraints to get final risk-adjusted target_weight
+            target_df = apply_risk_constraints(strat_out, strategy_col="raw_weight")
+        except Exception as e:
+            print(f"      ⚠ Error applying risk constraints to {strategy_id}: {e}")
+            continue
 
+        if target_df.is_empty():
+            print(f"      ⚠ Strategy {strategy_id} generated no target weights.")
+            continue
+
+        # Use allocated_capital strictly, NOT drifting total_equity
+        allocated_capital = port.allocated_capital
+        _, holdings = get_portfolio_state_by_id(port.id)
+        print(f"      Allocated Capital=${allocated_capital:,.2f}, {len(holdings)} positions")
+        
+        # Build dictionary of target weights by ticker
+        target_map = {}
+        for row in target_df.iter_rows(named=True):
+            ticker = entity_to_ticker.get(row["entity_id"])
+            if ticker:
+                target_map[ticker] = row["target_weight"]
+
+        port_intents = []
+        for ticker, target_weight in target_map.items():
+            if target_weight <= 0:
+                continue
+                
+            price = price_map.get(ticker)
             if price is None or price <= 0:
                 continue
 
-            target_shares = math.floor((total_equity * target_weight) / price)
+            target_shares = math.floor((allocated_capital * target_weight) / price)
             current_shares = holdings.get(ticker, {}).get("shares", 0)
             delta = target_shares - current_shares
 
@@ -119,24 +170,24 @@ def extract_portfolio_intents():
                 "target_weight": target_weight,
                 "portfolio_id": port.id,
                 "trader_id": port.trader_id,
-                "strategy_id": port.strategy_id or "default_ml",
+                "strategy_id": strategy_id,
             })
 
         # Liquidate positions not in targets for this portfolio
-        target_tickers = set(targets["ticker"].tolist())
         for ticker, info in holdings.items():
-            if ticker not in target_tickers and info["shares"] > 0:
-                price = price_map.get(ticker, info.get("avg_price", 0))
-                port_intents.append({
-                    "ticker": ticker,
-                    "side": "SELL",
-                    "quantity": info["shares"],
-                    "price": price,
-                    "target_weight": 0.0,
-                    "portfolio_id": port.id,
-                    "trader_id": port.trader_id,
-                    "strategy_id": port.strategy_id or "default_ml",
-                })
+            if ticker not in target_map or target_map[ticker] <= 0:
+                if info["shares"] > 0:
+                    price = price_map.get(ticker, info.get("avg_price", 0))
+                    port_intents.append({
+                        "ticker": ticker,
+                        "side": "SELL",
+                        "quantity": info["shares"],
+                        "price": price,
+                        "target_weight": 0.0,
+                        "portfolio_id": port.id,
+                        "trader_id": port.trader_id,
+                        "strategy_id": strategy_id,
+                    })
         
         print(f"      ✓ Generated {len(port_intents)} intent(s)")
         intents.extend(port_intents)

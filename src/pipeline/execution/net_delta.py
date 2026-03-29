@@ -98,6 +98,7 @@ def distribute_fills(
             executions.append({
                 "portfolio_id": row["portfolio_id"],
                 "trader_id": row.get("trader_id"),
+                "strategy_id": row.get("strategy_id"),
                 "ticker": ticker,
                 "side": row["side"],
                 "quantity": round(allocated_qty, 4),
