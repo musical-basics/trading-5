@@ -175,6 +175,43 @@ async def api_trader_positions(trader_id: int):
     }
 
 
+@router.get("/{trader_id}/executions")
+async def api_trader_executions(trader_id: int):
+    """Get recent execution history (tickets) for a trader."""
+    import sqlite3
+    import pandas as pd
+    from src.config import DB_PATH
+
+    trader = get_trader(trader_id)
+    if not trader:
+        raise HTTPException(status_code=404, detail=f"Trader {trader_id} not found")
+
+    conn = sqlite3.connect(DB_PATH)
+    try:
+        # Fetch up to 200 most recent executions for this trader
+        executions = pd.read_sql_query("""
+            SELECT 
+                e.id, e.timestamp, e.ticker, e.action, e.quantity, 
+                e.simulated_price, e.strategy_id, e.portfolio_id, p.name as portfolio_name
+            FROM paper_executions e
+            LEFT JOIN portfolios p ON e.portfolio_id = p.id
+            WHERE e.trader_id = ?
+            ORDER BY e.timestamp DESC
+            LIMIT 200
+        """, conn, params=(trader_id,))
+
+        if executions.empty:
+            return []
+
+        # Convert timestamps to string format natively avoiding NaT issues
+        executions["timestamp"] = executions["timestamp"].astype(str)
+        return executions.to_dict(orient="records")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch execution history: {e}")
+    finally:
+        conn.close()
+
+
 @router.delete("/{trader_id}")
 async def api_delete_trader(trader_id: int, db: Session = Depends(get_db)):
     """Delete a trader and cascade delete constraints and portfolios."""

@@ -802,3 +802,21 @@ export async function fetchLivePositions(traderId: number): Promise<LivePosition
   }
   return (await res.json()) as LivePositionsResponse
 }
+
+export interface TraderExecution {
+  id: number
+  timestamp: string
+  ticker: string
+  action: "BUY" | "SELL"
+  quantity: number
+  simulated_price: number
+  strategy_id: string | null
+  portfolio_id: number | null
+  portfolio_name: string | null
+}
+
+export async function fetchTraderExecutions(traderId: number): Promise<TraderExecution[]> {
+  const res = await fetch(`${API_BASE}/api/traders/${traderId}/executions`)
+  if (!res.ok) throw new Error(`Failed to fetch executions: ${res.status}`)
+  return (await res.json()) as TraderExecution[]
+}

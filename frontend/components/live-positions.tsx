@@ -12,6 +12,7 @@ import {
   BarChart3,
   ChevronUp,
   ChevronDown,
+  History,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -22,6 +23,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   Select,
   SelectContent,
@@ -35,9 +44,11 @@ import { cn } from "@/lib/utils"
 import {
   getTraders,
   fetchLivePositions,
+  fetchTraderExecutions,
   type Trader,
   type LivePositionsResponse,
   type LivePosition,
+  type TraderExecution,
 } from "@/lib/api"
 
 // ── Helpers ───────────────────────────────────────────────────
@@ -57,6 +68,18 @@ function fmtUsd(n: number) {
 
 function fmtPct(n: number) {
   return `${n >= 0 ? "+" : ""}${fmt(n, 2)}%`
+}
+
+function fmtDateTime(dstr: string) {
+  const d = new Date(dstr)
+  if (isNaN(d.getTime())) return dstr
+  return d.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+  })
 }
 
 type SortKey = keyof LivePosition
@@ -107,6 +130,7 @@ export function LivePositions() {
   const [traders, setTraders] = useState<Trader[]>([])
   const [selectedTraderId, setSelectedTraderId] = useState<number | null>(null)
   const [data, setData] = useState<LivePositionsResponse | null>(null)
+  const [executions, setExecutions] = useState<TraderExecution[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
@@ -128,8 +152,12 @@ export function LivePositions() {
     setLoading(true)
     setError(null)
     try {
-      const result = await fetchLivePositions(selectedTraderId)
-      setData(result)
+      const [posRes, execRes] = await Promise.all([
+        fetchLivePositions(selectedTraderId),
+        fetchTraderExecutions(selectedTraderId),
+      ])
+      setData(posRes)
+      setExecutions(execRes)
       setLastRefresh(new Date())
     } catch (e: any) {
       setError(e.message ?? "Failed to load positions")
@@ -226,6 +254,86 @@ export function LivePositions() {
             <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} />
             Refresh
           </Button>
+
+          {/* Execution History Sheet */}
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 gap-2 border-border/50"
+                disabled={!selectedTraderId}
+              >
+                <History className="w-3.5 h-3.5" />
+                History
+              </Button>
+            </SheetTrigger>
+            <SheetContent className="w-[400px] sm:w-[540px] border-border/50 p-0 flex flex-col bg-card/95 backdrop-blur-md">
+              <SheetHeader className="p-6 pb-4 border-b border-border/50">
+                <SheetTitle className="text-lg flex items-center gap-2">
+                  <History className="w-5 h-5 text-primary" />
+                  Execution History
+                </SheetTitle>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Recent paper trading executions for {data?.trader_name ?? "this trader"}.
+                </p>
+              </SheetHeader>
+              <ScrollArea className="flex-1">
+                {executions.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
+                    <History className="w-10 h-10 opacity-30" />
+                    <p className="text-sm">No recent executions found.</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-border/30">
+                    {executions.map((exec) => {
+                      const isBuy = exec.action === "BUY"
+                      return (
+                        <div key={exec.id} className="p-4 hover:bg-muted/10 transition-colors">
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="flex items-center gap-2">
+                              <Badge
+                                variant="outline"
+                                className={cn(
+                                  "text-[10px] font-bold tracking-wider",
+                                  isBuy ? "text-emerald-400 border-emerald-500/30 bg-emerald-500/10" : "text-rose-400 border-rose-500/30 bg-rose-500/10"
+                                )}
+                              >
+                                {exec.action}
+                              </Badge>
+                              <span className="font-mono font-bold text-sm text-foreground">
+                                {exec.ticker}
+                              </span>
+                            </div>
+                            <span className="text-xs text-muted-foreground font-mono">
+                              {fmtDateTime(exec.timestamp)}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                            <div className="text-muted-foreground text-xs">Quantity</div>
+                            <div className="text-right tabular-nums font-medium">{exec.quantity.toLocaleString()}</div>
+                            
+                            <div className="text-muted-foreground text-xs">Simulated Price</div>
+                            <div className="text-right tabular-nums">${fmt(exec.simulated_price, 2)}</div>
+                            
+                            <div className="text-muted-foreground text-xs">Total Value</div>
+                            <div className="text-right tabular-nums text-foreground font-medium">{fmtUsd(exec.quantity * exec.simulated_price)}</div>
+                            
+                            {exec.portfolio_name && (
+                              <>
+                                <div className="text-muted-foreground text-[10px] mt-2 col-span-2">Portfolio</div>
+                                <div className="text-[11px] font-medium text-primary col-span-2">{exec.portfolio_name}</div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </ScrollArea>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
 
