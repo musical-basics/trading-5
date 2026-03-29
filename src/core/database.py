@@ -21,8 +21,10 @@ from src.config import DATABASE_URL, PROJECT_ROOT
 
 logger = logging.getLogger(__name__)
 
-# SQLite fallback path
-_SQLITE_PATH = os.path.join(PROJECT_ROOT, "data", "quantprime.db")
+# SQLite fallback path — must match DB_PATH in config.py so Base.metadata.create_all
+# migrates the same file that DATABASE_URL points to by default.
+from src.config import DB_PATH as _DB_PATH
+_SQLITE_PATH = _DB_PATH
 _SQLITE_URL = f"sqlite:///{_SQLITE_PATH}"
 
 
