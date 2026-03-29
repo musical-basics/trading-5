@@ -175,6 +175,7 @@ CRITICAL POLARS API RULES (you MUST follow these exactly):
 - Use `.fill_null(0.0)` BEFORE arithmetic operations on columns that may have nulls
 - DO NOT EVER use `.fill_null(strategy="backward")` or `.fill_null(strategy='backward')`. Backward fill introduces lookahead bias (peeking into the future). It is STRICTLY PROHIBITED.
 - Ensure that fundamental fields (e.g., `total_debt`, `free_cash_flow`) have explicit null-handling or fill logic before computation to avoid NaN gaps.
+- Fundamental data staleness guardrail: If your strategy uses fundamental fields, you MUST ensure the data is not stale. You MUST force the fundamental signal to 0.0 if `filing_date` is null or older than 540 days (18 months): `pl.when(pl.col("filing_date").is_null() | ((pl.col("date") - pl.col("filing_date").cast(pl.Date)).dt.total_days() > 540)).then(0.0)`
 
 RESPOND in this exact format:
 STRATEGY_NAME: snake_case_name
