@@ -54,10 +54,9 @@ def get_available_models() -> list[dict]:
         print(f"Failed to fetch Anthropic models: {e}")
         # Fallback to known good models
         return [
-            {"id": "claude-3-7-sonnet-latest", "display_name": "Claude 3.7 Sonnet"},
-            {"id": "claude-3-5-sonnet-latest", "display_name": "Claude 3.5 Sonnet"},
-            {"id": "claude-3-opus-latest", "display_name": "Claude 3 Opus"},
-            {"id": "claude-3-5-haiku-latest", "display_name": "Claude 3.5 Haiku"},
+            {"id": "claude-sonnet-4-6", "display_name": "Claude Sonnet 4.6"},
+            {"id": "claude-opus-4-6", "display_name": "Claude Opus 4.6"},
+            {"id": "claude-haiku-4-5-20251001", "display_name": "Claude Haiku 4.5"},
         ]
 
 
@@ -254,7 +253,7 @@ Audit this backtest. Output ONLY the JSON verdict.
 """
 
 
-def run_forensic_audit(experiment_id: str, model_id: str = "claude-3-7-sonnet-latest") -> dict:
+def run_forensic_audit(experiment_id: str, model_id: str = "claude-sonnet-4-6") -> dict:
     """
     Master entry point for the Forensic Auditor.
 

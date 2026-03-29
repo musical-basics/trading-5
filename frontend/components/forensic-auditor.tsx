@@ -175,7 +175,7 @@ function TradeRow({
 export function ForensicAuditor() {
   const [experiments, setExperiments] = useState<AlphaExperiment[]>([])
   const [models, setModels] = useState<AuditModel[]>([])
-  const [selectedModel, setSelectedModel] = useState("claude-3-7-sonnet-latest")
+  const [selectedModel, setSelectedModel] = useState("claude-sonnet-4-6")
   const [selectedId, setSelectedId] = useState<string>("")
   const [auditResult, setAuditResult] = useState<AuditReport | null>(null)
   const [trades, setTrades] = useState<TradeLedgerEntry[]>([])
@@ -327,7 +327,7 @@ export function ForensicAuditor() {
                   </SelectTrigger>
                   <SelectContent>
                     {models.length === 0 ? (
-                      <SelectItem value="claude-3-7-sonnet-latest">Claude 3.7 Sonnet (Default)</SelectItem>
+                      <SelectItem value="claude-sonnet-4-6">Claude Sonnet 4.6 (Default)</SelectItem>
                     ) : (
                       models.map((m) => (
                         <SelectItem key={m.id} value={m.id}>{m.display_name}</SelectItem>

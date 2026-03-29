@@ -16,7 +16,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 
-from src.alpha_lab.strategy_generator import generate_strategy, get_tier_info, combine_strategies, get_available_models
+from src.alpha_lab.strategy_generator import generate_strategy, get_tier_info, combine_strategies
 from src.alpha_lab.alpha_lab_store import (
     save_experiment,
     list_experiments,
@@ -506,7 +506,7 @@ async def get_audit_models():
     return _safe_response({"models": models})
 
 class AuditOptions(BaseModel):
-    model_id: str = "claude-3-7-sonnet-latest"
+    model_id: str = "claude-sonnet-4-6"
 
 @router.post("/{experiment_id}/audit")
 async def run_audit(

@@ -35,6 +35,8 @@ __turbopack_context__.s([
     ()=>fetchAlphaExperiments,
     "fetchAlphaModelTiers",
     ()=>fetchAlphaModelTiers,
+    "fetchAuditModels",
+    ()=>fetchAuditModels,
     "fetchExperimentTrades",
     ()=>fetchExperimentTrades,
     "fetchIndicators",
@@ -357,9 +359,21 @@ async function fetchAlignedProfile() {
     if (!res.ok) throw new Error(`Failed to fetch profile: ${res.status}`);
     return await res.json();
 }
-async function runForensicAudit(experimentId) {
+async function fetchAuditModels() {
+    const res = await fetch(`${API_BASE}/api/alpha-lab/audit/models`);
+    if (!res.ok) throw new Error("Failed to fetch models");
+    return await res.json();
+}
+async function runForensicAudit(experimentId, modelId) {
+    const body = modelId ? JSON.stringify({
+        model_id: modelId
+    }) : undefined;
     const res = await fetch(`${API_BASE}/api/alpha-lab/${experimentId}/audit`, {
-        method: "POST"
+        method: "POST",
+        headers: body ? {
+            "Content-Type": "application/json"
+        } : undefined,
+        body
     });
     return await res.json();
 }
