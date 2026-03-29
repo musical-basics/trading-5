@@ -127,3 +127,217 @@ INFO:     Finished server process [54544]
 INFO:     Started server process [54560]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
+✓ DuckDB store initialized
+✓ Redis WebSocket listener started
+  ⚠ Redis listener not available: Error 61 connecting to localhost:6379. Connection refused.
+  ⚠ WebSocket push will be disabled (REST polling still works)
+INFO:     127.0.0.1:52938 - "GET /api/alpha-lab/generate-swarm-stream?prompt=make+me+money&strategy_style=hedge_fund&agent_tiers=%7B%22researcher%22%3A%22opus%22%2C%22risk_manager%22%3A%22sonnet%22%2C%22developer%22%3A%22sonnet%22%7D&agent_notes=%7B%22researcher%22%3A%22%22%2C%22risk_manager%22%3A%22%22%2C%22developer%22%3A%22%22%7D HTTP/1.1" 200 OK
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.12/3.12.6/Frameworks/Python.framework/Versions/3.12/lib/python3.12/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+StopIteration
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/uvicorn/protocols/http/httptools_impl.py", line 416, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/fastapi/applications.py", line 1159, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/applications.py", line 90, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/middleware/cors.py", line 96, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/middleware/cors.py", line 154, in simple_response
+    await self.app(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 134, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 121, in app
+    await response(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/responses.py", line 273, in __call__
+    with collapse_excgroups():
+         ^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.6/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/_utils.py", line 87, in collapse_excgroups
+    raise exc
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/responses.py", line 277, in wrap
+    await func()
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/responses.py", line 250, in stream_response
+    async for chunk in self.body_iterator:
+  File "/Users/lionelyu/Documents/New Version/trading-5/src/api/routers/alpha_lab.py", line 208, in _async_stream
+    chunk = await loop.run_in_executor(executor, next, gen)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: StopIteration interacts badly with generators and cannot be raised into a Future
+INFO:     127.0.0.1:55236 - "OPTIONS /api/alpha-lab/generate-swarm-save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55236 - "POST /api/alpha-lab/generate-swarm-save HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55236 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55236 - "GET /api/alpha-lab/393aa438 HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'src/alpha_lab/alpha_lab_store.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [54560]
+INFO:     Started server process [57654]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src/api/routers/alpha_lab.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [57654]
+INFO:     Started server process [58386]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+✓ DuckDB store initialized
+✓ Redis WebSocket listener started
+  ⚠ Redis listener not available: Error 61 connecting to localhost:6379. Connection refused.
+  ⚠ WebSocket push will be disabled (REST polling still works)
+INFO:     127.0.0.1:56567 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57194 - "GET /api/alpha-lab/settings/swarm_agent_tiers HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/uvicorn/protocols/http/httptools_impl.py", line 416, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/fastapi/applications.py", line 1159, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/applications.py", line 90, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/middleware/cors.py", line 96, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/middleware/cors.py", line 154, in simple_response
+    await self.app(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 134, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 120, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 674, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 328, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lionelyu/Documents/New Version/trading-5/src/api/routers/alpha_lab.py", line 258, in get_setting
+    val = get_editor_setting(key)
+          ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lionelyu/Documents/New Version/trading-5/src/alpha_lab/alpha_lab_store.py", line 313, in get_editor_setting
+    resp = sb.table("editor_settings").select("value").eq("key", key).execute()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/postgrest/_sync/request_builder.py", line 53, in execute
+    raise APIError(dict(json_obj))
+postgrest.exceptions.APIError: {'message': "Could not find the table 'public.editor_settings' in the schema cache", 'code': 'PGRST205', 'hint': "Perhaps you meant the table 'public.trader_constraints'", 'details': None}
+INFO:     127.0.0.1:57195 - "GET /api/alpha-lab/settings/swarm_agent_notes HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/uvicorn/protocols/http/httptools_impl.py", line 416, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/fastapi/applications.py", line 1159, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/applications.py", line 90, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/middleware/cors.py", line 96, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/middleware/cors.py", line 154, in simple_response
+    await self.app(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 134, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 120, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 674, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 328, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lionelyu/Documents/New Version/trading-5/src/api/routers/alpha_lab.py", line 258, in get_setting
+    val = get_editor_setting(key)
+          ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lionelyu/Documents/New Version/trading-5/src/alpha_lab/alpha_lab_store.py", line 313, in get_editor_setting
+    resp = sb.table("editor_settings").select("value").eq("key", key).execute()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lionelyu/Documents/New Version/trading-5/.venv/lib/python3.12/site-packages/postgrest/_sync/request_builder.py", line 53, in execute
+    raise APIError(dict(json_obj))
+postgrest.exceptions.APIError: {'message': "Could not find the table 'public.editor_settings' in the schema cache", 'code': 'PGRST205', 'hint': "Perhaps you meant the table 'public.trader_constraints'", 'details': None}
+INFO:     127.0.0.1:57196 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK

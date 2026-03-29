@@ -588,6 +588,22 @@ export async function combineAlphaStrategies(
   return await res.json()
 }
 
+// ── Editor Settings ────────────────────────────────────────
+
+export async function getEditorSetting(key: string): Promise<any> {
+  const res = await fetch(`${API_BASE}/api/alpha-lab/settings/${key}`)
+  const data = await res.json()
+  return data.value
+}
+
+export async function saveEditorSetting(key: string, value: any): Promise<void> {
+  await fetch(`${API_BASE}/api/alpha-lab/settings/${key}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ value }),
+  })
+}
+
 // ── Pipeline Triggers ──────────────────────────────────────
 
 export async function runPipelineIngest(): Promise<{ ok: boolean; message?: string; error?: string }> {

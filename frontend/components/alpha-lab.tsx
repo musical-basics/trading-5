@@ -13,6 +13,8 @@ import {
   promoteAlphaExperiment,
   combineAlphaStrategies,
   runStandaloneBacktest,
+  getEditorSetting,
+  saveEditorSetting,
   type AlphaExperiment,
   type AlphaEquityPoint,
 } from "@/lib/api"
@@ -132,20 +134,20 @@ export default function AlphaLab() {
   const swarmAbortRef = useRef<AbortController | null>(null)
   type SwarmLogEntry = { agent: string; label: string; status: "running" | "done" | "error"; preview?: string; tokens?: number }
   const [swarmLogs, setSwarmLogs] = useState<SwarmLogEntry[]>([])
-  // Swarm config state — initialized from localStorage
-  const [swarmAgentTiers, setSwarmAgentTiers] = useState<Record<string, TierKey>>(() => {
-    try {
-      const saved = localStorage.getItem("swarm_agent_tiers")
-      return saved ? JSON.parse(saved) : { researcher: "haiku", risk_manager: "haiku", developer: "sonnet" }
-    } catch { return { researcher: "haiku", risk_manager: "haiku", developer: "sonnet" } }
-  })
-  const [swarmAgentNotes, setSwarmAgentNotes] = useState<Record<string, string>>(() => {
-    try {
-      const saved = localStorage.getItem("swarm_agent_notes")
-      return saved ? JSON.parse(saved) : { researcher: "", risk_manager: "", developer: "" }
-    } catch { return { researcher: "", risk_manager: "", developer: "" } }
-  })
+  // Swarm config state — initialized from DB via useEffect
+  const [swarmAgentTiers, setSwarmAgentTiers] = useState<Record<string, TierKey>>({ researcher: "haiku", risk_manager: "haiku", developer: "sonnet" })
+  const [swarmAgentNotes, setSwarmAgentNotes] = useState<Record<string, string>>({ researcher: "", risk_manager: "", developer: "" })
   const [configSaved, setConfigSaved] = useState(false)
+
+  useEffect(() => {
+    getEditorSetting("swarm_agent_tiers").then(data => {
+      if (data) setSwarmAgentTiers(data)
+    }).catch(() => {})
+    
+    getEditorSetting("swarm_agent_notes").then(data => {
+      if (data) setSwarmAgentNotes(data)
+    }).catch(() => {})
+  }, [])
 
   // Standalone Backtester state
   const [standaloneCode, setStandaloneCode] = useState(DEFAULT_STANDALONE_CODE)
@@ -165,10 +167,11 @@ export default function AlphaLab() {
     loadExperiments()
   }, [loadExperiments])
 
-  const handleSaveSwarmConfig = () => {
+  const handleSaveSwarmConfig = async () => {
     try {
-      localStorage.setItem("swarm_agent_tiers", JSON.stringify(swarmAgentTiers))
-      localStorage.setItem("swarm_agent_notes", JSON.stringify(swarmAgentNotes))
+      setConfigSaved(false)
+      await saveEditorSetting("swarm_agent_tiers", swarmAgentTiers)
+      await saveEditorSetting("swarm_agent_notes", swarmAgentNotes)
       setConfigSaved(true)
       setTimeout(() => setConfigSaved(false), 2000)
     } catch { /* ignore */ }

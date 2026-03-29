@@ -76,3 +76,12 @@ CREATE INDEX IF NOT EXISTS idx_experiments_created ON alpha_lab_experiments(crea
 CREATE INDEX IF NOT EXISTS idx_executions_date ON paper_executions(timestamp);
 CREATE INDEX IF NOT EXISTS idx_executions_ticker ON paper_executions(ticker);
 CREATE INDEX IF NOT EXISTS idx_portfolios_trader ON portfolios(trader_id);
+
+-- ── Editor Settings ─────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS editor_settings (
+    id SERIAL PRIMARY KEY,
+    key VARCHAR(255) NOT NULL UNIQUE,
+    value JSONB NOT NULL,
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_editor_settings_key ON editor_settings(key);

@@ -48,6 +48,8 @@ __turbopack_context__.s([
     ()=>fetchXrayTickers,
     "generateAlphaStrategy",
     ()=>generateAlphaStrategy,
+    "getEditorSetting",
+    ()=>getEditorSetting,
     "getPipelineLogs",
     ()=>getPipelineLogs,
     "getPipelineStatus",
@@ -76,6 +78,8 @@ __turbopack_context__.s([
     ()=>runTournament,
     "runTraderBacktest",
     ()=>runTraderBacktest,
+    "saveEditorSetting",
+    ()=>saveEditorSetting,
     "saveSwarmResult",
     ()=>saveSwarmResult,
     "updateAlphaCode",
@@ -323,6 +327,22 @@ async function combineAlphaStrategies(experimentIds, modelTier = "sonnet", guida
         method: "POST"
     });
     return await res.json();
+}
+async function getEditorSetting(key) {
+    const res = await fetch(`${API_BASE}/api/alpha-lab/settings/${key}`);
+    const data = await res.json();
+    return data.value;
+}
+async function saveEditorSetting(key, value) {
+    await fetch(`${API_BASE}/api/alpha-lab/settings/${key}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            value
+        })
+    });
 }
 async function runPipelineIngest() {
     const res = await fetch(`${API_BASE}/api/pipeline/run/ingest`, {

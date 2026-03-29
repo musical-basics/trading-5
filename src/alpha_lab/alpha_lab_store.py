@@ -288,3 +288,29 @@ def _parquet_delete(experiment_id: str) -> bool:
         return False
     filtered.write_parquet(EXPERIMENTS_PATH)
     return True
+
+
+# ═══════════════════════════════════════════════════════════════
+# EDITOR SETTINGS OPERATIONS
+# ═══════════════════════════════════════════════════════════════
+
+def save_editor_setting(key: str, value: dict) -> None:
+    """Save an arbitrary JSON dict to the editor_settings table."""
+    sb = _use_supabase()
+    if sb:
+        record = {
+            "key": key,
+            "value": value,
+            "updated_at": datetime.utcnow().isoformat()
+        }
+        sb.table("editor_settings").upsert(record, on_conflict="key").execute()
+
+
+def get_editor_setting(key: str) -> Optional[dict]:
+    """Retrieve an arbitrary JSON dict from the editor_settings table."""
+    sb = _use_supabase()
+    if sb:
+        resp = sb.table("editor_settings").select("value").eq("key", key).execute()
+        if resp.data and len(resp.data) > 0:
+            return resp.data[0]["value"]
+    return None

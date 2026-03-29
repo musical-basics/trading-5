@@ -24,6 +24,8 @@ from src.alpha_lab.alpha_lab_store import (
     delete_experiment,
     get_equity_curve,
     update_experiment_code,
+    save_editor_setting,
+    get_editor_setting,
 )
 from src.alpha_lab.lab_backtester import run_lab_backtest, run_raw_backtest
 
@@ -246,6 +248,24 @@ async def save_swarm_result(request: SwarmSaveRequest):
         cost_usd=request.cost_usd,
     )
     return _safe_response({"experiment_id": experiment_id, "strategy_name": request.name})
+
+
+# ── Editor Settings ───────────────────────────────────────
+
+@router.get("/settings/{key}")
+async def get_setting(key: str):
+    """Retrieve an arbitrary JSON dictionary from the editor defaults database."""
+    val = get_editor_setting(key)
+    if val is None:
+        return _safe_response({"value": None})
+    return _safe_response({"value": val})
+
+
+@router.post("/settings/{key}")
+async def set_setting(key: str, payload: dict = Body(...)):
+    """Save an arbitrary JSON dictionary to the editor defaults database."""
+    save_editor_setting(key, payload.get("value", {}))
+    return _safe_response({"status": "ok"})
 
 
 class UpdateCodeRequest(BaseModel):
