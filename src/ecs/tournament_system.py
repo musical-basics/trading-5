@@ -64,13 +64,12 @@ def _compute_metrics(equity: np.ndarray, daily_returns: np.ndarray) -> dict:
 
 def _prepare_data() -> pl.DataFrame:
     """Load and merge all components needed for strategy evaluation."""
-    market = pl.read_parquet(get_parquet_path("market_data"))
+    from src.ecs.alignment_system import align_fundamentals
+    df = align_fundamentals()
 
     # Load optional components
     feature_path = get_parquet_path("feature")
     macro_path = get_parquet_path("macro")
-
-    df = market.sort(["entity_id", "date"])
 
     # Merge features if available
     if os.path.exists(feature_path):
