@@ -13,6 +13,7 @@ import {
   promoteAlphaExperiment,
   combineAlphaStrategies,
   runStandaloneBacktest,
+  saveStandaloneExperiment,
   getEditorSetting,
   saveEditorSetting,
   type AlphaExperiment,
@@ -152,6 +153,7 @@ export default function AlphaLab() {
   // Standalone Backtester state
   const [standaloneCode, setStandaloneCode] = useState(DEFAULT_STANDALONE_CODE)
   const [runningStandalone, setRunningStandalone] = useState(false)
+  const [savingStandalone, setSavingStandalone] = useState(false)
   const [standaloneResult, setStandaloneResult] = useState<{
     metrics?: any;
     equity_curve?: any[];
@@ -421,6 +423,36 @@ export default function AlphaLab() {
       setStandaloneResult({ error: e instanceof Error ? e.message : "Run failed" })
     } finally {
       setRunningStandalone(false)
+    }
+  }
+
+  const handleSaveStandalone = async () => {
+    if (!standaloneCode) return
+    setSavingStandalone(true)
+    setError(null)
+    try {
+      const res = await saveStandaloneExperiment(standaloneCode)
+      if (res.error) {
+        setStandaloneResult({ ...standaloneResult, error: res.error })
+      } else {
+        await loadExperiments()
+        if (res.experiment_id) {
+          const exp = await fetchAlphaExperiment(res.experiment_id)
+          if (exp) {
+            setSelectedExp(exp)
+            setActiveTab("results")
+            // Optionally, tell the backend to run standard backtest to fill metrics
+            await runAlphaBacktest(res.experiment_id)
+            await loadExperiments()
+            const updated = await fetchAlphaExperiment(res.experiment_id)
+            if (updated) setSelectedExp(updated)
+          }
+        }
+      }
+    } catch (e: unknown) {
+      setStandaloneResult({ ...standaloneResult, error: e instanceof Error ? e.message : "Save failed" })
+    } finally {
+      setSavingStandalone(false)
     }
   }
 
@@ -1194,17 +1226,27 @@ export default function AlphaLab() {
                 <span className="text-xl">💻</span>
                 <div className="text-sm font-semibold text-white">Standalone Editor</div>
               </div>
-              <button
-                onClick={handleRunStandalone}
-                disabled={runningStandalone}
-                className="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 disabled:bg-zinc-700 text-white text-xs font-semibold rounded-md transition-all flex items-center gap-2"
-              >
-                {runningStandalone ? (
-                  <><span className="animate-spin text-sm">⏳</span> Running...</>
-                ) : (
-                  <><span className="text-sm">▶</span> Run Backtest</>
-                )}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleSaveStandalone}
+                  disabled={savingStandalone || !standaloneResult || !!standaloneResult.error}
+                  className="px-4 py-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 text-white text-xs font-semibold rounded-md transition-all flex items-center gap-2"
+                  title="Run backtest first to save results"
+                >
+                  {savingStandalone ? "⏳ Saving..." : "💾 Save Experiment"}
+                </button>
+                <button
+                  onClick={handleRunStandalone}
+                  disabled={runningStandalone}
+                  className="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 disabled:bg-zinc-700 text-white text-xs font-semibold rounded-md transition-all flex items-center gap-2"
+                >
+                  {runningStandalone ? (
+                    <><span className="animate-spin text-sm">⏳</span> Running...</>
+                  ) : (
+                    <><span className="text-sm">▶</span> Run Backtest</>
+                  )}
+                </button>
+              </div>
             </div>
             
             {/* Editor */}

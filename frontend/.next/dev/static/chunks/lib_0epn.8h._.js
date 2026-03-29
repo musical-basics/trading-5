@@ -83,6 +83,8 @@ __turbopack_context__.s([
     ()=>runTraderBacktest,
     "saveEditorSetting",
     ()=>saveEditorSetting,
+    "saveStandaloneExperiment",
+    ()=>saveStandaloneExperiment,
     "saveSwarmResult",
     ()=>saveSwarmResult,
     "updateAlphaCode",
@@ -270,6 +272,18 @@ async function saveSwarmResult(data) {
 }
 async function runStandaloneBacktest(code) {
     const res = await fetch(`${API_BASE}/api/alpha-lab/standalone-backtest`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            code
+        })
+    });
+    return await res.json();
+}
+async function saveStandaloneExperiment(code) {
+    const res = await fetch(`${API_BASE}/api/alpha-lab/save-standalone`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"

@@ -513,6 +513,15 @@ export async function runStandaloneBacktest(code: string): Promise<{
   return await res.json()
 }
 
+export async function saveStandaloneExperiment(code: string): Promise<{ experiment_id?: string; strategy_name?: string; error?: string }> {
+  const res = await fetch(`${API_BASE}/api/alpha-lab/save-standalone`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code }),
+  })
+  return await res.json()
+}
+
 export async function runAlphaBacktest(experimentId: string): Promise<{ metrics?: AlphaMetrics; equity_curve?: AlphaEquityPoint[]; status?: string; error?: string }> {
   const res = await fetch(`${API_BASE}/api/alpha-lab/${experimentId}/backtest`, { method: "POST" })
   return await res.json()

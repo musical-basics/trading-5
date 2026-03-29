@@ -249,6 +249,28 @@ async def save_swarm_result(request: SwarmSaveRequest):
     )
     return _safe_response({"experiment_id": experiment_id, "strategy_name": request.name})
 
+class StandaloneSaveRequest(BaseModel):
+    code: str
+
+@router.post("/save-standalone")
+async def save_standalone_result(request: StandaloneSaveRequest):
+    """Save manually edited standalone code as a new experiment."""
+    import re
+    match = re.search(r"def\s+([a-zA-Z0-9_]+)\(df", request.code)
+    strategy_name = match.group(1) if match else "standalone_strategy"
+    
+    experiment_id = save_experiment(
+        hypothesis="(Manual Coding)",
+        strategy_code=request.code,
+        strategy_name=strategy_name,
+        model_tier="human",
+        rationale="(Coded via Standalone Editor)",
+        input_tokens=0,
+        output_tokens=0,
+        cost_usd=0.0,
+    )
+    return _safe_response({"experiment_id": experiment_id, "strategy_name": strategy_name})
+
 
 # ── Editor Settings ───────────────────────────────────────
 
