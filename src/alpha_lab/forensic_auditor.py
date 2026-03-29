@@ -66,10 +66,18 @@ TAXONOMY_DEFINITIONS = """
 ## Error Taxonomy
 
 ### A. STRUCTURAL (App-Level Data / Math Issues)
+**A1 — Math / Price Errors:**
 - Stock splits or dividends not adjusted in market data (price drops 50%+ overnight)
 - Portfolio total equity ignores cash drag or miscalculates aggregate P/L
 - Prices have decimal errors, zeros, or null-propagating infinities
-→ Resolution: Hardcoded patch in Data Ingestion or ECS Alignment
+
+**A2 — Data Pipeline Leakage (ABBV-style):**
+- Fundamental data ingested without the ~45-day SEC publication lag.
+  If the database stores `period_end_date` directly into `filing_date` (or `filing_date` is systematically too early), the data itself contains lookahead bias.
+  Detection: In the 'latest_fundamental_prior_to_T' block, compute days_lag = (trade_date - filing_date).
+  If days_lag < 45 when the fundamental event just triggered a trade, the underlying data ingest pipeline failed to enforce filing_date = MAX(actual_sec_date, period_end_date + 45 days).
+
+→ Resolution for A: Hardcoded patch in Data Ingestion or ECS Alignment pipeline.
 
 ### B. BACKTEST (Backtester-Level Physics Issues)
 - Survivorship Bias: Trading a stock with 0 volume on that date (halted/bankrupt)
@@ -89,23 +97,12 @@ TAXONOMY_DEFINITIONS = """
   it is using numbers that wouldn't have been publicly available on the trade date.
   Detection: strategy touches fundamental columns but does not reference 'filing_date'.
 
-**C3 — SEC Publication Lag Violation:** Fundamental data used too soon after filing_date.
-  Even when filing_date is present in the data, strategies must enforce a ≥45-day gap:
-  trade_date >= filing_date + 45 days. If the evidence shows a trade date where
-  (trade_date - filing_date) < 45 days AND fundamental columns drove the signal,
-  this is a C3 violation. This is the specific failure mode for ABBV-style stale-filing
-  leakage where period_end_date was stored as filing_date with no lag applied.
-  Detection: compute (trade_date - filing_date) for each sampled trade in days.
-  Flag if < 45 days when fundamental columns are referenced by the strategy.
-
-**C4 — Hallucinated Data:** Pulling columns or sources that do not exist in the data
+**C3 — Hallucinated Data:** Pulling columns or sources that do not exist in the data
   dictionary (e.g., referencing 'pe_ratio' when only 'ev_sales_zscore' is available).
   Detection: strategy references column names not in the live schema.
 
-→ Resolution for C1/C2/C3: Reject strategy, update swarm_generator.py AST guardrails.
-→ Resolution for C3 specifically: Also audit fundamental ingestion pipeline — check that
-   filing_date = period_end_date + 45 days is applied at ingest time (not just strategy time).
-→ Resolution for C4: Update LLM system prompt with accurate data dictionary.
+→ Resolution for C1/C2: Reject strategy, update swarm_generator.py AST guardrails.
+→ Resolution for C3: Update LLM system prompt with accurate data dictionary.
 
 ### D. NONE — all checks pass, backtest appears physically and logically sound
 """
@@ -250,9 +247,9 @@ Your job is to classify any detected anomaly into EXACTLY one of the error categ
    c. For the 'latest_fundamental_prior_to_T' block, compute:
       - days_lag = (trade_date - filing_date) in calendar days
       - days_stale = (trade_date - filing_date) in calendar days
-      - Flag C3 (SEC Publication Lag) if days_lag < 45 AND strategy uses fundamental columns
+      - Flag A2 (Data Pipeline Leakage) if days_lag < 45 AND strategy uses fundamental columns
       - Flag C2 (Earnings Leakage) if filing_date is null but strategy uses fundamental columns
-      - Flag C3 (Stale Data) if days_stale > 540 AND strategy assigns non-zero weight
+      - Flag A2 (Stale Data) if days_stale > 540 AND strategy assigns non-zero weight
 4. Classify the overall backtest into one category only (use the most severe violation found).
 5. List ALL flagged individual trades with a short reason.
 6. Output ONLY valid JSON — no markdown, no preamble.
@@ -261,10 +258,10 @@ Required output schema (JSON only, no other text):
 {{
   "status": "PASS" | "FAIL" | "WARNING",
   "error_category": "STRUCTURAL" | "BACKTEST" | "STRATEGY" | "NONE",
-  "error_subtype": "C1_LOOKAHEAD" | "C2_EARNINGS_LEAKAGE" | "C3_SEC_LAG" | "C4_HALLUCINATED_DATA" | "B1_SURVIVORSHIP" | "B2_LIQUIDITY" | "B3_FRICTIONLESS" | "A1_STRUCTURAL" | "NONE",
+  "error_subtype": "C1_LOOKAHEAD" | "C2_EARNINGS_LEAKAGE" | "C3_HALLUCINATED_DATA" | "B1_SURVIVORSHIP" | "B2_LIQUIDITY" | "B3_FRICTIONLESS" | "A1_MATH_PRICE" | "A2_DATA_LEAKAGE" | "NONE",
   "confidence": <float 0.0-1.0>,
   "flagged_trades": [
-    {{"ticker": "AAPL", "date": "2023-01-05", "days_lag": 12, "reason": "filing_date=2022-09-30, trade_date=2022-10-12, lag=12d < 45d. C3 SEC Publication Lag violation."}}
+    {{"ticker": "AAPL", "date": "2023-01-05", "days_lag": 12, "reason": "filing_date=2022-09-30, trade_date=2022-10-12, lag=12d < 45d. A2 Data Pipeline Leakage violation."}}
   ],
   "recommendation": "<1-2 sentence actionable fix targeting the correct stack layer>"
 }}
