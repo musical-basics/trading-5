@@ -588,6 +588,7 @@ async def get_experiment_trades(experiment_id: str):
     Used by the Trade Inspector table in the Forensic Auditor UI.
     Returns a list of trade records sorted by date descending, with
     per-trade P/L computed via round-trip BUY->SELL price matching.
+    Includes both pnl_pct (%) and pnl_usd ($ per share).
     """
     from src.alpha_lab.alpha_lab_store import get_trade_ledger
     ledger = get_trade_ledger(experiment_id)
@@ -606,16 +607,22 @@ async def get_experiment_trades(experiment_id: str):
 
         if action == "BUY" and price is not None:
             entry_prices[ticker] = float(price)
-            trade["pnl_pct"] = None  # Open position — no realized P/L yet
+            trade["pnl_pct"] = None   # Open position — no realized P/L yet
+            trade["pnl_usd"] = None
         elif action == "SELL" and price is not None:
             entry = entry_prices.get(ticker)
             if entry is not None and entry > 0:
-                trade["pnl_pct"] = (float(price) - entry) / entry  # realized return
+                sell = float(price)
+                trade["pnl_pct"] = (sell - entry) / entry  # realized return %
+                trade["pnl_usd"] = sell - entry             # per-share $ gain/loss
             else:
                 trade["pnl_pct"] = None
+                trade["pnl_usd"] = None
         else:
             trade["pnl_pct"] = None
+            trade["pnl_usd"] = None
 
     # Return sorted descending (newest first) for display
     trades_asc.sort(key=lambda t: str(t.get("date", "")), reverse=True)
     return _safe_response({"trades": trades_asc})
+
