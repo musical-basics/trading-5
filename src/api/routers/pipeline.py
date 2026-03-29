@@ -264,3 +264,28 @@ def run_full():
     thread.start()
 
     return {"ok": True, "message": "Full pipeline started (ingest + migrate + scoring)"}
+
+
+@router.post("/run/rebalance")
+def run_rebalance():
+    """Phase 5: Run only the portfolio rebalancer and order router."""
+    if _pipeline_status["running"]:
+        return {"ok": False, "error": f"Pipeline already running: {_pipeline_status['phase']}"}
+
+    def _rebalance():
+        from src.pipeline.execution.portfolio_rebalancer import extract_portfolio_intents
+        from src.pipeline.execution.order_router import route_orders
+        from src.core.migrate_sqlite_to_parquet import run_migration
+
+        # Phase 5: Execution Engine
+        intents = extract_portfolio_intents()
+        route_orders(intents)
+
+        # Convert SQLite → Parquet so coverage matrix can read it
+        run_migration()
+
+    thread = threading.Thread(target=_run_in_background, args=("rebalance", _rebalance))
+    thread.daemon = True
+    thread.start()
+
+    return {"ok": True, "message": "Execution routing started (rebalancer + order router)"}

@@ -45,6 +45,8 @@ import {
   getTraders,
   fetchLivePositions,
   fetchTraderExecutions,
+  runPipelineRebalance,
+  getPipelineStatus,
   type Trader,
   type LivePositionsResponse,
   type LivePosition,
@@ -411,9 +413,33 @@ export function LivePositions() {
               <CardContent className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-3">
                 <Briefcase className="w-10 h-10 opacity-30" />
                 <p className="text-sm">No open positions for {data.trader_name}</p>
-                <p className="text-xs">
+                <p className="text-xs mb-4">
                   Run the pipeline and rebalancer to generate paper trades.
                 </p>
+                <Button 
+                  onClick={async () => {
+                    setLoading(true)
+                    try {
+                      await runPipelineRebalance()
+                      // Poll status every second until finished
+                      const timer = setInterval(async () => {
+                        const status = await getPipelineStatus()
+                        if (!status.running) {
+                          clearInterval(timer)
+                          refresh()
+                        }
+                      }, 1000)
+                    } catch (e) {
+                      setLoading(false)
+                    }
+                  }}
+                  disabled={loading}
+                  variant="outline"
+                  className="bg-primary/10 border-primary/20 hover:bg-primary/20 text-primary"
+                >
+                  <RefreshCw className={cn("w-4 h-4 mr-2", loading && "animate-spin")} />
+                  Force Rebalancer
+                </Button>
               </CardContent>
             </Card>
           ) : (

@@ -654,6 +654,11 @@ export async function runPipelineScoring(): Promise<{ ok: boolean; message?: str
   return await res.json()
 }
 
+export async function runPipelineRebalance(): Promise<{ ok: boolean; message?: string; error?: string }> {
+  const res = await fetch(`${API_BASE}/api/pipeline/run/rebalance`, { method: "POST" })
+  return await res.json()
+}
+
 export async function getPipelineStatus(): Promise<{ running: boolean; phase: string | null; error: string | null }> {
   const res = await fetch(`${API_BASE}/api/pipeline/status`)
   return await res.json()
