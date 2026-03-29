@@ -56,12 +56,14 @@ def iterative_mcr_scale(
     max_exposure: float = 1.0 - CASH_BUFFER,
     max_iterations: int = 50,
 ) -> tuple[np.ndarray, np.ndarray, int]:
-    """Iterative MCR scaling that properly handles cash buffer re-allocation.
+    """Iterative Risk scaling that bounds Relative Risk Contribution (RRC).
 
-    This is the Level 4 fix for the Level 3 normalization bug:
-    - Scale down breaching assets
-    - Re-allocate freed cash to non-breaching assets ONLY up to MCR limit
-    - Repeat until convergence
+    This is the Level 4 fix for normalization bugs:
+    - Analyzes Relative Risk Contribution (RRC = w * Marginal Vol / Total Vol)
+    - Dynamically relaxes constraints if there are too few assets to physically enforce it
+    - Scales down breaching assets
+    - Re-allocates freed cash to non-breaching assets ONLY up to MCR limit
+    - Repeats until convergence
 
     Returns:
         (adjusted_weights, mcr_values, iterations_used)
@@ -71,20 +73,27 @@ def iterative_mcr_scale(
 
     for iteration in range(max_iterations):
         mcr, port_vol = compute_mcr(w, cov_matrix)
+        
+        # Calculate Relative Risk Contribution per asset
+        rrc = (w * mcr) / max(port_vol, 1e-10)
+
+        # Dynamic limit based on active assets to prevent impossible convergence scenarios (e.g. N < 20)
+        active_assets = np.sum(w > 1e-6)
+        dynamic_limit = max(max_mcr, 1.25 / max(active_assets, 1))
 
         # Check for breaches
-        breaching = np.abs(mcr) > max_mcr
+        breaching = rrc > dynamic_limit
         if not np.any(breaching):
             # Ensure total exposure <= max_exposure
             total = np.sum(w)
             if total > max_exposure:
-                w *= max_exposure / total
+                w *= max_exposure / max(total, 1e-10)
             break
 
         # Scale down ONLY breaching assets
         for j in range(n):
-            if breaching[j] and w[j] > 0:
-                scale = max_mcr / abs(mcr[j])
+            if breaching[j] and w[j] > 0 and rrc[j] > 0:
+                scale = dynamic_limit / rrc[j]
                 w[j] *= min(scale, 1.0)
 
         # Calculate freed cash
@@ -93,10 +102,9 @@ def iterative_mcr_scale(
 
         if available_cash > 0:
             # Distribute freed cash to non-breaching positive-weight assets
-            # But ONLY up to the point where they'd breach MCR
+            # But ONLY up to the point where they'd breach RRC limits
             non_breaching = (~breaching) & (w > 0)
             if np.any(non_breaching):
-                # Give equal shares of available cash, but check MCR after
                 n_safe = np.sum(non_breaching)
                 increment = available_cash / n_safe
 
@@ -105,16 +113,21 @@ def iterative_mcr_scale(
                     if non_breaching[j]:
                         test_w = w.copy()
                         test_w[j] += increment
-                        test_mcr, _ = compute_mcr(test_w, cov_matrix)
-                        if abs(test_mcr[j]) <= max_mcr:
+                        test_mcr, test_vol = compute_mcr(test_w, cov_matrix)
+                        test_rrc = (test_w[j] * test_mcr[j]) / max(test_vol, 1e-10)
+                        
+                        if test_rrc <= dynamic_limit:
                             w[j] += increment
-                        # If it would breach, don't add the cash
 
-        # Ensure no negative weights (for long-only strategies)
-        # but preserve short positions for L/S strategies
-        total_weight = np.sum(np.abs(w))
+        # Ensure no accidental negative weights for long only parts (if it was somehow subtracted)
+        w = np.maximum(w, 0)
+        
+        # Recalculate if it accidentally exploded
+        total_weight = np.sum(w)
+        if total_weight == 0:
+            break
 
-    # Final MCR for audit
+    # Final MCR for audit (just return raw MCR values, not RRC)
     mcr, _ = compute_mcr(w, cov_matrix)
 
     return w, mcr, iteration + 1
