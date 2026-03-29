@@ -18,6 +18,9 @@ import {
   TrendingUp,
   BrainCircuit,
   Filter,
+  Download,
+  Layers,
+  List,
   ArrowUpDown,
 } from "lucide-react"
 import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis } from "recharts"
@@ -216,6 +219,7 @@ export function ForensicAuditor() {
   const [isRerunning, setIsRerunning] = useState(false)
   const [flagFilter, setFlagFilter] = useState<"all" | "flagged" | "clean">("all")
   const [plSort, setPlSort] = useState<"none" | "best" | "worst">("none")
+  const [viewMode, setViewMode] = useState<"ledger" | "clusters">("ledger")
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   // Load passed experiments and models
@@ -330,6 +334,80 @@ export function ForensicAuditor() {
     }
     return result
   }, [trades, flagFilter, flaggedTrades, plSort])
+
+  const positionClusters = useMemo(() => {
+    const clusters: Record<string, {
+      ticker: string
+      trades: TradeLedgerEntry[]
+      totalRealizedPct: number
+      totalRealizedUsd: number
+      sellCount: number
+    }> = {}
+    
+    trades.forEach(trade => {
+      const ticker = trade.ticker ?? `entity_${trade.entity_id}`
+      if (!clusters[ticker]) {
+        clusters[ticker] = { ticker, trades: [], totalRealizedPct: 0, totalRealizedUsd: 0, sellCount: 0 }
+      }
+      clusters[ticker].trades.push(trade)
+      if (trade.action === "SELL" && trade.pnl_pct != null) {
+        clusters[ticker].totalRealizedPct += trade.pnl_pct
+        clusters[ticker].totalRealizedUsd += (trade.pnl_usd ?? 0)
+        clusters[ticker].sellCount += 1
+      }
+    })
+
+    return Object.values(clusters).sort((a, b) => b.totalRealizedPct - a.totalRealizedPct)
+  }, [trades])
+
+  const summaryStats = useMemo(() => {
+    let wins = 0
+    let totalSells = 0
+    let totalPct = 0
+    let totalUsd = 0
+    
+    trades.forEach(t => {
+      if (t.action === "SELL" && t.pnl_pct != null) {
+        totalSells++
+        totalPct += t.pnl_pct
+        totalUsd += (t.pnl_usd ?? 0)
+        if (t.pnl_pct > 0) wins++
+      }
+    })
+    
+    return {
+      wins,
+      totalSells,
+      winRate: totalSells > 0 ? wins / totalSells : 0,
+      avgPct: totalSells > 0 ? totalPct / totalSells : 0,
+      totalUsd
+    }
+  }, [trades])
+
+  const handleExportCsv = () => {
+    if (filteredTrades.length === 0) return
+    const headers = ["Date", "Ticker", "Action", "Weight Delta (%)", "Price ($)", "Volume", "P/L (%)", "P/L ($)"]
+    const rows = filteredTrades.map(t => [
+      String(t.date).slice(0, 10),
+      t.ticker ?? `entity_${t.entity_id}`,
+      t.action,
+      (t.weight_delta * 100).toFixed(2),
+      t.adj_close?.toFixed(2) ?? "",
+      t.volume ?? "",
+      t.pnl_pct != null ? (t.pnl_pct * 100).toFixed(2) : "",
+      t.pnl_usd != null ? t.pnl_usd.toFixed(2) : "",
+    ])
+    
+    const csvContent = "data:text/csv;charset=utf-8," + 
+      [headers.join(","), ...rows.map(e => e.join(","))].join("\n")
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement("a")
+    link.setAttribute("href", encodedUri)
+    link.setAttribute("download", `alpha_lab_trades_${selectedId}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
 
   return (
     <div className="space-y-6">
@@ -554,15 +632,39 @@ export function ForensicAuditor() {
               <div className="flex-1 min-w-0">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-primary" />
-                  Trade Inspector — The Receipts
+                  Trade Inspector
                 </CardTitle>
-                <CardDescription className="text-[11px] mt-0.5">
-                  {trades.length > 0
-                    ? `${filteredTrades.length} of ${trades.length} positions shown · click flagged rows to see AI reason`
-                    : isLoadingTrades
-                    ? "Loading trade ledger…"
-                    : "No trade ledger found — run a full backtest first"}
-                </CardDescription>
+                <div className="flex items-center gap-3 mt-2">
+                  <div className="flex bg-muted/30 p-0.5 rounded-md border border-border/50">
+                    <button
+                      onClick={() => setViewMode("ledger")}
+                      className={cn(
+                        "flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all",
+                        viewMode === "ledger" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <List className="w-3 h-3" /> Ledger
+                    </button>
+                    <button
+                      onClick={() => setViewMode("clusters")}
+                      className={cn(
+                        "flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all",
+                        viewMode === "clusters" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <Layers className="w-3 h-3" /> Clusters
+                    </button>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-6 text-[10px] px-2 gap-1.5 border-border/50 bg-muted/20"
+                    onClick={handleExportCsv}
+                    disabled={trades.length === 0}
+                  >
+                    <Download className="w-3 h-3 text-muted-foreground" /> Export CSV
+                  </Button>
+                </div>
               </div>
               {/* Equity sparkline */}
               {equityCurve.length > 1 && (
@@ -597,7 +699,7 @@ export function ForensicAuditor() {
               {isLoadingTrades && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground shrink-0 mt-1" />}
             </div>
           </CardHeader>
-          {trades.length > 0 && (
+          {trades.length > 0 && viewMode === "ledger" && (
             <CardContent className="p-0 pt-3">
               <ScrollArea className="max-h-[420px]">
                 <table className="w-full text-sm">
@@ -650,8 +752,91 @@ export function ForensicAuditor() {
                   </tbody>
                 </table>
               </ScrollArea>
+              {/* Summary Footer */}
+              {summaryStats.totalSells > 0 && (
+                <div className="border-t border-border/50 bg-card/50 px-4 py-2.5 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-4 text-muted-foreground">
+                    <span>
+                      <strong className="text-foreground">{summaryStats.totalSells}</strong> trades closed
+                    </span>
+                    <span>
+                      Win Rate: <strong className={summaryStats.winRate >= 0.5 ? "text-emerald-400" : "text-amber-400"}>
+                        {(summaryStats.winRate * 100).toFixed(1)}%
+                      </strong>
+                    </span>
+                    <span>
+                      Avg Return: <strong className={summaryStats.avgPct >= 0 ? "text-emerald-400" : "text-red-400"}>
+                        {(summaryStats.avgPct * 100).toFixed(2)}%
+                      </strong>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground mr-1">Total Realized P/L per share:</span>
+                    <Badge variant="outline" className={cn(
+                      "font-mono text-[11px]",
+                      summaryStats.totalUsd >= 0 ? "border-emerald-500/30 text-emerald-400 bg-emerald-500/10" : "border-red-500/30 text-red-400 bg-red-500/10"
+                    )}>
+                      {summaryStats.totalUsd >= 0 ? "+" : ""}${summaryStats.totalUsd.toFixed(2)}
+                    </Badge>
+                  </div>
+                </div>
+              )}
             </CardContent>
           )}
+
+          {/* Position Clusters View */}
+          {trades.length > 0 && viewMode === "clusters" && (
+            <CardContent className="p-0 pt-3">
+              <ScrollArea className="max-h-[420px]">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border/50 bg-muted/30">
+                      <th className="px-4 py-2 text-left text-[11px] font-medium text-muted-foreground">Ticker</th>
+                      <th className="px-4 py-2 text-left text-[11px] font-medium text-muted-foreground">Total Trades</th>
+                      <th className="px-4 py-2 text-left text-[11px] font-medium text-muted-foreground">Realized Sells</th>
+                      <th className="px-4 py-2 text-left text-[11px] font-medium text-muted-foreground">Total Realized %</th>
+                      <th className="px-4 py-2 text-left text-[11px] font-medium text-muted-foreground">Total Realized $/sh</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {positionClusters.map((cluster) => (
+                      <tr key={cluster.ticker} className="border-b border-border/50 hover:bg-muted/10 transition-colors">
+                        <td className="px-4 py-3 text-xs font-semibold">{cluster.ticker}</td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground">{cluster.trades.length} events</td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground">{cluster.sellCount}</td>
+                        <td className="px-4 py-3 text-xs font-mono">
+                          {cluster.sellCount > 0 ? (
+                            <span className={cluster.totalRealizedPct >= 0 ? "text-emerald-400" : "text-red-400"}>
+                              {cluster.totalRealizedPct >= 0 ? "+" : ""}{(cluster.totalRealizedPct * 100).toFixed(2)}%
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground/50">open</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-xs font-mono">
+                          {cluster.sellCount > 0 ? (
+                            <span className={cluster.totalRealizedUsd >= 0 ? "text-emerald-400" : "text-red-400"}>
+                              {cluster.totalRealizedUsd >= 0 ? "+" : ""}${cluster.totalRealizedUsd.toFixed(2)}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground/50">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </ScrollArea>
+              {summaryStats.totalSells > 0 && (
+                <div className="border-t border-border/50 bg-card/50 px-4 py-2.5 flex items-center justify-between text-xs">
+                  <div className="text-muted-foreground">
+                    Grouped into <strong className="text-foreground">{positionClusters.length}</strong> ticker clusters
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          )}
+
           {!isLoadingTrades && trades.length === 0 && selectedId && (
             <CardContent className="py-6">
               <div className="flex flex-col items-center gap-4 text-center">
