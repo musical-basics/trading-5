@@ -699,6 +699,42 @@ export function ForensicAuditor() {
               {isLoadingTrades && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground shrink-0 mt-1" />}
             </div>
           </CardHeader>
+
+          {/* Global Summary Header */}
+          {trades.length > 0 && summaryStats.totalSells > 0 && (
+            <div className="border-b border-border/50 bg-muted/10 px-4 py-3 flex items-center justify-between text-xs w-full">
+              <div className="flex items-center gap-4 text-muted-foreground">
+                <span>
+                  <strong className="text-foreground">{summaryStats.totalSells}</strong> trades closed
+                </span>
+                <span>
+                  Win Rate: <strong className={summaryStats.winRate >= 0.5 ? "text-emerald-400" : "text-amber-400"}>
+                    {(summaryStats.winRate * 100).toFixed(1)}%
+                  </strong>
+                </span>
+                <span>
+                  Avg Return: <strong className={summaryStats.avgPct >= 0 ? "text-emerald-400" : "text-red-400"}>
+                    {(summaryStats.avgPct * 100).toFixed(2)}%
+                  </strong>
+                </span>
+                {viewMode === "clusters" && (
+                  <span className="flex items-center gap-1.5 ml-2 border-l border-border/50 pl-4">
+                    <Layers className="w-3.5 h-3.5" /> <strong className="text-foreground">{positionClusters.length}</strong> clusters
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground mr-1">Total Realized P/L per share:</span>
+                <Badge variant="outline" className={cn(
+                  "font-mono text-[11px] font-semibold py-0.5 shadow-sm",
+                  summaryStats.totalUsd >= 0 ? "border-emerald-500/30 text-emerald-400 bg-emerald-500/10" : "border-red-500/30 text-red-400 bg-red-500/10"
+                )}>
+                  {summaryStats.totalUsd >= 0 ? "+" : ""}${summaryStats.totalUsd.toFixed(2)}
+                </Badge>
+              </div>
+            </div>
+          )}
+
           {trades.length > 0 && viewMode === "ledger" && (
             <CardContent className="p-0 pt-3">
               <ScrollArea className="max-h-[420px]">
@@ -752,35 +788,6 @@ export function ForensicAuditor() {
                   </tbody>
                 </table>
               </ScrollArea>
-              {/* Summary Footer */}
-              {summaryStats.totalSells > 0 && (
-                <div className="border-t border-border/50 bg-card/50 px-4 py-2.5 flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-4 text-muted-foreground">
-                    <span>
-                      <strong className="text-foreground">{summaryStats.totalSells}</strong> trades closed
-                    </span>
-                    <span>
-                      Win Rate: <strong className={summaryStats.winRate >= 0.5 ? "text-emerald-400" : "text-amber-400"}>
-                        {(summaryStats.winRate * 100).toFixed(1)}%
-                      </strong>
-                    </span>
-                    <span>
-                      Avg Return: <strong className={summaryStats.avgPct >= 0 ? "text-emerald-400" : "text-red-400"}>
-                        {(summaryStats.avgPct * 100).toFixed(2)}%
-                      </strong>
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground mr-1">Total Realized P/L per share:</span>
-                    <Badge variant="outline" className={cn(
-                      "font-mono text-[11px]",
-                      summaryStats.totalUsd >= 0 ? "border-emerald-500/30 text-emerald-400 bg-emerald-500/10" : "border-red-500/30 text-red-400 bg-red-500/10"
-                    )}>
-                      {summaryStats.totalUsd >= 0 ? "+" : ""}${summaryStats.totalUsd.toFixed(2)}
-                    </Badge>
-                  </div>
-                </div>
-              )}
             </CardContent>
           )}
 
@@ -827,13 +834,6 @@ export function ForensicAuditor() {
                   </tbody>
                 </table>
               </ScrollArea>
-              {summaryStats.totalSells > 0 && (
-                <div className="border-t border-border/50 bg-card/50 px-4 py-2.5 flex items-center justify-between text-xs">
-                  <div className="text-muted-foreground">
-                    Grouped into <strong className="text-foreground">{positionClusters.length}</strong> ticker clusters
-                  </div>
-                </div>
-              )}
             </CardContent>
           )}
 
