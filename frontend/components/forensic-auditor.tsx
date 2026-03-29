@@ -33,6 +33,7 @@ import {
   fetchAlphaExperiments,
   runForensicAudit,
   fetchExperimentTrades,
+  runAlphaBacktest,
   type AlphaExperiment,
   type AuditReport,
   type TradeLedgerEntry,
@@ -175,6 +176,7 @@ export function ForensicAuditor() {
   const [trades, setTrades] = useState<TradeLedgerEntry[]>([])
   const [isRunning, setIsRunning] = useState(false)
   const [isLoadingTrades, setIsLoadingTrades] = useState(false)
+  const [isRerunning, setIsRerunning] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   // Load passed experiments
@@ -222,6 +224,22 @@ export function ForensicAuditor() {
       setErrorMsg(e.message ?? "Audit failed")
     } finally {
       setIsRunning(false)
+    }
+  }
+
+  const handleRerunBacktest = async () => {
+    if (!selectedId) return
+    setIsRerunning(true)
+    setErrorMsg(null)
+    try {
+      await runAlphaBacktest(selectedId)
+      // After re-run, reload trade ledger
+      const r = await fetchExperimentTrades(selectedId)
+      setTrades(r.trades ?? [])
+    } catch (e: any) {
+      setErrorMsg(e.message ?? "Re-run failed")
+    } finally {
+      setIsRerunning(false)
     }
   }
 
@@ -457,6 +475,36 @@ export function ForensicAuditor() {
                   </tbody>
                 </table>
               </ScrollArea>
+            </CardContent>
+          )}
+          {!isLoadingTrades && trades.length === 0 && selectedId && (
+            <CardContent className="py-6">
+              <div className="flex flex-col items-center gap-4 text-center">
+                <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                  <AlertTriangle className="w-6 h-6 text-amber-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">No trade ledger found</p>
+                  <p className="text-xs text-muted-foreground/60 mt-1 max-w-xs">
+                    This experiment was backtested before trade-ledger extraction was enabled.
+                    Re-run the backtest to generate the discrete trade log.
+                  </p>
+                </div>
+                <Button
+                  id="rerun-backtest-btn"
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 border-amber-500/40 text-amber-400 hover:bg-amber-500/10"
+                  onClick={handleRerunBacktest}
+                  disabled={isRerunning}
+                >
+                  {isRerunning ? (
+                    <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Re-running Backtest…</>
+                  ) : (
+                    <><RefreshCw className="w-3.5 h-3.5" /> Re-run Backtest to Generate Ledger</>
+                  )}
+                </Button>
+              </div>
             </CardContent>
           )}
         </Card>
