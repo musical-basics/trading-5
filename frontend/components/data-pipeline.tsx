@@ -4,9 +4,10 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Loader2, Database, CheckCircle2, AlertTriangle, XCircle, Play, RefreshCw, Terminal } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Loader2, Database, CheckCircle2, AlertTriangle, XCircle, Play, RefreshCw, Terminal, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { fetchPipelineCoverage, runPipelineIngest, runPipelineFull, runPipelineScoring, getPipelineLogs, type TickerCoverage, type ComponentCoverage } from "@/lib/api"
+import { fetchPipelineCoverage, runPipelineIngest, runPipelineFull, runPipelineScoring, getPipelineLogs, runPipelineIngestEdgar, type TickerCoverage, type ComponentCoverage } from "@/lib/api"
 
 const STAGES = [
   { key: "market_data", label: "Market Data", cols: ["adj_close", "volume", "daily_return"] },
@@ -111,6 +112,15 @@ export function DataPipeline() {
     }
   }
 
+  const handleRunIngestEdgar = async () => {
+    const result = await runPipelineIngestEdgar()
+    if (result.ok) {
+      startPipeline("ingest_edgar")
+    } else {
+      setPipelineError(result.error ?? "Failed to start")
+    }
+  }
+
   const handleRunCompute = async () => {
     const result = await runPipelineScoring()
     if (result.ok) {
@@ -171,19 +181,31 @@ export function DataPipeline() {
             <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
             Refresh
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRunIngest}
-            disabled={pipelineRunning}
-          >
-            {pipelineRunning && pipelinePhase === "ingest" ? (
-              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-            ) : (
-              <Play className="w-3.5 h-3.5 mr-1.5" />
-            )}
-            Ingest Data
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={pipelineRunning}
+              >
+                {pipelineRunning && (pipelinePhase === "ingest" || pipelinePhase === "ingest_edgar") ? (
+                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                ) : (
+                  <Play className="w-3.5 h-3.5 mr-1.5" />
+                )}
+                Ingest Data
+                <ChevronDown className="w-3.5 h-3.5 ml-1.5 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleRunIngest}>
+                All Sources (Market + Fundamentals + Macro)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleRunIngestEdgar}>
+                EDGAR Fundamentals Only
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             variant="outline"
             size="sm"

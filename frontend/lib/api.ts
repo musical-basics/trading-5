@@ -632,6 +632,11 @@ export async function runPipelineIngest(): Promise<{ ok: boolean; message?: stri
   return await res.json()
 }
 
+export async function runPipelineIngestEdgar(): Promise<{ ok: boolean; message?: string; error?: string }> {
+  const res = await fetch(`${API_BASE}/api/pipeline/run/ingest_edgar`, { method: "POST" })
+  return await res.json()
+}
+
 export async function runPipelineFull(): Promise<{ ok: boolean; message?: string; error?: string }> {
   const res = await fetch(`${API_BASE}/api/pipeline/run/full`, { method: "POST" })
   return await res.json()

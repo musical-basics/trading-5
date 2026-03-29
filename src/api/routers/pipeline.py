@@ -160,6 +160,30 @@ def run_ingest():
     return {"ok": True, "message": "Ingestion started (market data + fundamentals + macro → parquet)"}
 
 
+@router.post("/run/ingest_edgar")
+def run_ingest_edgar():
+    """Phase 1 Target: Ingest only EDGAR Fundamentals → SQLite → Parquet."""
+    if _pipeline_status["running"]:
+        return {"ok": False, "error": f"Pipeline already running: {_pipeline_status['phase']}"}
+
+    def _ingest_edgar():
+        from src.pipeline.core.db_init import init_db
+        from src.pipeline.data_sources.edgar.fundamentals import ingest_fundamentals_edgar
+        from src.core.migrate_sqlite_to_parquet import run_migration
+
+        init_db()
+        ingest_fundamentals_edgar()
+
+        # Convert SQLite → Parquet so DuckDB/coverage can read it
+        run_migration()
+
+    thread = threading.Thread(target=_run_in_background, args=("ingest_edgar", _ingest_edgar))
+    thread.daemon = True
+    thread.start()
+
+    return {"ok": True, "message": "EDGAR Ingestion started (EDGAR fundamentals → parquet)"}
+
+
 @router.post("/run/pipeline")
 def run_pipeline():
     """Phases 2-4: Scoring, features, ML, risk."""
