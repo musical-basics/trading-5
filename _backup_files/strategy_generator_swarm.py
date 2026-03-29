@@ -12,6 +12,7 @@ Supports three model tiers with cost tracking:
 
 import os
 import re
+import ast
 from dataclasses import dataclass
 from collections import defaultdict
 
@@ -172,6 +173,8 @@ CRITICAL POLARS API RULES (you MUST follow these exactly):
 - Avoid `.select()` at the end — return the full df with the weight column added via `.with_columns()`
 - NEVER divide by a value that could be zero or near-zero. Always clip the divisor: `/ pl.col("x").clip(0.01, None)` instead of `/ (pl.col("x") + 1e-6)`
 - Use `.fill_null(0.0)` BEFORE arithmetic operations on columns that may have nulls
+- DO NOT EVER use `.fill_null(strategy="backward")` or `.fill_null(strategy='backward')`. Backward fill introduces lookahead bias (peeking into the future). It is STRICTLY PROHIBITED.
+- Ensure that fundamental fields (e.g., `total_debt`, `free_cash_flow`) have explicit null-handling or fill logic before computation to avoid NaN gaps.
 
 RESPOND in this exact format:
 STRATEGY_NAME: snake_case_name
@@ -323,6 +326,8 @@ CRITICAL POLARS API RULES (you MUST follow these exactly):
 - Avoid `.select()` at the end — return the full df with the weight column added via `.with_columns()`
 - NEVER divide by a value that could be zero or near-zero. Always clip the divisor: `/ pl.col("x").clip(0.01, None)` instead of `/ (pl.col("x") + 1e-6)`
 - Use `.fill_null(0.0)` BEFORE arithmetic operations on columns that may have nulls
+- DO NOT EVER use `.fill_null(strategy="backward")` or `.fill_null(strategy='backward')`. Backward fill introduces lookahead bias (peeking into the future). It is STRICTLY PROHIBITED.
+- Ensure that fundamental fields (e.g., `total_debt`, `free_cash_flow`) have explicit null-handling or fill logic before computation to avoid NaN gaps.
 
 RESPOND in this exact format:
 STRATEGY_NAME: snake_case_name
@@ -436,6 +441,9 @@ def generate_strategy(
 
     # Parse response
     name, dev_rationale, code = _parse_response(dev_text)
+
+    # AST Guardrail Verification
+    _enforce_ast_guardrails(code)
 
     # Build a unified rationale explaining the swarm process
     combined_rationale = (
@@ -580,6 +588,9 @@ def combine_strategies(
 
     name, rationale, code = _parse_response(text)
 
+    # AST Guardrail Verification
+    _enforce_ast_guardrails(code)
+
     return StrategyHypothesis(
         name=name,
         rationale=f"[Combined from: {', '.join(strategy_names)}] {rationale}",
@@ -589,3 +600,34 @@ def combine_strategies(
         output_tokens=output_tokens,
         cost_usd=round(cost_usd, 6),
     )
+
+
+def _enforce_ast_guardrails(code: str) -> None:
+    """Parse the generated code and look for illegal patterns such as lookahead bias."""
+    try:
+        tree = ast.parse(code)
+    except SyntaxError as e:
+        raise ValueError(f"LLM generated invalid Python syntax: {e}")
+
+    class GuardrailVisitor(ast.NodeVisitor):
+        def visit_Call(self, node):
+            # Block .fill_null(strategy="backward")
+            if isinstance(node.func, ast.Attribute) and node.func.attr == "fill_null":
+                # Check kwargs
+                for kw in node.keywords:
+                    if kw.arg == "strategy":
+                        val = None
+                        if isinstance(kw.value, ast.Constant):
+                            val = kw.value.value
+                        elif isinstance(kw.value, ast.Str): # Python 3.7 fallback
+                            val = kw.value.s
+                        
+                        if val == "backward":
+                            raise ValueError(
+                                "AST Guardrail Violation: fill_null(strategy='backward') "
+                                "is strictly prohibited. It introduces future lookahead bias."
+                            )
+            self.generic_visit(node)
+            
+    visitor = GuardrailVisitor()
+    visitor.visit(tree)

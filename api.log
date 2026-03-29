@@ -87,3 +87,43 @@ INFO:     127.0.0.1:55206 - "POST /api/alpha-lab/c32ea324/audit HTTP/1.1" 200 OK
 INFO:     127.0.0.1:58572 - "POST /api/alpha-lab/c32ea324/audit HTTP/1.1" 200 OK
 INFO:     127.0.0.1:60446 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
 INFO:     127.0.0.1:60447 - "GET /api/alpha-lab/audit/models HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61431 - "GET /api/alpha-lab/c32ea324/trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63511 - "GET /api/alpha-lab/aligned-profile HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63513 - "GET /api/alpha-lab/aligned-profile HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63511 - "GET /api/indicators/AAPL?rfr_source=irx HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63513 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63511 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63584 - "GET /api/indicators/AAPL?rfr_source=irx HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63584 - "GET /api/alpha-lab/c32ea324 HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in '_backup_files/concentrated_value_momentum.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [53272]
+INFO:     Started server process [54505]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in '_backup_files/concentrated_value_momentum.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [54505]
+INFO:     Started server process [54524]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in '_backup_files/strategy_generator_swarm.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [54524]
+INFO:     Started server process [54544]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src/alpha_lab/strategy_generator.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [54544]
+INFO:     Started server process [54560]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
