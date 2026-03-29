@@ -78,10 +78,34 @@ TAXONOMY_DEFINITIONS = """
 → Resolution: Patch lab_backtester.py with liquidity gates, delisting checks, slippage
 
 ### C. STRATEGY (Alpha Lab / Strategy Code Issues)
-- Lookahead Bias: Strategy uses .shift(-1) or fill_null(strategy="backward") to peek future
-- Earnings Leakage: Fundamental data used on exact quarter-end date, not SEC filing_date+45d
-- Hallucinated Data: Pulling columns or sources that do not exist in the data dictionary
-→ Resolution: Reject strategy, update swarm_generator.py prompts, add AST guardrails
+
+**C1 — Lookahead Bias:** Strategy uses .shift(-1) or fill_null(strategy="backward") to
+  directly peek at future price or fundamental rows.
+  Detection: search for shift(-N), pct_change(-N), fill_null(strategy='backward').
+
+**C2 — Earnings Leakage:** Fundamental data referenced ON the exact fiscal quarter-end date
+  (period_end_date), not the actual SEC filing date. Companies file 10-Q/10-K 40-60 days
+  after quarter-end. If the strategy uses fundamental data without checking filing_date,
+  it is using numbers that wouldn't have been publicly available on the trade date.
+  Detection: strategy touches fundamental columns but does not reference 'filing_date'.
+
+**C3 — SEC Publication Lag Violation:** Fundamental data used too soon after filing_date.
+  Even when filing_date is present in the data, strategies must enforce a ≥45-day gap:
+  trade_date >= filing_date + 45 days. If the evidence shows a trade date where
+  (trade_date - filing_date) < 45 days AND fundamental columns drove the signal,
+  this is a C3 violation. This is the specific failure mode for ABBV-style stale-filing
+  leakage where period_end_date was stored as filing_date with no lag applied.
+  Detection: compute (trade_date - filing_date) for each sampled trade in days.
+  Flag if < 45 days when fundamental columns are referenced by the strategy.
+
+**C4 — Hallucinated Data:** Pulling columns or sources that do not exist in the data
+  dictionary (e.g., referencing 'pe_ratio' when only 'ev_sales_zscore' is available).
+  Detection: strategy references column names not in the live schema.
+
+→ Resolution for C1/C2/C3: Reject strategy, update swarm_generator.py AST guardrails.
+→ Resolution for C3 specifically: Also audit fundamental ingestion pipeline — check that
+   filing_date = period_end_date + 45 days is applied at ingest time (not just strategy time).
+→ Resolution for C4: Update LLM system prompt with accurate data dictionary.
 
 ### D. NONE — all checks pass, backtest appears physically and logically sound
 """
@@ -218,22 +242,29 @@ Your job is to classify any detected anomaly into EXACTLY one of the error categ
 {taxonomy}
 
 ## Instructions
-1. Examine the Strategy Code carefully for lookahead patterns (.shift(-1), fill_null backward, etc.).
-2. Examine each Trade in the Evidence File. For each trade, cross-reference:
-   - The volume on the trade date (was there actually volume?)
-   - The price trajectory (any suspicious overnight jumps suggesting unadjusted splits?)
-   - The fundamental filing_date (was it available before the trade date?)
-3. Classify the overall backtest into one category only.
-4. List ALL flagged individual trades with a short reason.
-5. Output ONLY valid JSON — no markdown, no preamble.
+1. Examine the Strategy Code carefully for lookahead patterns (.shift(-1), fill_null backward, pct_change with negative n, etc.).
+2. Check whether the strategy references fundamental column names (dcf_npv_gap, ev_sales_zscore, pe_ratio, revenue, total_debt, free_cash_flow, etc.) WITHOUT referencing 'filing_date' — if so, flag as C2 (Earnings Leakage).
+3. For each Trade in the Evidence File:
+   a. Check volume on trade date (was there actually volume? zero = halted)
+   b. Check price trajectory (overnight jump >40% = possible unadjusted split)
+   c. For the 'latest_fundamental_prior_to_T' block, compute:
+      - days_lag = (trade_date - filing_date) in calendar days
+      - days_stale = (trade_date - filing_date) in calendar days
+      - Flag C3 (SEC Publication Lag) if days_lag < 45 AND strategy uses fundamental columns
+      - Flag C2 (Earnings Leakage) if filing_date is null but strategy uses fundamental columns
+      - Flag C3 (Stale Data) if days_stale > 540 AND strategy assigns non-zero weight
+4. Classify the overall backtest into one category only (use the most severe violation found).
+5. List ALL flagged individual trades with a short reason.
+6. Output ONLY valid JSON — no markdown, no preamble.
 
 Required output schema (JSON only, no other text):
 {{
   "status": "PASS" | "FAIL" | "WARNING",
   "error_category": "STRUCTURAL" | "BACKTEST" | "STRATEGY" | "NONE",
+  "error_subtype": "C1_LOOKAHEAD" | "C2_EARNINGS_LEAKAGE" | "C3_SEC_LAG" | "C4_HALLUCINATED_DATA" | "B1_SURVIVORSHIP" | "B2_LIQUIDITY" | "B3_FRICTIONLESS" | "A1_STRUCTURAL" | "NONE",
   "confidence": <float 0.0-1.0>,
   "flagged_trades": [
-    {{"ticker": "AAPL", "date": "2023-01-05", "reason": "Traded 500% of daily volume. Liquidity hallucination."}}
+    {{"ticker": "AAPL", "date": "2023-01-05", "days_lag": 12, "reason": "filing_date=2022-09-30, trade_date=2022-10-12, lag=12d < 45d. C3 SEC Publication Lag violation."}}
   ],
   "recommendation": "<1-2 sentence actionable fix targeting the correct stack layer>"
 }}

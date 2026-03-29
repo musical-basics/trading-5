@@ -206,7 +206,16 @@ def ingest_fundamentals(
             records = []
 
             for col_date in bs.columns:
-                row: dict = {"entity_id": entity_id, "filing_date": col_date.date()}
+                # col_date is the quarter PERIOD-END date from yfinance.
+                # We must add 45 days to simulate the SEC filing publication lag
+                # (companies have 40-45 days after quarter-end to file 10-Q/10-K).
+                # Without this offset, strategies can use fundamental data the same
+                # day it is "filed", which is impossible in practice — this is the
+                # exact earnings-leakage vector the forensic auditor detected.
+                period_end = col_date.date()
+                filing_date = period_end + timedelta(days=45)
+
+                row: dict = {"entity_id": entity_id, "filing_date": filing_date}
                 row["total_debt"] = float(bs.at["Total Debt", col_date]) if "Total Debt" in bs.index else None
                 row["cash"] = float(bs.at["Cash And Cash Equivalents", col_date]) if "Cash And Cash Equivalents" in bs.index else None
                 row["shares_out"] = float(bs.at["Ordinary Shares Number", col_date]) if "Ordinary Shares Number" in bs.index else None
@@ -221,7 +230,7 @@ def ingest_fundamentals(
             if records:
                 df = pl.DataFrame(records)
                 all_frames.append(df)
-                print(f"    {ticker}: ✓ {len(records)} quarters")
+                print(f"    {ticker}: ✓ {len(records)} quarters (latest filing_date: {records[-1]['filing_date']})")
         except Exception as e:
             print(f"    {ticker}: ⚠ {e}")
 
@@ -252,6 +261,38 @@ def ingest_fundamentals(
     combined = combined.sort(["entity_id", "filing_date"])
     combined.write_parquet(parquet_path)
     print(f"  ✓ {len(combined):,} total fundamental rows")
+
+    # ── Staleness report ────────────────────────────────────────────────────
+    # Warn operators when a ticker's latest filing_date is older than 540 days.
+    # This is the stale-data condition the forensic auditor checks at trade time.
+    today = datetime.now().date()
+    stale_threshold_days = 540
+    latest_per_entity = (
+        combined
+        .group_by("entity_id")
+        .agg(pl.col("filing_date").max().alias("latest_filing"))
+        .with_columns(
+            ((pl.lit(str(today)).str.to_date() - pl.col("latest_filing")).dt.total_days())
+            .alias("days_stale")
+        )
+        .filter(pl.col("days_stale") > stale_threshold_days)
+        .sort("days_stale", descending=True)
+    )
+    if not latest_per_entity.is_empty():
+        print(f"\n  ⚠️  STALENESS WARNING — {len(latest_per_entity)} ticker(s) have fundamentals older than {stale_threshold_days} days:")
+        # Load entity map for ticker labels
+        em_path = os.path.join(os.path.dirname(parquet_path), "entity_map.parquet")
+        if os.path.exists(em_path):
+            emap = pl.read_parquet(em_path)
+            stale_report = latest_per_entity.join(emap, on="entity_id", how="left")
+            for row in stale_report.to_dicts():
+                print(f"    • {row.get('ticker', row['entity_id'])}: last filing {row['latest_filing']} ({int(row['days_stale'])} days ago)")
+        else:
+            for row in latest_per_entity.to_dicts():
+                print(f"    • entity_id={row['entity_id']}: last filing {row['latest_filing']} ({int(row['days_stale'])} days ago)")
+        print(f"  → Re-run ingest_fundamentals() or switch to EDGAR source to refresh.")
+    else:
+        print(f"  ✓ All tickers have fresh fundamentals (none older than {stale_threshold_days} days).")
 
 
 def ingest_macro(
