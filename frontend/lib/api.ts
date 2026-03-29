@@ -153,6 +153,13 @@ export async function updateConstraints(
   if (!res.ok) throw new Error(`Failed to update constraints: ${res.status}`)
 }
 
+export async function deleteTrader(traderId: number): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/traders/${traderId}`, {
+    method: "DELETE",
+  })
+  if (!res.ok) throw new Error(`Failed to delete trader: ${res.status}`)
+}
+
 // ── Portfolio API ─────────────────────────────────────────
 
 export async function getPortfolios(traderId: number): Promise<Portfolio[]> {

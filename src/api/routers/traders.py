@@ -12,8 +12,9 @@ from __future__ import annotations
 
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 from src.core.trader_manager import (
     create_trader,
@@ -28,6 +29,7 @@ from src.api.routers.models import (
     TraderConstraintUpdate,
     TraderConstraintResponse,
 )
+from src.core.database import get_db
 
 router = APIRouter(prefix="/api/traders", tags=["traders"])
 
@@ -96,6 +98,20 @@ async def api_update_constraints(trader_id: int, req: TraderConstraintUpdate):
         raise HTTPException(status_code=400, detail=str(e))
 
     return {"status": "updated", "trader_id": trader_id}
+
+
+@router.delete("/{trader_id}")
+async def api_delete_trader(trader_id: int, db: Session = Depends(get_db)):
+    """Delete a trader and cascade delete constraints and portfolios."""
+    from src.core.models import Trader
+    
+    trader = db.query(Trader).filter(Trader.id == trader_id).first()
+    if not trader:
+        raise HTTPException(status_code=404, detail=f"Trader {trader_id} not found")
+    
+    db.delete(trader)
+    db.commit()
+    return {"status": "deleted", "trader_id": trader_id}
 
 
 class TraderBacktestRequest(BaseModel):

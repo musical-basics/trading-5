@@ -33,6 +33,7 @@ import {
   Users,
   Wallet,
   AlertTriangle,
+  Trash2,
 } from "lucide-react"
 import {
   Trader,
@@ -45,6 +46,7 @@ import {
   updatePortfolioStrategy,
   updatePortfolioSchedule,
   fetchStrategies,
+  deleteTrader,
 } from "@/lib/api"
 import { TraderBacktest } from "./trader-backtest"
 
@@ -64,6 +66,10 @@ export function TraderManager() {
   const [numPortfolios, setNumPortfolios] = useState("10")
   const [capitalPerPortfolio, setCapitalPerPortfolio] = useState("")
   const [creating, setCreating] = useState(false)
+
+  // Delete dialog
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   // Constraints
   const [maxDrawdown, setMaxDrawdown] = useState(20)
@@ -134,6 +140,22 @@ export function TraderManager() {
       setError(e instanceof Error ? e.message : "Failed to create trader")
     } finally {
       setCreating(false)
+    }
+  }
+
+  const handleDeleteTrader = async () => {
+    if (!selectedTrader) return
+    setDeleting(true)
+    try {
+      await deleteTrader(selectedTrader.id)
+      const updatedTraders = traders.filter(t => t.id !== selectedTrader.id)
+      setTraders(updatedTraders)
+      setSelectedTrader(updatedTraders.length > 0 ? updatedTraders[0] : null)
+      setShowDeleteDialog(false)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to delete trader")
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -345,31 +367,69 @@ export function TraderManager() {
       {selectedTrader && (
         <div className="space-y-4">
           {/* Sub-tab navigation */}
-          <div className="flex gap-1 p-1 bg-card/50 rounded-lg border border-border w-fit">
-            <button
-              onClick={() => setActiveTab("portfolios")}
-              className={`
-                px-4 py-1.5 rounded-md text-sm font-medium transition-all
-                ${activeTab === "portfolios"
-                  ? "bg-primary/10 text-primary shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"}
-              `}
-            >
-              <Wallet className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" />
-              Portfolios
-            </button>
-            <button
-              onClick={() => setActiveTab("backtest")}
-              className={`
-                px-4 py-1.5 rounded-md text-sm font-medium transition-all
-                ${activeTab === "backtest"
-                  ? "bg-primary/10 text-primary shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"}
-              `}
-            >
-              <BarChart3 className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" />
-              Backtest
-            </button>
+          <div className="flex items-center justify-between">
+            <div className="flex gap-1 p-1 bg-card/50 rounded-lg border border-border w-fit">
+              <button
+                onClick={() => setActiveTab("portfolios")}
+                className={`
+                  px-4 py-1.5 rounded-md text-sm font-medium transition-all
+                  ${activeTab === "portfolios"
+                    ? "bg-primary/10 text-primary shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"}
+                `}
+              >
+                <Wallet className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" />
+                Portfolios
+              </button>
+              <button
+                onClick={() => setActiveTab("backtest")}
+                className={`
+                  px-4 py-1.5 rounded-md text-sm font-medium transition-all
+                  ${activeTab === "backtest"
+                    ? "bg-primary/10 text-primary shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"}
+                `}
+              >
+                <BarChart3 className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" />
+                Backtest
+              </button>
+            </div>
+
+            <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="text-destructive border-destructive/20 hover:bg-destructive/10">
+                  <Trash2 className="w-4 h-4 mr-1" />
+                  Delete Trader
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Delete Trader</DialogTitle>
+                  <DialogDescription>
+                    Are you sure you want to delete <strong>{selectedTrader.name}</strong>? This action will permanently remove all associated constraints and sub-portfolios.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={handleDeleteTrader}
+                    disabled={deleting}
+                  >
+                    {deleting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                        Deleting...
+                      </>
+                    ) : (
+                      "Delete"
+                    )}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
 
           {/* Portfolios Tab */}
