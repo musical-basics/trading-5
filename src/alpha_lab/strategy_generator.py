@@ -175,7 +175,7 @@ CRITICAL POLARS API RULES (you MUST follow these exactly):
 - Use `.fill_null(0.0)` BEFORE arithmetic operations on columns that may have nulls
 - DO NOT EVER use `.fill_null(strategy="backward")` or `.fill_null(strategy='backward')`. Backward fill introduces lookahead bias (peeking into the future). It is STRICTLY PROHIBITED.
 - Ensure that fundamental fields (e.g., `total_debt`, `free_cash_flow`) have explicit null-handling or fill logic before computation to avoid NaN gaps.
-- Fundamental data staleness guardrail: If your strategy uses fundamental fields, you MUST ensure the data is not stale. You MUST force the fundamental signal to 0.0 if `filing_date` is null or older than 540 days (18 months): `pl.when(pl.col("filing_date").is_null() | ((pl.col("date") - pl.col("filing_date").cast(pl.Date)).dt.total_days() > 540)).then(0.0)`
+- Fundamental data staleness guardrail: If your strategy uses fundamental fields, you MUST enforce TWO checks combined: (1) staleness — filing_date must not be null and must be < 540 days old (18 months); (2) SEC publication lag — trade date must be >= filing_date + 45 days (data is not publicly available before this). You MUST force the signal to 0.0 and zero the weight for any row that fails either check: `pl.when(pl.col("filing_date").is_null() | ((pl.col("date") - pl.col("filing_date").cast(pl.Date)).dt.total_days() > 540) | ((pl.col("date") - pl.col("filing_date").cast(pl.Date)).dt.total_days() < 45)).then(0.0)`. This stale mask MUST also be applied as a hard circuit-breaker to the final weight column — not just the fundamental sub-signal — to prevent stale fundamentals from leaking into the weight via other signals.
 
 RESPOND in this exact format:
 STRATEGY_NAME: snake_case_name
@@ -469,31 +469,116 @@ def combine_strategies(
 
 
 def _enforce_ast_guardrails(code: str) -> None:
-    """Parse the generated code and look for illegal patterns such as lookahead bias."""
+    """Parse the generated code and look for illegal patterns such as lookahead bias.
+
+    Guardrails enforced:
+      G1. fill_null(strategy='backward')  — future lookahead via backward fill
+      G2. .shift(-N) with negative N      — peeking at future rows
+      G3. .pct_change(-N) with negative N — future return calculation
+      G4. Fundamental columns used without filing_date staleness guard
+          (filing_date must appear in code when any fundamental col is referenced)
+    """
     try:
         tree = ast.parse(code)
     except SyntaxError as e:
         raise ValueError(f"LLM generated invalid Python syntax: {e}")
 
+    # ── Catalogue of fundamental columns that require staleness guards ──────
+    FUNDAMENTAL_COLS = {
+        "dcf_npv_gap", "ev_sales_zscore", "pe_ratio", "pb_ratio", "ps_ratio",
+        "ebit", "ebitda", "net_income", "free_cash_flow", "total_debt",
+        "total_equity", "revenue", "gross_margin", "operating_margin",
+        "net_margin", "roe", "roa", "roic", "current_ratio", "quick_ratio",
+        "debt_to_equity", "earnings_yield", "book_value", "enterprise_value",
+        "ev_ebitda", "peg_ratio", "dividend_yield", "payout_ratio",
+        "revenue_growth", "earnings_growth", "asset_turnover",
+        "filing_date",  # itself — must be referenced alongside the guard
+    }
+
     class GuardrailVisitor(ast.NodeVisitor):
+        def __init__(self):
+            self.referenced_fundamentals: set[str] = set()
+            self.has_staleness_guard: bool = False  # filing_date > 540 days check present
+
         def visit_Call(self, node):
-            # Block .fill_null(strategy="backward")
+            # ── G1: fill_null(strategy='backward') ─────────────────────────
             if isinstance(node.func, ast.Attribute) and node.func.attr == "fill_null":
-                # Check kwargs
                 for kw in node.keywords:
                     if kw.arg == "strategy":
                         val = None
                         if isinstance(kw.value, ast.Constant):
                             val = kw.value.value
-                        elif isinstance(kw.value, ast.Str): # Python 3.7 fallback
+                        elif isinstance(kw.value, ast.Str):
                             val = kw.value.s
-                        
                         if val == "backward":
                             raise ValueError(
-                                "AST Guardrail Violation: fill_null(strategy='backward') "
-                                "is strictly prohibited. It introduces future lookahead bias."
+                                "AST Guardrail Violation [G1]: fill_null(strategy='backward') "
+                                "is strictly prohibited — introduces future lookahead bias."
                             )
+
+            # ── G2: .shift(-N) lookahead ────────────────────────────────────
+            if isinstance(node.func, ast.Attribute) and node.func.attr == "shift":
+                if node.args:
+                    arg = node.args[0]
+                    # shift(-N) as direct negative literal
+                    if isinstance(arg, ast.UnaryOp) and isinstance(arg.op, ast.USub):
+                        if isinstance(arg.operand, ast.Constant) and isinstance(arg.operand.value, (int, float)):
+                            raise ValueError(
+                                f"AST Guardrail Violation [G2]: .shift({-arg.operand.value}) "
+                                "uses a negative offset — this peeks at future rows (lookahead bias). "
+                                "Use .shift(1) or positive offsets only."
+                            )
+                    # shift(n=...) as kwarg
+                for kw in node.keywords:
+                    if kw.arg in ("n", "periods"):
+                        if isinstance(kw.value, ast.UnaryOp) and isinstance(kw.value.op, ast.USub):
+                            raise ValueError(
+                                "AST Guardrail Violation [G2]: .shift(n=negative) "
+                                "peeks at future rows (lookahead bias). Use positive offsets only."
+                            )
+
+            # ── G3: .pct_change(-N) lookahead ──────────────────────────────
+            if isinstance(node.func, ast.Attribute) and node.func.attr == "pct_change":
+                if node.args:
+                    arg = node.args[0]
+                    if isinstance(arg, ast.UnaryOp) and isinstance(arg.op, ast.USub):
+                        if isinstance(arg.operand, ast.Constant) and isinstance(arg.operand.value, (int, float)):
+                            raise ValueError(
+                                f"AST Guardrail Violation [G3]: .pct_change({-arg.operand.value}) "
+                                "computes future returns (lookahead bias). "
+                                "Use positive period arguments only."
+                            )
+                for kw in node.keywords:
+                    if kw.arg == "n":
+                        if isinstance(kw.value, ast.UnaryOp) and isinstance(kw.value.op, ast.USub):
+                            raise ValueError(
+                                "AST Guardrail Violation [G3]: .pct_change(n=negative) "
+                                "computes future returns (lookahead bias). Use positive n only."
+                            )
+
             self.generic_visit(node)
-            
+
+        def visit_Constant(self, node):
+            # ── G4: Track fundamental column string references ───────────────
+            if isinstance(node.value, str) and node.value in FUNDAMENTAL_COLS:
+                if node.value != "filing_date":
+                    self.referenced_fundamentals.add(node.value)
+                else:
+                    # Presence of "filing_date" string suggests a staleness guard
+                    self.has_staleness_guard = True
+            self.generic_visit(node)
+
     visitor = GuardrailVisitor()
     visitor.visit(tree)
+
+    # ── G4 post-visit: fundamental usage without staleness guard ────────────
+    if visitor.referenced_fundamentals and not visitor.has_staleness_guard:
+        cols = ", ".join(sorted(visitor.referenced_fundamentals))
+        raise ValueError(
+            f"AST Guardrail Violation [G4]: Strategy references fundamental column(s) "
+            f"[{cols}] without a filing_date staleness guard. "
+            "You MUST include: "
+            "pl.when(pl.col('filing_date').is_null() | "
+            "((pl.col('date') - pl.col('filing_date').cast(pl.Date)).dt.total_days() > 540))"
+            ".then(0.0) to prevent earnings leakage from stale filings."
+        )

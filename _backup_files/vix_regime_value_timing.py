@@ -65,14 +65,22 @@ def vix_regime_value_timing(df: pl.DataFrame) -> pl.DataFrame:
     dcf = pl.col("dcf_npv_gap").fill_null(0.0)
     evz = pl.col("ev_sales_zscore").fill_null(0.0)
 
-    # Enforce fundamental data staleness logic (max 540 days / 18 months)
+    # ── Fundamental Staleness Circuit-Breaker ──────────────────────────────
+    # Two guards run together:
+    #   1. Staleness: filing_date must exist and be < 540 days old (18 months)
+    #   2. SEC publication lag: trade date must be >= filing_date + 45 days
+    #      (data cannot be acted upon before it is publicly filed with the SEC)
+    # This mask is used BOTH to zero the sub-signal AND as a final weight blocker.
     stale_mask = (
-        pl.col("filing_date").is_null() | 
-        ((pl.col("date") - pl.col("filing_date").cast(pl.Date)).dt.total_days() > 540)
+        pl.col("filing_date").is_null() |
+        ((pl.col("date") - pl.col("filing_date").cast(pl.Date)).dt.total_days() > 540) |
+        ((pl.col("date") - pl.col("filing_date").cast(pl.Date)).dt.total_days() < 45)
     )
 
+    df = df.with_columns(stale_mask.alias("_stale_fundamental"))
+
     df = df.with_columns(
-        pl.when(stale_mask)
+        pl.when(pl.col("_stale_fundamental"))
         .then(0.0)
         .when((dcf > 0.50) & (evz < -0.50))
         .then(
@@ -227,7 +235,13 @@ def vix_regime_value_timing(df: pl.DataFrame) -> pl.DataFrame:
     # (already handled by composite_alpha_adj boosting)
 
     df = df.with_columns(
-        pl.when(pl.col("stop_triggered"))
+        # ── HARD CIRCUIT-BREAKER: stale fundamentals kill the entire weight ──
+        # A row with stale/unavailable fundamental data cannot receive any weight
+        # regardless of what vol_score, quality_score or flow_score say.
+        # This prevents stale 2018 ABBV filings from driving 2022 allocations.
+        pl.when(pl.col("_stale_fundamental"))
+        .then(0.0)
+        .when(pl.col("stop_triggered"))
         .then(0.0)
         .when(pl.col("top_decile") & (pl.col("composite_alpha_adj") > 0.0))
         .then(long_weight_per * pl.col("gross_scalar"))
@@ -260,7 +274,7 @@ def vix_regime_value_timing(df: pl.DataFrame) -> pl.DataFrame:
         "alpha_rank", "stock_count", "top_decile",
         "realized_vol_20d", "trailing_high_60d", "drawdown_from_high",
         "stop_triggered", "bottom_decile", "n_top_decile", "n_bottom_decile",
-        "daily_return_calc"
+        "daily_return_calc", "_stale_fundamental"
     ]
     df = df.drop(drop_cols)
 
