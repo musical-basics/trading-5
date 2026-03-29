@@ -15,6 +15,7 @@ import {
   Code2,
   RefreshCw,
   TrendingUp,
+  BrainCircuit,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -34,9 +35,11 @@ import {
   runForensicAudit,
   fetchExperimentTrades,
   runAlphaBacktest,
+  fetchAuditModels,
   type AlphaExperiment,
   type AuditReport,
   type TradeLedgerEntry,
+  type AuditModel,
 } from "@/lib/api"
 
 // ── Helpers ───────────────────────────────────────────────────────────
@@ -171,6 +174,8 @@ function TradeRow({
 
 export function ForensicAuditor() {
   const [experiments, setExperiments] = useState<AlphaExperiment[]>([])
+  const [models, setModels] = useState<AuditModel[]>([])
+  const [selectedModel, setSelectedModel] = useState("claude-3-7-sonnet-latest")
   const [selectedId, setSelectedId] = useState<string>("")
   const [auditResult, setAuditResult] = useState<AuditReport | null>(null)
   const [trades, setTrades] = useState<TradeLedgerEntry[]>([])
@@ -179,11 +184,21 @@ export function ForensicAuditor() {
   const [isRerunning, setIsRerunning] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
-  // Load passed experiments
+  // Load passed experiments and models
   useEffect(() => {
     fetchAlphaExperiments()
       .then((exps) => setExperiments(exps.filter((e) => e.status === "passed")))
       .catch(() => setExperiments([]))
+
+    fetchAuditModels()
+      .then((res) => {
+        if (res.models && res.models.length > 0) {
+          setModels(res.models)
+          // Default to the first (usually smartest) available
+          setSelectedModel(res.models[0].id)
+        }
+      })
+      .catch(() => setModels([]))
   }, [])
 
   // When experiment changes, load trades and any cached audit
@@ -214,7 +229,7 @@ export function ForensicAuditor() {
     setErrorMsg(null)
     setAuditResult(null)
     try {
-      const result = await runForensicAudit(selectedId)
+      const result = await runForensicAudit(selectedId, selectedModel)
       if (result.error) {
         setErrorMsg(result.error)
       } else {
@@ -275,30 +290,52 @@ export function ForensicAuditor() {
       <Card className="border-border/50 bg-card/50">
         <CardContent className="pt-4 pb-4">
           <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
-            <div className="flex-1 space-y-1.5">
-              <label className="text-xs text-muted-foreground font-medium">
-                Select Passed Experiment
-              </label>
-              <Select value={selectedId} onValueChange={setSelectedId}>
-                <SelectTrigger id="forensic-experiment-select" className="bg-background">
-                  <SelectValue placeholder="— choose a strategy —" />
-                </SelectTrigger>
-                <SelectContent>
-                  {experiments.length === 0 && (
-                    <SelectItem value="__none__" disabled>
-                      No passed experiments yet
-                    </SelectItem>
-                  )}
-                  {experiments.map((exp) => (
-                    <SelectItem key={exp.experiment_id} value={exp.experiment_id}>
-                      <span className="mr-2 font-medium">{exp.strategy_name}</span>
-                      <span className="text-muted-foreground text-xs">
-                        #{exp.experiment_id} · Sharpe {exp.metrics?.sharpe?.toFixed(2) ?? "—"}
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="flex-1 space-y-1.5 flex gap-3">
+              <div className="w-1/2 space-y-1.5">
+                <label className="text-xs text-muted-foreground font-medium">
+                  Select Passed Experiment
+                </label>
+                <Select value={selectedId} onValueChange={setSelectedId}>
+                  <SelectTrigger id="forensic-experiment-select" className="bg-background">
+                    <SelectValue placeholder="— choose a strategy —" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {experiments.length === 0 && (
+                      <SelectItem value="__none__" disabled>
+                        No passed experiments yet
+                      </SelectItem>
+                    )}
+                    {experiments.map((exp) => (
+                      <SelectItem key={exp.experiment_id} value={exp.experiment_id}>
+                        <span className="mr-2 font-medium">{exp.strategy_name}</span>
+                        <span className="text-muted-foreground text-xs">
+                          #{exp.experiment_id} · Sharpe {exp.metrics?.sharpe?.toFixed(2) ?? "—"}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="w-1/2 space-y-1.5">
+                <label className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
+                  <BrainCircuit className="w-3.5 h-3.5" /> Evaluator Model
+                </label>
+                <Select value={selectedModel} onValueChange={setSelectedModel}>
+                  <SelectTrigger className="bg-background w-full">
+                    <SelectValue placeholder="Select Claude model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {models.length === 0 ? (
+                      <SelectItem value="claude-3-7-sonnet-latest">Claude 3.7 Sonnet (Default)</SelectItem>
+                    ) : (
+                      models.map((m) => (
+                        <SelectItem key={m.id} value={m.id}>{m.display_name}</SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <Button
               id="run-forensic-audit-btn"
@@ -424,6 +461,18 @@ export function ForensicAuditor() {
                 </div>
               </CardContent>
             </Card>
+          )}
+
+          {/* Metrics footer */}
+          {auditResult.metrics && (
+            <div className="flex items-center gap-4 text-xs font-mono text-muted-foreground bg-muted/20 px-4 py-2 rounded-md border border-border/50">
+              <span className="flex items-center gap-1.5"><BrainCircuit className="w-3.5 h-3.5" /> {auditResult.metrics.model}</span>
+              <span className="w-px h-3 bg-border" />
+              <span>In: {auditResult.metrics.input_tokens.toLocaleString()}</span>
+              <span>Out: {auditResult.metrics.output_tokens.toLocaleString()}</span>
+              <span className="w-px h-3 bg-border" />
+              <span className="text-primary font-medium">Cost: ${auditResult.metrics.cost_usd.toFixed(4)}</span>
+            </div>
           )}
         </div>
       )}

@@ -10,6 +10,7 @@ This module acts as an independent "Glass Box" AI auditing layer. It:
 
 import os
 import json
+import httpx
 from typing import Optional
 from datetime import timedelta, datetime
 
@@ -21,6 +22,43 @@ from src.alpha_lab.alpha_lab_store import (
     get_experiment,
     update_audit_result,
 )
+
+
+# ── Live Models ──────────────────────────────────────────────────────────────
+
+def get_available_models() -> list[dict]:
+    """Fetch the latest available Anthropic models."""
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        return []
+        
+    try:
+        response = httpx.get(
+            "https://api.anthropic.com/v1/models",
+            headers={
+                "x-api-key": api_key,
+                "anthropic-version": "2023-06-01"
+            },
+            timeout=5.0
+        )
+        response.raise_for_status()
+        data = response.json()
+        models = []
+        for m in data.get("data", []):
+            models.append({
+                "id": m.get("id"),
+                "display_name": m.get("display_name", m.get("id")),
+            })
+        return models
+    except Exception as e:
+        print(f"Failed to fetch Anthropic models: {e}")
+        # Fallback to known good models
+        return [
+            {"id": "claude-3-7-sonnet-latest", "display_name": "Claude 3.7 Sonnet"},
+            {"id": "claude-3-5-sonnet-latest", "display_name": "Claude 3.5 Sonnet"},
+            {"id": "claude-3-opus-latest", "display_name": "Claude 3 Opus"},
+            {"id": "claude-3-5-haiku-latest", "display_name": "Claude 3.5 Haiku"},
+        ]
 
 
 # ── Error taxonomy definitions (injected verbatim into LLM prompt) ──────────
@@ -216,7 +254,7 @@ Audit this backtest. Output ONLY the JSON verdict.
 """
 
 
-def run_forensic_audit(experiment_id: str) -> dict:
+def run_forensic_audit(experiment_id: str, model_id: str = "claude-3-7-sonnet-latest") -> dict:
     """
     Master entry point for the Forensic Auditor.
 
@@ -225,7 +263,7 @@ def run_forensic_audit(experiment_id: str) -> dict:
     3. Compiles T-5 to T+5 evidence windows via DuckDB.
     4. Calls Claude to classify errors and produce a structured JSON verdict.
     5. Persists the verdict to Supabase / local parquet.
-    6. Returns the parsed verdict dict.
+    6. Returns the parsed verdict dict with cost and token usage included.
     """
     # ── Fetch experiment ─────────────────────────────────────────
     exp = get_experiment(experiment_id)
@@ -265,11 +303,23 @@ def run_forensic_audit(experiment_id: str) -> dict:
         client = anthropic.Anthropic(api_key=api_key)
 
         response = client.messages.create(
-            model="claude-3-5-sonnet-20241022",
+            model=model_id,
             max_tokens=2048,
             system=system_prompt,
             messages=[{"role": "user", "content": user_prompt}],
         )
+
+        in_tok = response.usage.input_tokens
+        out_tok = response.usage.output_tokens
+        
+        # Approximate dynamic pricing
+        cost = 0.0
+        if "opus" in model_id:
+            cost = (in_tok / 1000000 * 15.0) + (out_tok / 1000000 * 75.0)
+        elif "sonnet" in model_id:
+            cost = (in_tok / 1000000 * 3.0) + (out_tok / 1000000 * 15.0)
+        elif "haiku" in model_id:
+            cost = (in_tok / 1000000 * 0.25) + (out_tok / 1000000 * 1.25)
 
         raw_text = response.content[0].text.strip()
 
@@ -281,6 +331,13 @@ def run_forensic_audit(experiment_id: str) -> dict:
             raw_text = raw_text.strip()
 
         verdict = json.loads(raw_text)
+        verdict["metrics"] = {
+            "model": model_id,
+            "input_tokens": in_tok,
+            "output_tokens": out_tok,
+            "cost_usd": cost
+            
+        }
 
     except json.JSONDecodeError as e:
         return {"error": f"LLM returned non-JSON response: {e}", "raw": raw_text}

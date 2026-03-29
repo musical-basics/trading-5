@@ -10,11 +10,13 @@ import json
 import math
 from datetime import date, datetime
 from pathlib import Path
-from fastapi import APIRouter
+from json.decoder import JSONDecodeError
+from fastapi import APIRouter, Header, Depends, Request, BackgroundTasks, Body
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
+from typing import Optional, List, Dict, Any
 
-from src.alpha_lab.strategy_generator import generate_strategy, get_tier_info, combine_strategies
+from src.alpha_lab.strategy_generator import generate_strategy, get_tier_info, combine_strategies, get_available_models
 from src.alpha_lab.alpha_lab_store import (
     save_experiment,
     list_experiments,
@@ -496,8 +498,21 @@ async def combine_experiments(
 # LEVEL 5.5: Forensic AI Backtest Auditor
 # ═══════════════════════════════════════════════════════════════
 
+@router.get("/audit/models")
+async def get_audit_models():
+    """Return available Anthropic models for the Forensic Auditor."""
+    from src.alpha_lab.forensic_auditor import get_available_models
+    models = get_available_models()
+    return _safe_response({"models": models})
+
+class AuditOptions(BaseModel):
+    model_id: str = "claude-3-7-sonnet-latest"
+
 @router.post("/{experiment_id}/audit")
-async def run_audit(experiment_id: str):
+async def run_audit(
+    experiment_id: str,
+    options: AuditOptions = Body(default=AuditOptions())
+):
     """Trigger the Forensic AI Auditor for a completed backtest experiment.
 
     Samples top trades, compiles T-5 to T+5 evidence windows, calls Claude
@@ -505,7 +520,7 @@ async def run_audit(experiment_id: str):
     """
     from src.alpha_lab.forensic_auditor import run_forensic_audit
     try:
-        verdict = run_forensic_audit(experiment_id)
+        verdict = run_forensic_audit(experiment_id, model_id=options.model_id)
         return _safe_response(verdict)
     except Exception as e:
         return _safe_response({"error": f"Audit failed: {type(e).__name__}: {e}"})

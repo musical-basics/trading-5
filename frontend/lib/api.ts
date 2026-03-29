@@ -654,6 +654,11 @@ export async function fetchAlignedProfile(): Promise<AlignedProfileResponse> {
 
 // ── Level 5.5: Forensic AI Backtest Auditor ──────────────────
 
+export interface AuditModel {
+  id: string
+  display_name: string
+}
+
 export interface FlaggedTrade {
   ticker: string
   date: string
@@ -666,6 +671,12 @@ export interface AuditReport {
   confidence: number
   flagged_trades: FlaggedTrade[]
   recommendation: string
+  metrics?: {
+    model: string
+    input_tokens: number
+    output_tokens: number
+    cost_usd: number
+  }
   error?: string
 }
 
@@ -680,10 +691,21 @@ export interface TradeLedgerEntry {
   volume?: number
 }
 
-export async function runForensicAudit(experimentId: string): Promise<AuditReport> {
+export async function fetchAuditModels(): Promise<{ models: AuditModel[] }> {
+  const res = await fetch(`${API_BASE}/api/alpha-lab/audit/models`)
+  if (!res.ok) throw new Error("Failed to fetch models")
+  return await res.json()
+}
+
+export async function runForensicAudit(experimentId: string, modelId?: string): Promise<AuditReport> {
+  const body = modelId ? JSON.stringify({ model_id: modelId }) : undefined
   const res = await fetch(
     `${API_BASE}/api/alpha-lab/${experimentId}/audit`,
-    { method: "POST" }
+    { 
+      method: "POST",
+      headers: body ? { "Content-Type": "application/json" } : undefined,
+      body
+    }
   )
   return await res.json()
 }
