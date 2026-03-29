@@ -164,3 +164,43 @@ INFO:     127.0.0.1:58994 - "GET /api/alpha-lab/audit/models HTTP/1.1" 200 OK
 INFO:     127.0.0.1:59025 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
 INFO:     127.0.0.1:58993 - "GET /api/alpha-lab/audit/models HTTP/1.1" 200 OK
 INFO:     127.0.0.1:58993 - "GET /api/alpha-lab/ae4bfb6e/trades HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59317 - "GET /api/alpha-lab/settings/swarm_agent_tiers HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59318 - "GET /api/alpha-lab/settings/swarm_agent_notes HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59317 - "GET /api/alpha-lab/settings/swarm_agent_tiers HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59319 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59326 - "GET /api/alpha-lab/settings/swarm_agent_notes HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59318 - "GET /api/alpha-lab/experiments HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59857 - "OPTIONS /api/alpha-lab/standalone-backtest HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59857 - "POST /api/alpha-lab/standalone-backtest HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'src/alpha_lab/lab_backtester.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [62534]
+INFO:     Started server process [64015]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'test_backtester.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [64015]
+INFO:     Started server process [64753]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'test_backtester.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [64753]
+INFO:     Started server process [64766]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in '_backup_files/vix_regime_value_timing.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [64766]
+INFO:     Started server process [65072]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.

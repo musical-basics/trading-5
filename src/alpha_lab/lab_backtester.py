@@ -70,19 +70,21 @@ def _load_aligned_data() -> pl.DataFrame:
     fund_path = get_parquet_path("fundamental")
     if os.path.exists(fund_path):
         fund = pl.read_parquet(fund_path)
-        # Rename filing_date → date for the join
-        if "filing_date" in fund.columns and "date" not in fund.columns:
-            fund = fund.rename({"filing_date": "date"})
-        if "date" in fund.columns and "entity_id" in fund.columns:
-            # Only pick columns not already in market
-            new_cols = [c for c in fund.columns if c not in market.columns]
-            if new_cols:
-                fund_select = ["entity_id", "date"] + new_cols
-                market = market.join(
-                    fund.select(fund_select),
-                    on=["entity_id", "date"],
-                    how="left",
-                )
+        if "filing_date" in fund.columns and "entity_id" in fund.columns:
+            # Drop date column from fundamental if it somehow exists to prevent conflicts
+            if "date" in fund.columns:
+                fund = fund.drop("date")
+            
+            market = market.sort(["entity_id", "date"])
+            fund = fund.sort(["entity_id", "filing_date"])
+            
+            market = market.join_asof(
+                fund,
+                left_on="date",
+                right_on="filing_date",
+                by="entity_id",
+                strategy="backward",
+            )
 
     return market
 

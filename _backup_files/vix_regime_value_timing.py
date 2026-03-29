@@ -1,3 +1,5 @@
+import polars as pl
+
 def vix_regime_value_timing(df: pl.DataFrame) -> pl.DataFrame:
     # STEP 1: Compute SPY 200-day MA and regime
     # SPY is a macro column (same for all stocks on a given date), but we compute from the data
