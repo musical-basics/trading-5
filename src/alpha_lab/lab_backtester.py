@@ -195,10 +195,15 @@ def run_raw_backtest(
             result_df
             .sort(["entity_id", "date"])
             .with_columns(
-                (pl.col("adj_close") / pl.col("adj_close").shift(1).over("entity_id") - 1).alias("_daily_ret")
+                (pl.col("adj_close") / pl.col("adj_close").shift(1).over("entity_id") - 1).alias("_daily_ret"),
+                (pl.col("_norm_weight") - pl.col("_norm_weight").shift(1).over("entity_id").fill_null(0.0)).abs().alias("_weight_turnover")
             )
             .with_columns(
-                (pl.col("_norm_weight").shift(1).over("entity_id") * pl.col("_daily_ret")).alias("_weighted_ret")
+                # Asset return based on previous day's intended weight, minus 5 bps transaction cost on turnover
+                (
+                    (pl.col("_norm_weight").shift(1).over("entity_id").fill_null(0.0) * pl.col("_daily_ret").fill_null(0.0))
+                    - (pl.col("_weight_turnover") * 0.0005)
+                ).alias("_weighted_ret")
             )
             .group_by("date")
             .agg(pl.col("_weighted_ret").sum().alias("daily_return"))

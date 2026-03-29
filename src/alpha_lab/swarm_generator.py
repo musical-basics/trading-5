@@ -172,6 +172,7 @@ CRITICAL POLARS API RULES (you MUST follow these exactly):
 - Avoid `.select()` at the end — return the full df with the weight column added via `.with_columns()`
 - NEVER divide by a value that could be zero or near-zero. Always clip the divisor: `/ pl.col("x").clip(0.01, None)` instead of `/ (pl.col("x") + 1e-6)`
 - Use `.fill_null(0.0)` BEFORE arithmetic operations on columns that may have nulls
+- T-1 LOOKAHEAD GUARDRAIL: All signal generation, trailing stops, trailing maximums, and price/volume filters MUST evaluate on strictly shifted T-1 data to make decisions for T0. Do NOT evaluate today's `adj_close`, `volume`, or calculated metrics mapped to today's row to trigger a trade today. Force a `.shift(1).over("entity_id")` on all price/volume references used in signal thresholds, stop-loss calculations, and conditionals.
 
 RESPOND in this exact format:
 STRATEGY_NAME: snake_case_name
@@ -323,6 +324,7 @@ CRITICAL POLARS API RULES (you MUST follow these exactly):
 - Avoid `.select()` at the end — return the full df with the weight column added via `.with_columns()`
 - NEVER divide by a value that could be zero or near-zero. Always clip the divisor: `/ pl.col("x").clip(0.01, None)` instead of `/ (pl.col("x") + 1e-6)`
 - Use `.fill_null(0.0)` BEFORE arithmetic operations on columns that may have nulls
+- T-1 LOOKAHEAD GUARDRAIL: All signal generation, trailing stops, trailing maximums, and price/volume filters MUST evaluate on strictly shifted T-1 data to make decisions for T0. Do NOT evaluate today's `adj_close`, `volume`, or calculated metrics mapped to today's row to trigger a trade today. Force a `.shift(1).over("entity_id")` on all price/volume references used in signal thresholds, stop-loss calculations, and conditionals.
 
 RESPOND in this exact format:
 STRATEGY_NAME: snake_case_name
