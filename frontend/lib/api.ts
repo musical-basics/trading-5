@@ -770,3 +770,35 @@ export async function fetchExperimentTrades(experimentId: string): Promise<{
   if (!res.ok) return { trades: [], error: `HTTP ${res.status}` }
   return await res.json()
 }
+
+// ── Live Positions ────────────────────────────────────────────
+
+export interface LivePosition {
+  ticker: string
+  shares: number
+  avg_entry: number
+  current_price: number
+  market_value: number
+  cost_basis: number
+  unrealized_pnl_usd: number
+  unrealized_pnl_pct: number
+}
+
+export interface LivePositionsResponse {
+  trader_id: number
+  trader_name: string
+  total_equity: number
+  total_cash: number
+  total_invested: number
+  total_unrealized_pnl: number
+  positions: LivePosition[]
+}
+
+export async function fetchLivePositions(traderId: number): Promise<LivePositionsResponse> {
+  const res = await fetch(`${API_BASE}/api/traders/${traderId}/positions`)
+  if (!res.ok) {
+    const text = await res.text().catch(() => "Unknown error")
+    throw new Error(`Failed to fetch positions: ${text}`)
+  }
+  return (await res.json()) as LivePositionsResponse
+}

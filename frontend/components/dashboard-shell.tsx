@@ -18,6 +18,7 @@ import {
   Database,
   Sparkles,
   BookOpen,
+  Briefcase,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -35,8 +36,9 @@ import { IndicatorsAnalysis } from "./indicators-analysis"
 import AlphaLab from "./alpha-lab"
 import { AlignedDataPipeline } from "./aligned-pipeline"
 import { ForensicAuditor } from "./forensic-auditor"
+import { LivePositions } from "./live-positions"
 
-type View = "data-pipeline" | "aligned-pipeline" | "indicators-analysis" | "alpha-lab" | "forensic-auditor" | "strategy-studio" | "xray-inspector" | "risk-war-room" | "execution-ledger" | "trader-manager"
+type View = "data-pipeline" | "aligned-pipeline" | "indicators-analysis" | "alpha-lab" | "forensic-auditor" | "strategy-studio" | "xray-inspector" | "risk-war-room" | "execution-ledger" | "trader-manager" | "live-positions"
 
 const navItems = [
   {
@@ -107,6 +109,13 @@ const navItems = [
     label: "Traders & Portfolios", 
     icon: Users, 
     description: "Capital Management",
+    badge: null
+  },
+  {
+    id: "live-positions" as const,
+    label: "Live Positions",
+    icon: Briefcase,
+    description: "Real-time PnL & Holdings",
     badge: null
   },
 ]
@@ -282,6 +291,7 @@ export function DashboardShell() {
           {currentView === "risk-war-room" && <RiskWarRoom />}
           {currentView === "execution-ledger" && <ExecutionLedger />}
           {currentView === "trader-manager" && <TraderManager />}
+          {currentView === "live-positions" && <LivePositions />}
         </main>
 
         {/* Status Bar */}

@@ -100,6 +100,81 @@ async def api_update_constraints(trader_id: int, req: TraderConstraintUpdate):
     return {"status": "updated", "trader_id": trader_id}
 
 
+@router.get("/{trader_id}/positions")
+async def api_trader_positions(trader_id: int):
+    """Get real-time positions and PnL for a trader.
+
+    Calls get_trader_state() to reconstruct holdings from paper_executions,
+    then fetches the latest adj_close from daily_bars to compute market value
+    and unrealized PnL.
+    """
+    import sqlite3
+    import pandas as pd
+    from src.config import DB_PATH
+    from src.pipeline.execution.portfolio_state import get_trader_state
+
+    trader = get_trader(trader_id)
+    if not trader:
+        raise HTTPException(status_code=404, detail=f"Trader {trader_id} not found")
+
+    try:
+        total_equity, all_holdings = get_trader_state(trader_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch trader state: {e}")
+
+    positions = []
+    total_invested = 0.0
+
+    if all_holdings:
+        conn = sqlite3.connect(DB_PATH)
+        try:
+            for ticker, info in all_holdings.items():
+                shares = info["shares"]
+                avg_price = info["avg_price"]
+                cost_basis = shares * avg_price
+
+                # Fetch latest price from daily_bars
+                try:
+                    price_row = pd.read_sql_query(
+                        "SELECT adj_close FROM daily_bars WHERE ticker = ? ORDER BY date DESC LIMIT 1",
+                        conn, params=(ticker,)
+                    )
+                    current_price = float(price_row["adj_close"].iloc[0]) if not price_row.empty else avg_price
+                except Exception:
+                    current_price = avg_price
+
+                market_value = shares * current_price
+                unrealized_pnl_usd = market_value - cost_basis
+                unrealized_pnl_pct = (unrealized_pnl_usd / cost_basis * 100) if cost_basis > 0 else 0.0
+
+                positions.append({
+                    "ticker": ticker,
+                    "shares": shares,
+                    "avg_entry": round(avg_price, 4),
+                    "current_price": round(current_price, 4),
+                    "market_value": round(market_value, 2),
+                    "cost_basis": round(cost_basis, 2),
+                    "unrealized_pnl_usd": round(unrealized_pnl_usd, 2),
+                    "unrealized_pnl_pct": round(unrealized_pnl_pct, 4),
+                })
+                total_invested += market_value
+        finally:
+            conn.close()
+
+    total_cash = total_equity - total_invested
+    total_unrealized_pnl = sum(p["unrealized_pnl_usd"] for p in positions)
+
+    return {
+        "trader_id": trader_id,
+        "trader_name": trader["name"],
+        "total_equity": round(total_equity, 2),
+        "total_cash": round(total_cash, 2),
+        "total_invested": round(total_invested, 2),
+        "total_unrealized_pnl": round(total_unrealized_pnl, 2),
+        "positions": sorted(positions, key=lambda p: p["market_value"], reverse=True),
+    }
+
+
 @router.delete("/{trader_id}")
 async def api_delete_trader(trader_id: int, db: Session = Depends(get_db)):
     """Delete a trader and cascade delete constraints and portfolios."""
