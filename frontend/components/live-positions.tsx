@@ -321,8 +321,14 @@ export function LivePositions() {
                             
                             {exec.portfolio_name && (
                               <>
-                                <div className="text-muted-foreground text-[10px] mt-2 col-span-2">Portfolio</div>
-                                <div className="text-[11px] font-medium text-primary col-span-2">{exec.portfolio_name}</div>
+                                <div className="text-muted-foreground text-[10px] mt-2">Portfolio</div>
+                                <div className="text-[11px] font-medium text-primary mt-2">{exec.portfolio_name}</div>
+                              </>
+                            )}
+                            {exec.strategy_id && (
+                              <>
+                                <div className="text-muted-foreground text-[10px] mt-2">Strategy</div>
+                                <div className="text-[11px] font-medium font-mono text-primary mt-2">{exec.strategy_id}</div>
                               </>
                             )}
                           </div>
